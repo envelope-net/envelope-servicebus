@@ -1,0 +1,25 @@
+﻿
+
+- Ziadna log metoda ServiceBus-u nesmie spadnut do exceptionu, ked sa nepodari zapisat do DB ....... ABY sa kvoli chvilkovemu vypadku DB nezastavilo cele ESB
+	- fallback log to file - ak sa nepodari ani do file -> throw ???
+
+
+	Save:
+- najskor serialize Message To MessageBody
+- encrypt
+- compress
+
+
+	Load
+- decompress
+- deencrypt
+- ns koniec deserialize MessageBody to Message
+
+
+- za kazdym AWAIT nastav .ConfigureAwait(false);
+
+osetri ked nastane cancellation - najma pri spracovani message v ExchangeMessageBrokeri a aj v MessageQueueMessageHandleri
+
+
+zrus IResult<TIdentity> ... nahrad za TResult<Guid> resp. TResult
+
