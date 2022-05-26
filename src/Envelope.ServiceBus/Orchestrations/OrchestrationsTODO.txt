@@ -1,0 +1,24 @@
+﻿
+
+
+
+vzdy pouzi finally 
+finally
+{
+    await _lockProvider.ReleaseLock(itemId);
+}
+
+
+
+
+pre kazdy AWAIT nastav .ConfigureAwait(false)
+
+skontroluj ci su vsetky DateTime properties nazvane ako UTC
+
+vyries vsetky TODO
+
+vyskyty OrchestrationInstance orchestrationInstance zmena na IOrchestrationInstance orchestrationInstance
+
+
+Otestovat error scenare
+
