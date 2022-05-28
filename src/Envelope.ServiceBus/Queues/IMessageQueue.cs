@@ -31,17 +31,17 @@ public interface IMessageQueue<TMessage> : IMessageQueue, IQueueInfo, IDisposabl
 	/// <summary>
 	/// Enqueue the new message
 	/// </summary>
-	Task<IResult<Guid>> EnqueueAsync(TMessage? message, IQueueEnqueueContext context, CancellationToken cancellationToken);
+	Task<IResult> EnqueueAsync(TMessage? message, IQueueEnqueueContext context, CancellationToken cancellationToken);
 
 	/// <summary>
 	/// If the queue is pull queue than the subscriber call this method to try to return an message from
 	/// the beginning of the queue without removing it.
 	/// </summary>
-	Task<IResult<IQueuedMessage<TMessage>?, Guid>> TryPeekAsync(ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken);
+	Task<IResult<IQueuedMessage<TMessage>?>> TryPeekAsync(ITraceInfo traceInfo, CancellationToken cancellationToken);
 
 	/// <summary>
 	/// If the queue is pull queue than the subscriber call this method to try to remove and return the message
 	/// at the beginning of the queue.
 	/// </summary>
-	Task<IResult<Guid>> TryRemoveAsync(IQueuedMessage<TMessage> message, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken);
+	Task<IResult> TryRemoveAsync(IQueuedMessage<TMessage> message, ITraceInfo traceInfo, CancellationToken cancellationToken);
 }

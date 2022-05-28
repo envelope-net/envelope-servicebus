@@ -20,16 +20,16 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 		Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 
-	public virtual IResult<TResponse, Guid> InterceptHandle(
+	public virtual IResult<TResponse> InterceptHandle(
 		TRequestMessage message,
 		TContext handlerContext,
-		Func<TRequestMessage, TContext, IResult<TResponse, Guid>> next)
+		Func<TRequestMessage, TContext, IResult<TResponse>> next)
 	{
 		long callStartTicks = StaticWatch.CurrentTicks;
 		long callEndTicks;
 		decimal methodCallElapsedMilliseconds = -1;
 		Type? messageType = message?.GetType();
-		var traceInfo = new TraceInfoBuilder<Guid>(handlerContext.HostInfo.HostName, TraceFrame.Create(), handlerContext.TraceInfo).Build();
+		var traceInfo = new TraceInfoBuilder(handlerContext.HostInfo.HostName, TraceFrame.Create(), handlerContext.TraceInfo).Build();
 		using var scope = Logger.BeginMethodCallScope(traceInfo);
 
 		Logger.LogTraceMessage(
@@ -38,7 +38,7 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 					.CommandQueryName(messageType?.FullName),
 			true);
 
-		var resultBuilder = new ResultBuilder<TResponse, Guid>();
+		var resultBuilder = new ResultBuilder<TResponse>();
 		var result = resultBuilder.Build();
 		Guid? idCommand = null;
 
@@ -51,7 +51,7 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 			{
 				var executeResult = next(message!, handlerContext);
 				if (executeResult == null)
-					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse, Guid>).FullName}");
+					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse>).FullName}");
 
 				resultBuilder.MergeAllHasError(executeResult);
 
@@ -60,7 +60,7 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 					foreach (var errMsg in result.ErrorMessages)
 					{
 						if (string.IsNullOrWhiteSpace(errMsg.ClientMessage))
-							errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+							errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
 						if (!errMsg.IdCommandQuery.HasValue)
 							errMsg.IdCommandQuery = idCommand;
@@ -83,9 +83,9 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 				if (handlerContext.TransactionContext != null)
 					handlerContext.TransactionContext.TryRollback(executeEx);
 
-				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
-				result = new ResultBuilder<TResponse, Guid>()
+				result = new ResultBuilder<TResponse>()
 					.WithError(traceInfo,
 						x =>
 							x.ExceptionInfo(executeEx)
@@ -116,7 +116,7 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 			callEndTicks = StaticWatch.CurrentTicks;
 			methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
-			result = new ResultBuilder<TResponse, Guid>()
+			result = new ResultBuilder<TResponse>()
 				.WithError(traceInfo,
 					x =>
 						x.ExceptionInfo(interEx)
@@ -127,7 +127,7 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 			foreach (var errMsg in result.ErrorMessages)
 			{
 				if (string.IsNullOrWhiteSpace(errMsg.ClientMessage))
-					errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+					errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
 				if (!errMsg.IdCommandQuery.HasValue)
 					errMsg.IdCommandQuery = idCommand;

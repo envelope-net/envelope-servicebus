@@ -6,9 +6,9 @@ namespace Envelope.ServiceBus.Model.Internal;
 
 internal class QueueErrorEvent : QueueEvent, IQueueErrorEvent, IQueueEvent, IServiceBusEvent, IEvent
 {
-	public IResult<Guid> ErrorResult { get; }
+	public IResult ErrorResult { get; }
 
-	public QueueErrorEvent(IMessageQueue messageQueue, QueueEventType queueEventType, IResult<Guid> errorResult)
+	public QueueErrorEvent(IMessageQueue messageQueue, QueueEventType queueEventType, IResult errorResult)
 		: base(messageQueue, queueEventType)
 	{
 		ErrorResult = errorResult ?? throw new ArgumentNullException(nameof(errorResult));

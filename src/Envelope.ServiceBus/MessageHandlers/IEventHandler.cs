@@ -29,7 +29,7 @@ public interface IEventHandler<TEvent, TContext> : IEventHandler
 	/// Handles an event
 	/// </summary>
 	/// <returns>Response from the event</returns>
-	IResult<Guid> Handle(TEvent @event, TContext handlerContext);
+	IResult Handle(TEvent @event, TContext handlerContext);
 }
 
 /// <summary>
@@ -50,5 +50,5 @@ public interface IAsyncEventHandler<TEvent, TContext> : IEventHandler
 	/// Handles an event
 	/// </summary>
 	/// <returns>Response from the event</returns>
-	Task<IResult<Guid>> HandleAsync(TEvent @event, TContext handlerContext, CancellationToken cancellationToken = default);
+	Task<IResult> HandleAsync(TEvent @event, TContext handlerContext, CancellationToken cancellationToken = default);
 }

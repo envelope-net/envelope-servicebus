@@ -22,7 +22,7 @@ public interface IEventHandlerInterceptor<TEvent, TContext> : IEventHandlerInter
 	/// <summary>
 	/// Intercepts the event handler handle method
 	/// </summary>
-	IResult<Guid> InterceptHandle(TEvent @event, TContext handlerContext, Func<TEvent, TContext, IResult<Guid>> next);
+	IResult InterceptHandle(TEvent @event, TContext handlerContext, Func<TEvent, TContext, IResult> next);
 }
 
 /// <summary>
@@ -37,5 +37,5 @@ public interface IAsyncEventHandlerInterceptor<TEvent, TContext> : IEventHandler
 	/// <summary>
 	/// Intercepts the event handler handle method
 	/// </summary>
-	Task<IResult<Guid>> InterceptHandleAsync(TEvent @event, TContext handlerContext, Func<TEvent, TContext, CancellationToken, Task<IResult<Guid>>> next, CancellationToken cancellationToken);
+	Task<IResult> InterceptHandleAsync(TEvent @event, TContext handlerContext, Func<TEvent, TContext, CancellationToken, Task<IResult>> next, CancellationToken cancellationToken);
 }

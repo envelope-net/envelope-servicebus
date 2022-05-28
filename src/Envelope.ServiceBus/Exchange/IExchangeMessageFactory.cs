@@ -8,9 +8,9 @@ namespace Envelope.ServiceBus.Exchange;
 public interface IExchangeMessageFactory<TMessage>
 	where TMessage : class, IMessage
 {
-	IResult<List<IExchangeMessage<TMessage>>, Guid> CreateExchangeMessages(
+	IResult<List<IExchangeMessage<TMessage>>> CreateExchangeMessages(
 		TMessage? message,
 		IExchangeEnqueueContext context,
 		ExchangeContext<TMessage> exchangeContext,
-		ITraceInfo<Guid> traceInfo);
+		ITraceInfo traceInfo);
 }

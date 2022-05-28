@@ -6,9 +6,9 @@ namespace Envelope.ServiceBus.Model;
 
 public class ExchangeErrorEvent : ExchangeEvent, IExchangeErrorEvent, IExchangeEvent, IServiceBusEvent, IEvent
 {
-	public IResult<Guid> ErrorResult { get; }
+	public IResult ErrorResult { get; }
 
-	public ExchangeErrorEvent(IExchange exchange, ExchangeEventType exchangeEventType, IResult<Guid> errorResult)
+	public ExchangeErrorEvent(IExchange exchange, ExchangeEventType exchangeEventType, IResult errorResult)
 		: base(exchange, exchangeEventType)
 	{
 		ErrorResult = errorResult ?? throw new ArgumentNullException(nameof(errorResult));

@@ -12,7 +12,7 @@ internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 {
 	public async Task<MessageHandlerResult> HandleAsync(IExchangeMessage<TMessage> message, ExchangeContext<TMessage> exchangeContext, CancellationToken cancellationToken)
 	{
-		var traceInfo = TraceInfo<Guid>.Create(exchangeContext.ServiceBusOptions.HostInfo.HostName);
+		var traceInfo = TraceInfo.Create(exchangeContext.ServiceBusOptions.HostInfo.HostName);
 		var result = new ResultBuilder<Guid>();
 
 		var messageHandlerResultFactory = exchangeContext.ServiceBusOptions.MessageHandlerResultFactory;

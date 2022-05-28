@@ -15,7 +15,7 @@ internal class InMemoryMessageBodyProvider : IMessageBodyProvider
 		_cache = new MemoryCache(new MemoryCacheOptions());
 	}
 
-	public Task<IResult<Guid>> SaveToStorageAsync<TMessage>(List<IMessageMetadata> messagesMetadata, TMessage? message, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	public Task<IResult> SaveToStorageAsync<TMessage>(List<IMessageMetadata> messagesMetadata, TMessage? message, ITraceInfo traceInfo, CancellationToken cancellationToken)
 		where TMessage : class, IMessage
 	{
 		var result = new ResultBuilder<Guid>();
@@ -26,12 +26,12 @@ internal class InMemoryMessageBodyProvider : IMessageBodyProvider
 				_cache.Set(metadata.MessageId, message, new MemoryCacheEntryOptions { SlidingExpiration = _slidingExpiration });
 		}
 
-		return Task.FromResult((IResult<Guid>)result.Build());
+		return Task.FromResult((IResult)result.Build());
 	}
 
-	public Task<IResult<Guid, Guid>> SaveReplyToStorageAsync<TResponse>(Guid messageId, TResponse? response, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	public Task<IResult<Guid>> SaveReplyToStorageAsync<TResponse>(Guid messageId, TResponse? response, ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
-		var result = new ResultBuilder<Guid, Guid>();
+		var result = new ResultBuilder<Guid>();
 
 		if (response != null)
 		{
@@ -41,10 +41,10 @@ internal class InMemoryMessageBodyProvider : IMessageBodyProvider
 		return Task.FromResult(result.WithData(Guid.NewGuid()).Build());
 	}
 
-	public Task<IResult<TMessage?, Guid>> LoadFromStorageAsync<TMessage>(IMessageMetadata messageMetadata, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	public Task<IResult<TMessage?>> LoadFromStorageAsync<TMessage>(IMessageMetadata messageMetadata, ITraceInfo traceInfo, CancellationToken cancellationToken)
 		where TMessage : class, IMessage
 	{
-		var result = new ResultBuilder<TMessage?, Guid>();
+		var result = new ResultBuilder<TMessage?>();
 
 		if (messageMetadata == null)
 			throw new ArgumentNullException(nameof(messageMetadata));

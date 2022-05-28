@@ -31,7 +31,7 @@ public class EventBus : IEventBus
 	}
 
 	/// <inheritdoc />
-	public Task<IResult<Guid, Guid>> PublishAsync(
+	public Task<IResult<Guid>> PublishAsync(
 		IEvent @event,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
@@ -40,32 +40,32 @@ public class EventBus : IEventBus
 		=> PublishAsync(@event, null!, cancellationToken, memberName, sourceFilePath, sourceLineNumber);
 
 	/// <inheritdoc />
-	public Task<IResult<Guid, Guid>> PublishAsync(
+	public Task<IResult<Guid>> PublishAsync(
 		IEvent @event,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
-		=> PublishAsync(@event, optionsBuilder, TraceInfo<Guid>.Create(null, EventBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber), cancellationToken);
+		=> PublishAsync(@event, optionsBuilder, TraceInfo.Create(null, EventBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber), cancellationToken);
 
 	/// <inheritdoc />
-	public Task<IResult<Guid, Guid>> PublishAsync(
+	public Task<IResult<Guid>> PublishAsync(
 		IEvent @event,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 		=> PublishAsync(@event, null, traceInfo, cancellationToken);
 
 	/// <inheritdoc />
-	public async Task<IResult<Guid, Guid>> PublishAsync(
+	public async Task<IResult<Guid>> PublishAsync(
 		IEvent @event,
 		Action<MessageOptionsBuilder>? optionsBuilder,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 	{
 		if (@event == null)
 		{
-			var result = new ResultBuilder<Guid, Guid>();
+			var result = new ResultBuilder<Guid>();
 			return result.WithArgumentNullException(traceInfo, nameof(@event));
 		}
 
@@ -83,23 +83,23 @@ public class EventBus : IEventBus
 		return await PublishAsync(@event, options, isLocalTransactionContext, traceInfo, cancellationToken);
 	}
 
-	protected async Task<IResult<Guid, Guid>> PublishAsync(
+	protected async Task<IResult<Guid>> PublishAsync(
 		IEvent @event,
 		IMessageOptions options,
 		bool isLocalTransactionContext,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 	{
-		var result = new ResultBuilder<Guid, Guid>();
+		var result = new ResultBuilder<Guid>();
 
 		if (@event == null)
 			return result.WithArgumentNullException(traceInfo, nameof(@event));
 		if (options == null)
 			return result.WithArgumentNullException(traceInfo, nameof(options));
 		if (traceInfo == null)
-			return result.WithArgumentNullException(TraceInfo<Guid>.Create(EventBusOptions.HostInfo.HostName), nameof(traceInfo));
+			return result.WithArgumentNullException(TraceInfo.Create(EventBusOptions.HostInfo.HostName), nameof(traceInfo));
 
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		var transactionContext = options.TransactionContext;
 		try
@@ -270,11 +270,11 @@ public class EventBus : IEventBus
 	protected virtual Task<ITransactionContext> CreateTransactionContextAsync(CancellationToken cancellationToken = default)
 		=> Task.FromResult(ServiceProvider.GetService<ITransactionContextFactory>()?.Create() ?? TransactionContextFactory.CreateTransactionContext());
 
-	protected virtual async Task<IResult<ISavedMessage<TEvent>, Guid>> SaveEventAsync<TEvent>(TEvent @event, IMessageOptions options, ITraceInfo<Guid> traceInfo, CancellationToken cancellation = default)
+	protected virtual async Task<IResult<ISavedMessage<TEvent>>> SaveEventAsync<TEvent>(TEvent @event, IMessageOptions options, ITraceInfo traceInfo, CancellationToken cancellation = default)
 		where TEvent : class, IEvent
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<ISavedMessage<TEvent>, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<ISavedMessage<TEvent>>();
 
 		var utcNow = DateTime.UtcNow;
 		var metadata = new MessageMetadata<TEvent>
@@ -313,16 +313,16 @@ public class EventBus : IEventBus
 
 	#region IEventPublisher
 
-	async Task<IResult<List<Guid>, Guid>> IEventPublisher.PublishEventAsync(
+	async Task<IResult<List<Guid>>> IEventPublisher.PublishEventAsync(
 		IEvent @event,
 		CancellationToken cancellationToken,
 		string memberName,
 		string sourceFilePath,
 		int sourceLineNumber)
 	{
-		var traceInfo = TraceInfo<Guid>.Create(null, EventBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber);
+		var traceInfo = TraceInfo.Create(null, EventBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber);
 
-		var result = new ResultBuilder<List<Guid>, Guid>();
+		var result = new ResultBuilder<List<Guid>>();
 
 		if (@event == null)
 			return result.WithArgumentNullException(traceInfo, nameof(@event));
@@ -344,7 +344,7 @@ public class EventBus : IEventBus
 		return result.WithData(new List<Guid> { publishResult.Data }).Build();
 	}
 
-	async Task<IResult<List<Guid>, Guid>> IEventPublisher.PublishEventAsync(
+	async Task<IResult<List<Guid>>> IEventPublisher.PublishEventAsync(
 		IEvent @event,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		CancellationToken cancellationToken,
@@ -352,9 +352,9 @@ public class EventBus : IEventBus
 		string sourceFilePath,
 		int sourceLineNumber)
 	{
-		var traceInfo = TraceInfo<Guid>.Create(null, EventBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber);
+		var traceInfo = TraceInfo.Create(null, EventBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber);
 
-		var result = new ResultBuilder<List<Guid>, Guid>();
+		var result = new ResultBuilder<List<Guid>>();
 
 		if (@event == null)
 			return result.WithArgumentNullException(traceInfo, nameof(@event));
@@ -377,12 +377,12 @@ public class EventBus : IEventBus
 		return result.WithData(new List<Guid> { publishResult.Data }).Build();
 	}
 
-	async Task<IResult<List<Guid>, Guid>> IEventPublisher.PublishEventAsync(
+	async Task<IResult<List<Guid>>> IEventPublisher.PublishEventAsync(
 		IEvent @event,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken)
 	{
-		var result = new ResultBuilder<List<Guid>, Guid>();
+		var result = new ResultBuilder<List<Guid>>();
 
 		if (@event == null)
 			return result.WithArgumentNullException(traceInfo, nameof(@event));
@@ -404,13 +404,13 @@ public class EventBus : IEventBus
 		return result.WithData(new List<Guid> { publishResult.Data }).Build();
 	}
 
-	async Task<IResult<List<Guid>, Guid>> IEventPublisher.PublishEventAsync(
+	async Task<IResult<List<Guid>>> IEventPublisher.PublishEventAsync(
 		IEvent @event,
 		Action<MessageOptionsBuilder>? optionsBuilder,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken)
 	{
-		var result = new ResultBuilder<List<Guid>, Guid>();
+		var result = new ResultBuilder<List<Guid>>();
 
 		if (@event == null)
 			return result.WithArgumentNullException(traceInfo, nameof(@event));

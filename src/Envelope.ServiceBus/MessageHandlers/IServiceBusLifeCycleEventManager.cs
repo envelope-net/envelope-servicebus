@@ -8,9 +8,9 @@ public interface IServiceBusLifeCycleEventManager
 {
 	event ServiceBusEventHandler OnServiceBusEvent;
 
-	Task PublishServiceBusEventInternalAsync(IServiceBusEvent serviceBusEvent, ITraceInfo<Guid> traceInfo, IServiceBusOptions serviceBusOptions);
+	Task PublishServiceBusEventInternalAsync(IServiceBusEvent serviceBusEvent, ITraceInfo traceInfo, IServiceBusOptions serviceBusOptions);
 }
 
 
 
-public delegate Task ServiceBusEventHandler(IServiceBusEvent serviceBusEvent, ITraceInfo<Guid> traceInfo);
+public delegate Task ServiceBusEventHandler(IServiceBusEvent serviceBusEvent, ITraceInfo traceInfo);

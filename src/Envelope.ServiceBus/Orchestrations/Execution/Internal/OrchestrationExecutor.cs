@@ -48,7 +48,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 
 	public Task ExecuteAsync(
 		IOrchestrationInstance orchestrationInstance,
-		ITraceInfo<Guid> traceInfo)
+		ITraceInfo traceInfo)
 	{
 		_ = Task.Run(async () =>
 		{
@@ -80,7 +80,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					}
 				}
 
-				var logMsg = ex.GetLogMessage<Guid>();
+				var logMsg = ex.GetLogMessage();
 				if (logMsg == null || !logMsg.IsLogged)
 					await _logger.LogErrorAsync(
 						traceInfo,
@@ -99,12 +99,12 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 	private readonly AsyncLock _executeLock = new();
 	private async Task ExecuteInternalAsync(
 		IOrchestrationInstance orchestrationInstance,
-		ITraceInfo<Guid> traceInfo)
+		ITraceInfo traceInfo)
 	{
 		if (orchestrationInstance.Status == OrchestrationStatus.Executing)
 			return;
 
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		var exePointers = await GetExecutionPointersAsync(orchestrationInstance, traceInfo);
 
@@ -220,11 +220,11 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		}
 	}
 
-	private async Task<List<ExecutionPointer>> GetExecutionPointersAsync(IOrchestrationInstance orchestrationInstance, ITraceInfo<Guid> traceInfo)
+	private async Task<List<ExecutionPointer>> GetExecutionPointersAsync(IOrchestrationInstance orchestrationInstance, ITraceInfo traceInfo)
 	{
 		var nowUtc = DateTime.UtcNow;
 
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		if (orchestrationInstance.Status != OrchestrationStatus.Running
 			&& orchestrationInstance.Status != OrchestrationStatus.Executing)
@@ -303,7 +303,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		return pointers;
 	}
 
-	private async Task InitializeStepAsync(IOrchestrationInstance orchestrationInstance, ExecutionPointer pointer, ITraceInfo<Guid> traceInfo)
+	private async Task InitializeStepAsync(IOrchestrationInstance orchestrationInstance, ExecutionPointer pointer, ITraceInfo traceInfo)
 	{
 		if (pointer.Status != PointerStatus.InProcess)
 		{
@@ -330,10 +330,10 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 	private async Task ExecuteStepAsync(
 		IOrchestrationInstance orchestrationInstance,
 		ExecutionPointer pointer,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		IOrchestrationStep? finalizedBranch = null;
 		if (pointer.PredecessorExecutionPointer?.Step.StartingStep != null)
@@ -413,9 +413,9 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		IOrchestrationInstance orchestrationInstance,
 		ExecutionPointer pointer,
 		IExecutionResult? result,
-		ITraceInfo<Guid> traceInfo)
+		ITraceInfo traceInfo)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 		var step = pointer.Step;
 
 		if (result != null)
@@ -553,7 +553,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		}
 	}
 
-	private async Task DetermineOrchestrationIsCompletedAsync(IOrchestrationInstance orchestrationInstance, ITraceInfo<Guid> traceInfo)
+	private async Task DetermineOrchestrationIsCompletedAsync(IOrchestrationInstance orchestrationInstance, ITraceInfo traceInfo)
 	{
 		if (orchestrationInstance.Status != OrchestrationStatus.Running
 			&& orchestrationInstance.Status != OrchestrationStatus.Executing)
@@ -587,11 +587,11 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		IOrchestrationInstance orchestrationInstance,
 		ExecutionPointer pointer,
 		IExecutionResult? result,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		Exception? exception,
 		string? detailMessage)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 		var step = pointer.Step;
 
 		if (step.CanRetry(pointer.RetryCount))
@@ -651,11 +651,11 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 	private async Task SuspendAsync(
 		IOrchestrationInstance orchestrationInstance,
 		ExecutionPointer pointer,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		Exception? exception,
 		string? detailMessage)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 		var step = pointer.Step;
 		var nowUtc = DateTime.UtcNow;
 

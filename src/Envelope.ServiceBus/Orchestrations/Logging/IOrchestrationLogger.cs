@@ -6,62 +6,62 @@ namespace Envelope.ServiceBus.Orchestrations.Logging;
 
 public interface IOrchestrationLogger
 {
-	Task<ILogMessage<Guid>?> LogTraceAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<ILogMessage?> LogTraceAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
-	Task<ILogMessage<Guid>?> LogDebugAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<ILogMessage?> LogDebugAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
-	Task<ILogMessage<Guid>?> LogInformationAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<ILogMessage?> LogInformationAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
-	Task<ILogMessage<Guid>?> LogWarningAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<ILogMessage?> LogWarningAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
-	Task<IErrorMessage<Guid>> LogErrorAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<IErrorMessage> LogErrorAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
-	Task<IErrorMessage<Guid>> LogCriticalAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<IErrorMessage> LogCriticalAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);

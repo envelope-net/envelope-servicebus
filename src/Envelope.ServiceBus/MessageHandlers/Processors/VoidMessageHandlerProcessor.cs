@@ -8,7 +8,7 @@ namespace Envelope.ServiceBus.MessageHandlers.Processors;
 
 internal abstract class VoidMessageHandlerProcessor : MessageHandlerProcessorBase
 {
-	public abstract IResult<Guid> Handle(
+	public abstract IResult Handle(
 		Messages.IRequestMessage message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider);
@@ -27,13 +27,13 @@ internal class VoidMessageHandlerProcessor<TRequestMessage, TContext> : VoidMess
 		return handler;
 	}
 
-	public override IResult<Guid> Handle(
+	public override IResult Handle(
 		Messages.IRequestMessage message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider)
 		=> Handle((TRequestMessage)message, (TContext)handlerContext, serviceProvider);
 
-	public IResult<Guid> Handle(
+	public IResult Handle(
 		TRequestMessage message,
 		TContext handlerContext,
 		IServiceProvider serviceProvider)
@@ -42,7 +42,7 @@ internal class VoidMessageHandlerProcessor<TRequestMessage, TContext> : VoidMess
 		{
 			var handler = (IMessageHandler<TRequestMessage, TContext>)CreateHandler(serviceProvider);
 
-			IResult<Guid> result;
+			IResult result;
 			var interceptorType = handler.InterceptorType;
 			if (interceptorType == null)
 			{
@@ -61,7 +61,7 @@ internal class VoidMessageHandlerProcessor<TRequestMessage, TContext> : VoidMess
 		}
 		catch (Exception exHandler)
 		{
-			handlerContext.LogError(TraceInfo<Guid>.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "Send<Messages.IRequestMessage> error", null);
+			handlerContext.LogError(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "Send<Messages.IRequestMessage> error", null);
 			throw;
 		}
 	}

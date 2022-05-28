@@ -9,12 +9,12 @@ namespace Envelope.ServiceBus.MessageHandlers.Processors;
 
 internal abstract class AsyncMessageHandlerProcessor<TResponse> : MessageHandlerProcessorBase
 {
-	public abstract Task<IResult<ISendResponse<TResponse>, Guid>> HandleAsync(
+	public abstract Task<IResult<ISendResponse<TResponse>>> HandleAsync(
 		Messages.IRequestMessage<TResponse> message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
-		ITraceInfo<Guid> traceInfo,
-		Func<TResponse, IMessageHandlerContext, ITraceInfo<Guid>, CancellationToken, Task<IResult<Guid, Guid>>> saveResponseMessageAction,
+		ITraceInfo traceInfo,
+		Func<TResponse, IMessageHandlerContext, ITraceInfo, CancellationToken, Task<IResult<Guid>>> saveResponseMessageAction,
 		CancellationToken cancellationToken = default);
 }
 
@@ -31,28 +31,28 @@ internal class AsyncMessageHandlerProcessor<TRequestMessage, TResponse, TContext
 		return handler;
 	}
 
-	public override Task<IResult<ISendResponse<TResponse>, Guid>> HandleAsync(
+	public override Task<IResult<ISendResponse<TResponse>>> HandleAsync(
 		Messages.IRequestMessage<TResponse> message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
-		ITraceInfo<Guid> traceInfo,
-		Func<TResponse, IMessageHandlerContext, ITraceInfo<Guid>, CancellationToken, Task<IResult<Guid, Guid>>> saveResponseMessageAction,
+		ITraceInfo traceInfo,
+		Func<TResponse, IMessageHandlerContext, ITraceInfo, CancellationToken, Task<IResult<Guid>>> saveResponseMessageAction,
 		CancellationToken cancellationToken = default)
 		=> HandleAsync((TRequestMessage)message, (TContext)handlerContext, serviceProvider, traceInfo, saveResponseMessageAction, cancellationToken);
 
-	public async Task<IResult<ISendResponse<TResponse>, Guid>> HandleAsync(
+	public async Task<IResult<ISendResponse<TResponse>>> HandleAsync(
 		TRequestMessage message,
 		TContext handlerContext,
 		IServiceProvider serviceProvider,
-		ITraceInfo<Guid> traceInfo,
-		Func<TResponse, IMessageHandlerContext, ITraceInfo<Guid>, CancellationToken, Task<IResult<Guid, Guid>>> saveResponseMessageAction,
+		ITraceInfo traceInfo,
+		Func<TResponse, IMessageHandlerContext, ITraceInfo, CancellationToken, Task<IResult<Guid>>> saveResponseMessageAction,
 		CancellationToken cancellationToken = default)
 	{
 		try
 		{
 			var handler = (IAsyncMessageHandler<TRequestMessage, TResponse, TContext>)CreateHandler(serviceProvider);
 
-			IResult<TResponse, Guid> result;
+			IResult<TResponse> result;
 			var interceptorType = handler.InterceptorType;
 			if (interceptorType == null)
 			{
@@ -67,7 +67,7 @@ internal class AsyncMessageHandlerProcessor<TRequestMessage, TResponse, TContext
 				result = await interceptor.InterceptHandleAsync(message, handlerContext, handler.HandleAsync, cancellationToken);
 			}
 
-			var resultBuilder = new ResultBuilder<ISendResponse<TResponse>, Guid>();
+			var resultBuilder = new ResultBuilder<ISendResponse<TResponse>>();
 			if (result.Data != null)
 			{
 				var response = result.Data;
@@ -82,7 +82,7 @@ internal class AsyncMessageHandlerProcessor<TRequestMessage, TResponse, TContext
 		}
 		catch (Exception exHandler)
 		{
-			await handlerContext.LogErrorAsync(TraceInfo<Guid>.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage<TResponse>> error", null, cancellationToken);
+			await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage<TResponse>> error", null, cancellationToken);
 			throw;
 		}
 	}

@@ -17,9 +17,9 @@ public interface IExchange<TMessage> : IExchange, IQueueInfo, IDisposable, IAsyn
 	/// <summary>
 	/// Enqueue the new message
 	/// </summary>
-	Task<IResult<List<Guid>, Guid>> EnqueueAsync(TMessage? message, IExchangeEnqueueContext context, CancellationToken cancellationToken);
+	Task<IResult<List<Guid>>> EnqueueAsync(TMessage? message, IExchangeEnqueueContext context, CancellationToken cancellationToken);
 
-	Task<IResult<IExchangeMessage<TMessage>?, Guid>> TryPeekAsync(ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken);
+	Task<IResult<IExchangeMessage<TMessage>?>> TryPeekAsync(ITraceInfo traceInfo, CancellationToken cancellationToken);
 
-	Task<IResult<Guid>> TryRemoveAsync(IExchangeMessage<TMessage> message, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken);
+	Task<IResult> TryRemoveAsync(IExchangeMessage<TMessage> message, ITraceInfo traceInfo, CancellationToken cancellationToken);
 }

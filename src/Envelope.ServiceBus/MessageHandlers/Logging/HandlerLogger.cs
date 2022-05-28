@@ -16,8 +16,8 @@ internal class HandlerLogger : IHandlerLogger
 		_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 
-	private static Action<LogMessageBuilder<Guid>> AppendToBuilder(
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+	private static Action<LogMessageBuilder> AppendToBuilder(
+		Action<LogMessageBuilder> messageBuilder,
 		IMessageMetadata? messageMetadata,
 		string? detail)
 	{
@@ -35,8 +35,8 @@ internal class HandlerLogger : IHandlerLogger
 		return messageBuilder;
 	}
 
-	private static Action<ErrorMessageBuilder<Guid>> AppendToBuilder(
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+	private static Action<ErrorMessageBuilder> AppendToBuilder(
+		Action<ErrorMessageBuilder> messageBuilder,
 		IMessageMetadata? messageMetadata,
 		string? detail)
 	{
@@ -54,10 +54,10 @@ internal class HandlerLogger : IHandlerLogger
 		return messageBuilder;
 	}
 
-	public ILogMessage<Guid>? LogTrace(
-		ITraceInfo<Guid> traceInfo,
+	public ILogMessage? LogTrace(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -66,10 +66,10 @@ internal class HandlerLogger : IHandlerLogger
 		return msg;
 	}
 
-	public ILogMessage<Guid>? LogDebug(
-		ITraceInfo<Guid> traceInfo,
+	public ILogMessage? LogDebug(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -78,10 +78,10 @@ internal class HandlerLogger : IHandlerLogger
 		return msg;
 	}
 
-	public ILogMessage<Guid>? LogInformation(
-		ITraceInfo<Guid> traceInfo,
+	public ILogMessage? LogInformation(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -90,10 +90,10 @@ internal class HandlerLogger : IHandlerLogger
 		return msg;
 	}
 
-	public ILogMessage<Guid>? LogWarning(
-		ITraceInfo<Guid> traceInfo,
+	public ILogMessage? LogWarning(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -102,10 +102,10 @@ internal class HandlerLogger : IHandlerLogger
 		return msg;
 	}
 
-	public IErrorMessage<Guid> LogError(
-		ITraceInfo<Guid> traceInfo,
+	public IErrorMessage LogError(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -114,10 +114,10 @@ internal class HandlerLogger : IHandlerLogger
 		return msg;
 	}
 
-	public IErrorMessage<Guid> LogCritical(
-		ITraceInfo<Guid> traceInfo,
+	public IErrorMessage LogCritical(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -126,10 +126,10 @@ internal class HandlerLogger : IHandlerLogger
 		return msg;
 	}
 
-	public Task<ILogMessage<Guid>?> LogTraceAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogTraceAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -139,10 +139,10 @@ internal class HandlerLogger : IHandlerLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<ILogMessage<Guid>?> LogDebugAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogDebugAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -152,10 +152,10 @@ internal class HandlerLogger : IHandlerLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<ILogMessage<Guid>?> LogInformationAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogInformationAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -165,10 +165,10 @@ internal class HandlerLogger : IHandlerLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<ILogMessage<Guid>?> LogWarningAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogWarningAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -178,10 +178,10 @@ internal class HandlerLogger : IHandlerLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<IErrorMessage<Guid>> LogErrorAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<IErrorMessage> LogErrorAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -191,10 +191,10 @@ internal class HandlerLogger : IHandlerLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<IErrorMessage<Guid>> LogCriticalAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<IErrorMessage> LogCriticalAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)

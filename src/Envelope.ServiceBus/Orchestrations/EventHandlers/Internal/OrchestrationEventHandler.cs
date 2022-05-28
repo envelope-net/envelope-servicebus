@@ -17,12 +17,12 @@
 //		_orchestrationRepository = orchestrationRepository ?? throw new ArgumentNullException(nameof(orchestrationRepository));
 //	}
 
-//	public async Task<IResult<Guid>> HandleAsync(OrchestrationEvent @event, OrchestrationEventHandlerContext handlerContext, CancellationToken cancellationToken = default)
+//	public async Task<IResult> HandleAsync(OrchestrationEvent @event, OrchestrationEventHandlerContext handlerContext, CancellationToken cancellationToken = default)
 //	{
 //		@event.Id = handlerContext.MessageId;
 
 //		var result = new ResultBuilder<Guid>();
-//		var traceInfo = TraceInfo<Guid>.Create(handlerContext.TraceInfo);
+//		var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
 
 //		var saveResult = await _orchestrationRepository.EnqueueAsync(@event, traceInfo, cancellationToken).ConfigureAwait(false);
 //		result.MergeHasError(saveResult);
@@ -51,7 +51,7 @@ internal static class OrchestrationEventHandler
 	public static async Task<MessageHandlerResult> HandleMessageAsync(IQueuedMessage<OrchestrationEvent> message, IMessageHandlerContext context, CancellationToken cancellationToken)
 	{
 		var result = new ResultBuilder<Guid>();
-		var traceInfo = TraceInfo<Guid>.Create(message.TraceInfo);
+		var traceInfo = TraceInfo.Create(message.TraceInfo);
 
 		if (message.Message == null)
 			return context.MessageHandlerResultFactory.FromResult(

@@ -13,14 +13,14 @@ internal class ServiceBusLifeCycleEventManager : IServiceBusLifeCycleEventManage
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-	public Task PublishServiceBusEventInternalAsync(IServiceBusEvent serviceBusEvent, ITraceInfo<Guid> traceInfo, IServiceBusOptions serviceBusOptions)
+	public Task PublishServiceBusEventInternalAsync(IServiceBusEvent serviceBusEvent, ITraceInfo traceInfo, IServiceBusOptions serviceBusOptions)
 	{
 		if (OnServiceBusEvent != null)
 		{
 			if (serviceBusOptions == null)
 				throw new ArgumentNullException(nameof(serviceBusOptions));
 
-			traceInfo = TraceInfo<Guid>.Create(traceInfo);
+			traceInfo = TraceInfo.Create(traceInfo);
 
 			try
 			{

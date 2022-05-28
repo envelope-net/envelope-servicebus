@@ -55,10 +55,10 @@ internal class ExchangeProvider : IExchangeProvider
 			throw new InvalidOperationException($"Exchange with name {exchangeName} cannot store message type {typeof(TMessage).FullName}");
 	}
 
-	public IResult<IExchangeEnqueueContext, Guid> CreateExchangeEnqueueContext(ITraceInfo<Guid> traceInfo, IMessageOptions options, ExchangeType exchangeType)
+	public IResult<IExchangeEnqueueContext> CreateExchangeEnqueueContext(ITraceInfo traceInfo, IMessageOptions options, ExchangeType exchangeType)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<IExchangeEnqueueContext, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<IExchangeEnqueueContext>();
 
 		if (!options.IsAsynchronousInvocation && exchangeType != ExchangeType.Direct)
 			return result.WithInvalidOperationException(traceInfo, $"Cannot call synchronous invocation on non-Direct exchange");
@@ -85,7 +85,7 @@ internal class ExchangeProvider : IExchangeProvider
 		return result.WithData(context).Build();
 	}
 
-	public IFaultQueueContext CreateFaultQueueContext(ITraceInfo<Guid> traceInfo, IMessageOptions options)
+	public IFaultQueueContext CreateFaultQueueContext(ITraceInfo traceInfo, IMessageOptions options)
 	{
 		if (traceInfo == null)
 			throw new ArgumentNullException(nameof(traceInfo));

@@ -5,5 +5,5 @@ namespace Envelope.ServiceBus.Orchestrations.Model;
 
 public interface IOrchestrationError : IStepLifeCycleEvent, ILifeCycleEvent, IEvent
 {
-	IErrorMessage<Guid> ErrorMessage { get; }
+	IErrorMessage ErrorMessage { get; }
 }

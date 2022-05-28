@@ -8,7 +8,7 @@ namespace Envelope.ServiceBus.MessageHandlers.Processors;
 
 internal abstract class EventHandlerProcessor : EventHandlerProcessorBase
 {
-	public abstract IResult<Guid> Handle(
+	public abstract IResult Handle(
 		IEvent @vent,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider);
@@ -27,13 +27,13 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 		return handlers;
 	}
 
-	public override IResult<Guid> Handle(
+	public override IResult Handle(
 		IEvent @event,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider)
 		=> Handle((TEvent)@event, (TContext)handlerContext, serviceProvider);
 
-	public IResult<Guid> Handle(
+	public IResult Handle(
 		TEvent @event,
 		TContext handlerContext,
 		IServiceProvider serviceProvider)
@@ -45,12 +45,12 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 		}
 		catch (Exception exHandler)
 		{
-			handlerContext.LogError(TraceInfo<Guid>.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), $"PublishAsync<IEvent> {nameof(CreateHandlers)} error", null);
+			handlerContext.LogError(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), $"PublishAsync<IEvent> {nameof(CreateHandlers)} error", null);
 			throw;
 		}
 
 		var resultBuilder = new ResultBuilder<Guid>();
-		IResult<Guid>? result = null;
+		IResult? result = null;
 		foreach (var handler in handlers)
 		{
 			try
@@ -73,7 +73,7 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 			}
 			catch (Exception exHandler)
 			{
-				handlerContext.LogError(TraceInfo<Guid>.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null);
+				handlerContext.LogError(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null);
 				throw;
 			}
 		}

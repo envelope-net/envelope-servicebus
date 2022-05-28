@@ -28,7 +28,7 @@ public interface IQueueEnqueueContext
 	/// <summary>
 	/// Publisher source trace frame
 	/// </summary>
-	ITraceInfo<Guid> TraceInfo { get; }
+	ITraceInfo TraceInfo { get; }
 
 	/// <summary>
 	/// If true, the message will never be saved to storage

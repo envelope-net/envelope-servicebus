@@ -20,17 +20,17 @@ public abstract class AsyncEventHandlerInterceptor<TEvent, TContext> : IAsyncEve
 		Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 
-	public virtual async Task<IResult<Guid>> InterceptHandleAsync(
+	public virtual async Task<IResult> InterceptHandleAsync(
 		TEvent @event,
 		TContext handlerContext,
-		Func<TEvent, TContext, CancellationToken, Task<IResult<Guid>>> next,
+		Func<TEvent, TContext, CancellationToken, Task<IResult>> next,
 		CancellationToken cancellationToken)
 	{
 		long callStartTicks = StaticWatch.CurrentTicks;
 		long callEndTicks;
 		decimal methodCallElapsedMilliseconds = -1;
 		Type? eventType = @event?.GetType();
-		var traceInfo = new TraceInfoBuilder<Guid>(handlerContext.HostInfo.HostName, TraceFrame.Create(), handlerContext.TraceInfo).Build();
+		var traceInfo = new TraceInfoBuilder(handlerContext.HostInfo.HostName, TraceFrame.Create(), handlerContext.TraceInfo).Build();
 		using var scope = Logger.BeginMethodCallScope(traceInfo);
 
 		Logger.LogTraceMessage(
@@ -52,7 +52,7 @@ public abstract class AsyncEventHandlerInterceptor<TEvent, TContext> : IAsyncEve
 			{
 				var executeResult = await next(@event!, handlerContext, cancellationToken);
 				if (executeResult == null)
-					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<Guid>).FullName}");
+					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult).FullName}");
 
 				resultBuilder.MergeAllHasError(executeResult);
 
@@ -61,7 +61,7 @@ public abstract class AsyncEventHandlerInterceptor<TEvent, TContext> : IAsyncEve
 					foreach (var errMsg in result.ErrorMessages)
 					{
 						if (string.IsNullOrWhiteSpace(errMsg.ClientMessage))
-							errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+							errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
 						if (!errMsg.IdCommandQuery.HasValue)
 							errMsg.IdCommandQuery = idEvent;
@@ -84,7 +84,7 @@ public abstract class AsyncEventHandlerInterceptor<TEvent, TContext> : IAsyncEve
 				if (handlerContext.TransactionContext != null)
 					await handlerContext.TransactionContext.TryRollbackAsync(executeEx, cancellationToken);
 
-				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
 				result = new ResultBuilder<Guid>()
 					.WithError(traceInfo,
@@ -128,7 +128,7 @@ public abstract class AsyncEventHandlerInterceptor<TEvent, TContext> : IAsyncEve
 			foreach (var errMsg in result.ErrorMessages)
 			{
 				if (string.IsNullOrWhiteSpace(errMsg.ClientMessage))
-					errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+					errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
 				if (!errMsg.IdCommandQuery.HasValue)
 					errMsg.IdCommandQuery = idEvent;

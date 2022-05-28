@@ -6,9 +6,9 @@ namespace Envelope.ServiceBus.Orchestrations.EventHandlers;
 
 public interface IOrchestrationEventQueue
 {
-	Task<IResult<Guid>> SaveNewEventAsync(OrchestrationEvent @event, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken);
+	Task<IResult> SaveNewEventAsync(OrchestrationEvent @event, ITraceInfo traceInfo, CancellationToken cancellationToken);
 
-	Task<IResult<List<OrchestrationEvent>?, Guid>> GetUnprocessedEventsAsync(string orchestrationKey, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken);
+	Task<IResult<List<OrchestrationEvent>?>> GetUnprocessedEventsAsync(string orchestrationKey, ITraceInfo traceInfo, CancellationToken cancellationToken);
 
-	Task<IResult<Guid>> UpdateEventAsync(OrchestrationEvent @event, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken);
+	Task<IResult> UpdateEventAsync(OrchestrationEvent @event, ITraceInfo traceInfo, CancellationToken cancellationToken);
 }

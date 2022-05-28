@@ -8,14 +8,14 @@ namespace Envelope.ServiceBus.Exchange.Internal;
 internal class ExchangeMessageFactory<TMessage> : IExchangeMessageFactory<TMessage>
 	where TMessage : class, IMessage
 {
-	public IResult<List<IExchangeMessage<TMessage>>, Guid> CreateExchangeMessages(
+	public IResult<List<IExchangeMessage<TMessage>>> CreateExchangeMessages(
 		TMessage? message,
 		IExchangeEnqueueContext context,
 		ExchangeContext<TMessage> exchangeContext,
-		ITraceInfo<Guid> traceInfo)
+		ITraceInfo traceInfo)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<List<IExchangeMessage<TMessage>>, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<List<IExchangeMessage<TMessage>>>();
 
 		if (context == null)
 			return result.WithArgumentNullException(traceInfo, nameof(context));
@@ -32,14 +32,14 @@ internal class ExchangeMessageFactory<TMessage> : IExchangeMessageFactory<TMessa
 		};
 	}
 
-	private IResult<List<IExchangeMessage<TMessage>>, Guid> CreateDirectMessages(
+	private IResult<List<IExchangeMessage<TMessage>>> CreateDirectMessages(
 		TMessage? message,
 		IExchangeEnqueueContext context,
 		ExchangeContext<TMessage> exchangeContext,
-		ITraceInfo<Guid> traceInfo)
+		ITraceInfo traceInfo)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<List<IExchangeMessage<TMessage>>, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<List<IExchangeMessage<TMessage>>>();
 
 		if (string.IsNullOrWhiteSpace(context.RoutingKey))
 			return result.WithInvalidOperationException(traceInfo, $"For the {exchangeContext.Router.ExchangeType} {nameof(Routing.ExchangeType)} the {nameof(context.RoutingKey)} must be set.");
@@ -79,21 +79,21 @@ internal class ExchangeMessageFactory<TMessage> : IExchangeMessageFactory<TMessa
 		return result.WithData(new List<IExchangeMessage<TMessage>> { exchangeMessage }).Build();
 	}
 
-	private IResult<List<IExchangeMessage<TMessage>>, Guid> CreateTopicMessages(
+	private IResult<List<IExchangeMessage<TMessage>>> CreateTopicMessages(
 		TMessage? message,
 		IExchangeEnqueueContext context,
 		ExchangeContext<TMessage> exchangeContext,
-		ITraceInfo<Guid> traceInfo)
+		ITraceInfo traceInfo)
 		=> CreateDirectMessages(message, context, exchangeContext, traceInfo); //TODO: prepis metodu na vyhladanie TargetQueueName podla wildcard (*, ?) chars v RoutingKey
 
-	private IResult<List<IExchangeMessage<TMessage>>, Guid> CreateHeadersMessages(
+	private IResult<List<IExchangeMessage<TMessage>>> CreateHeadersMessages(
 		TMessage? message,
 		IExchangeEnqueueContext context,
 		ExchangeContext<TMessage> config,
-		ITraceInfo<Guid> traceInfo)
+		ITraceInfo traceInfo)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<List<IExchangeMessage<TMessage>>, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<List<IExchangeMessage<TMessage>>>();
 
 		var messages = new List<IExchangeMessage<TMessage>>();
 		var parentMessageId = Guid.NewGuid();
@@ -139,14 +139,14 @@ internal class ExchangeMessageFactory<TMessage> : IExchangeMessageFactory<TMessa
 		return result.WithData(messages).Build();
 	}
 
-	private IResult<List<IExchangeMessage<TMessage>>, Guid> CreateFanOutMessages(
+	private IResult<List<IExchangeMessage<TMessage>>> CreateFanOutMessages(
 		TMessage? message,
 		IExchangeEnqueueContext context,
 		ExchangeContext<TMessage> exchangeContext,
-		ITraceInfo<Guid> traceInfo)
+		ITraceInfo traceInfo)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<List<IExchangeMessage<TMessage>>, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<List<IExchangeMessage<TMessage>>>();
 
 		var messages = new List<IExchangeMessage<TMessage>>();
 		var parentMessageId = Guid.NewGuid();

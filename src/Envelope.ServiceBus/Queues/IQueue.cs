@@ -10,10 +10,10 @@ public interface IQueue : IDisposable
 
 	int? MaxSize { get; set; }
 
-	Task<IResult<Guid>> EnqueueAsync(List<IMessageMetadata> messagesMetadata, ITraceInfo<Guid> traceInfo);
+	Task<IResult> EnqueueAsync(List<IMessageMetadata> messagesMetadata, ITraceInfo traceInfo);
 
-	Task<IResult<Guid>> TryRemoveAsync(IMessageMetadata messageMetadata, ITraceInfo<Guid> traceInfo);
+	Task<IResult> TryRemoveAsync(IMessageMetadata messageMetadata, ITraceInfo traceInfo);
 
 	/// <inheritdoc/>
-	Task<IResult<IMessageMetadata?, Guid>> TryPeekAsync(ITraceInfo<Guid> traceInfo);
+	Task<IResult<IMessageMetadata?>> TryPeekAsync(ITraceInfo traceInfo);
 }

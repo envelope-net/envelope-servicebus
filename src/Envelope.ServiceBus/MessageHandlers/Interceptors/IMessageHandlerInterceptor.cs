@@ -23,7 +23,7 @@ public interface IMessageHandlerInterceptor<TRequestMessage, TResponse, TContext
 	/// <summary>
 	/// Intercepts the message handler handle method
 	/// </summary>
-	IResult<TResponse, Guid> InterceptHandle(TRequestMessage message, TContext handlerContext, Func<TRequestMessage, TContext, IResult<TResponse, Guid>> next);
+	IResult<TResponse> InterceptHandle(TRequestMessage message, TContext handlerContext, Func<TRequestMessage, TContext, IResult<TResponse>> next);
 }
 
 /// <summary>
@@ -39,7 +39,7 @@ public interface IAsyncMessageHandlerInterceptor<TRequestMessage, TResponse, TCo
 	/// <summary>
 	/// Intercepts the message handler handle method
 	/// </summary>
-	Task<IResult<TResponse, Guid>> InterceptHandleAsync(TRequestMessage message, TContext handlerContext, Func<TRequestMessage, TContext, CancellationToken, Task<IResult<TResponse, Guid>>> next, CancellationToken cancellationToken);
+	Task<IResult<TResponse>> InterceptHandleAsync(TRequestMessage message, TContext handlerContext, Func<TRequestMessage, TContext, CancellationToken, Task<IResult<TResponse>>> next, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -54,7 +54,7 @@ public interface IMessageHandlerInterceptor<TRequestMessage, TContext> : IMessag
 	/// <summary>
 	/// Intercepts the message handler handle method
 	/// </summary>
-	IResult<Guid> InterceptHandle(TRequestMessage message, TContext handlerContext, Func<TRequestMessage, TContext, IResult<Guid>> next);
+	IResult InterceptHandle(TRequestMessage message, TContext handlerContext, Func<TRequestMessage, TContext, IResult> next);
 }
 
 /// <summary>
@@ -69,5 +69,5 @@ public interface IAsyncMessageHandlerInterceptor<TRequestMessage, TContext> : IM
 	/// <summary>
 	/// Intercepts the message handler handle method
 	/// </summary>
-	Task<IResult<Guid>> InterceptHandleAsync(TRequestMessage message, TContext handlerContext, Func<TRequestMessage, TContext, CancellationToken, Task<IResult<Guid>>> next, CancellationToken cancellationToken);
+	Task<IResult> InterceptHandleAsync(TRequestMessage message, TContext handlerContext, Func<TRequestMessage, TContext, CancellationToken, Task<IResult>> next, CancellationToken cancellationToken);
 }
