@@ -18,7 +18,7 @@ public interface IEventBus : IEventPublisher
 	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
 	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
 	/// <returns>Created event ID or warning if no <see cref="MessageHandlerContext"/> was created</returns>
-	Task<IResult<Guid, Guid>> PublishAsync(
+	Task<IResult<Guid>> PublishAsync(
 		IEvent @event,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
@@ -35,7 +35,7 @@ public interface IEventBus : IEventPublisher
 	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
 	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
 	/// <returns>Created event ID or warning if no <see cref="MessageHandlerContext"/> was created</returns>
-	Task<IResult<Guid, Guid>> PublishAsync(
+	Task<IResult<Guid>> PublishAsync(
 		IEvent @event,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		CancellationToken cancellationToken = default,
@@ -50,9 +50,9 @@ public interface IEventBus : IEventPublisher
 	/// <param name="traceInfo"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns>Created event ID or warning if no <see cref="MessageHandlerContext"/> was created</returns>
-	Task<IResult<Guid, Guid>> PublishAsync(
+	Task<IResult<Guid>> PublishAsync(
 		IEvent @event,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default);
 
 	/// <summary>
@@ -63,9 +63,9 @@ public interface IEventBus : IEventPublisher
 	/// <param name="traceInfo"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns>Created event ID or warning if no <see cref="MessageHandlerContext"/> was created</returns>
-	Task<IResult<Guid, Guid>> PublishAsync(
+	Task<IResult<Guid>> PublishAsync(
 		IEvent @event,
 		Action<MessageOptionsBuilder>? optionsBuilder,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default);
 }

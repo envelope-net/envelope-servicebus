@@ -5,7 +5,7 @@ namespace Envelope.ServiceBus.Orchestrations.Execution;
 
 public interface IStepExecutionContext
 {
-	ITraceInfo<Guid> TraceInfo { get; }
+	ITraceInfo TraceInfo { get; }
 
 	IExecutionPointer ExecutionPointer { get; }
 

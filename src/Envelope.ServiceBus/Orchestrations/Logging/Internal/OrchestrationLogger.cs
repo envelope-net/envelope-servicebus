@@ -15,8 +15,8 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 
-	private static Action<LogMessageBuilder<Guid>> AppendToBuilder(
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+	private static Action<LogMessageBuilder> AppendToBuilder(
+		Action<LogMessageBuilder> messageBuilder,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
@@ -38,8 +38,8 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		return messageBuilder;
 	}
 
-	private static Action<ErrorMessageBuilder<Guid>> AppendToBuilder(
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+	private static Action<ErrorMessageBuilder> AppendToBuilder(
+		Action<ErrorMessageBuilder> messageBuilder,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
@@ -61,12 +61,12 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		return messageBuilder;
 	}
 
-	public Task<ILogMessage<Guid>?> LogTraceAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogTraceAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -76,12 +76,12 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<ILogMessage<Guid>?> LogDebugAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogDebugAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -91,12 +91,12 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<ILogMessage<Guid>?> LogInformationAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogInformationAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -106,12 +106,12 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<ILogMessage<Guid>?> LogWarningAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogWarningAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -121,12 +121,12 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<IErrorMessage<Guid>> LogErrorAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<IErrorMessage> LogErrorAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -136,12 +136,12 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<IErrorMessage<Guid>> LogCriticalAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<IErrorMessage> LogCriticalAsync(
+		ITraceInfo traceInfo,
 		Guid? idOrchestration,
 		Guid? idStep,
 		Guid? idExecutionPointer,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)

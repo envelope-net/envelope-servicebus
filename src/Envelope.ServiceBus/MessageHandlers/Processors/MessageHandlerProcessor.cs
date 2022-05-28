@@ -9,12 +9,12 @@ namespace Envelope.ServiceBus.MessageHandlers.Processors;
 
 internal abstract class MessageHandlerProcessor<TResponse> : MessageHandlerProcessorBase
 {
-	public abstract IResult<ISendResponse<TResponse>, Guid> Handle(
+	public abstract IResult<ISendResponse<TResponse>> Handle(
 		Messages.IRequestMessage<TResponse> message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
-		ITraceInfo<Guid> traceInfo,
-		Func<TResponse, IMessageHandlerContext, ITraceInfo<Guid>, IResult<Guid, Guid>> saveResponseMessageAction);
+		ITraceInfo traceInfo,
+		Func<TResponse, IMessageHandlerContext, ITraceInfo, IResult<Guid>> saveResponseMessageAction);
 }
 
 internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : MessageHandlerProcessor<TResponse>
@@ -30,26 +30,26 @@ internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : M
 		return handler;
 	}
 
-	public override IResult<ISendResponse<TResponse>, Guid> Handle(
+	public override IResult<ISendResponse<TResponse>> Handle(
 		Messages.IRequestMessage<TResponse> message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
-		ITraceInfo<Guid> traceInfo,
-		Func<TResponse, IMessageHandlerContext, ITraceInfo<Guid>, IResult<Guid, Guid>> saveResponseMessageAction)
+		ITraceInfo traceInfo,
+		Func<TResponse, IMessageHandlerContext, ITraceInfo, IResult<Guid>> saveResponseMessageAction)
 		=> Handle((TRequestMessage)message, (TContext)handlerContext, serviceProvider, traceInfo, saveResponseMessageAction);
 
-	public IResult<ISendResponse<TResponse>, Guid> Handle(
+	public IResult<ISendResponse<TResponse>> Handle(
 		TRequestMessage message,
 		TContext handlerContext,
 		IServiceProvider serviceProvider,
-		ITraceInfo<Guid> traceInfo,
-		Func<TResponse, IMessageHandlerContext, ITraceInfo<Guid>, IResult<Guid, Guid>> saveResponseMessageAction)
+		ITraceInfo traceInfo,
+		Func<TResponse, IMessageHandlerContext, ITraceInfo, IResult<Guid>> saveResponseMessageAction)
 	{
 		try
 		{
 			var handler = (IMessageHandler<TRequestMessage, TResponse, TContext>)CreateHandler(serviceProvider);
 
-			IResult<TResponse, Guid> result;
+			IResult<TResponse> result;
 			var interceptorType = handler.InterceptorType;
 			if (interceptorType == null)
 			{
@@ -64,7 +64,7 @@ internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : M
 				result = interceptor.InterceptHandle(message, handlerContext, handler.Handle);
 			}
 
-			var resultBuilder = new ResultBuilder<ISendResponse<TResponse>, Guid>();
+			var resultBuilder = new ResultBuilder<ISendResponse<TResponse>>();
 			if (result.Data != null)
 			{
 				var response = result.Data;
@@ -79,7 +79,7 @@ internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : M
 		}
 		catch (Exception exHandler)
 		{
-			handlerContext.LogError(TraceInfo<Guid>.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "Send<Messages.IRequestMessage<TResponse>> error", null);
+			handlerContext.LogError(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "Send<Messages.IRequestMessage<TResponse>> error", null);
 			throw;
 		}
 	}

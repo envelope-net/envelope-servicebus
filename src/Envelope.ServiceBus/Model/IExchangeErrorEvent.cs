@@ -5,5 +5,5 @@ namespace Envelope.ServiceBus.Model;
 
 public interface IExchangeErrorEvent : IExchangeEvent, IServiceBusEvent, IEvent
 {
-	IResult<Guid> ErrorResult { get; }
+	IResult ErrorResult { get; }
 }

@@ -133,22 +133,22 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 
 
 
-	public Task<IResult<Guid>> SaveNewEventAsync(OrchestrationEvent @event, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	public Task<IResult> SaveNewEventAsync(OrchestrationEvent @event, ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
 		var result = new ResultBuilder<Guid>();
 
 		if (@event == null)
-			return Task.FromResult((IResult<Guid>)result.WithArgumentNullException(traceInfo, nameof(@event)));
+			return Task.FromResult((IResult)result.WithArgumentNullException(traceInfo, nameof(@event)));
 
 		var instanceEventsDict = _eventsQueue.GetOrAdd(@event.OrchestrationKey, key => new ConcurrentDictionary<Guid, OrchestrationEvent>());
 
 		instanceEventsDict.TryAdd(@event.Id, @event);
-		return Task.FromResult((IResult<Guid>)result.Build());
+		return Task.FromResult((IResult)result.Build());
 	}
 
-	public Task<IResult<List<OrchestrationEvent>?, Guid>> GetUnprocessedEventsAsync(string orchestrationKey, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	public Task<IResult<List<OrchestrationEvent>?>> GetUnprocessedEventsAsync(string orchestrationKey, ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
-		var result = new ResultBuilder<List<OrchestrationEvent>?, Guid>();
+		var result = new ResultBuilder<List<OrchestrationEvent>?>();
 
 		if (string.IsNullOrWhiteSpace(orchestrationKey))
 			return Task.FromResult(result.WithArgumentNullException(traceInfo, nameof(orchestrationKey)));
@@ -159,19 +159,19 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.FromResult(result.Build());
 	}
 
-	public Task<IResult<Guid>> UpdateEventAsync(OrchestrationEvent @event, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	public Task<IResult> UpdateEventAsync(OrchestrationEvent @event, ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
 		var result = new ResultBuilder<Guid>();
 
 		if (@event == null)
-			return Task.FromResult((IResult<Guid>)result.WithArgumentNullException(traceInfo, nameof(@event)));
+			return Task.FromResult((IResult)result.WithArgumentNullException(traceInfo, nameof(@event)));
 
 		if (_eventsQueue.TryGetValue(@event.OrchestrationKey, out var instanceEventsDict)
 			&& instanceEventsDict.TryGetValue(@event.Id, out var existingEvent))
 			instanceEventsDict.TryUpdate(@event.Id, @event, existingEvent);
 		else
-			return Task.FromResult((IResult<Guid>)result.WithInvalidOperationException(traceInfo, $"Nothing to update | {nameof(@event.OrchestrationKey)} = {@event.OrchestrationKey} | {nameof(@event.Id)} = {@event.Id}"));
+			return Task.FromResult((IResult)result.WithInvalidOperationException(traceInfo, $"Nothing to update | {nameof(@event.OrchestrationKey)} = {@event.OrchestrationKey} | {nameof(@event.Id)} = {@event.Id}"));
 
-		return Task.FromResult((IResult<Guid>)result.Build());
+		return Task.FromResult((IResult)result.Build());
 	}
 }

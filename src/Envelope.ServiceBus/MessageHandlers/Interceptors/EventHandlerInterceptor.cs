@@ -20,16 +20,16 @@ public abstract class EventHandlerInterceptor<TEvent, TContext> : IEventHandlerI
 		Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 
-	public virtual IResult<Guid> InterceptHandle(
+	public virtual IResult InterceptHandle(
 		TEvent @event,
 		TContext handlerContext,
-		Func<TEvent, TContext, IResult<Guid>> next)
+		Func<TEvent, TContext, IResult> next)
 	{
 		long callStartTicks = StaticWatch.CurrentTicks;
 		long callEndTicks;
 		decimal methodCallElapsedMilliseconds = -1;
 		Type? eventType = @event?.GetType();
-		var traceInfo = new TraceInfoBuilder<Guid>(handlerContext.HostInfo.HostName, TraceFrame.Create(), handlerContext.TraceInfo).Build();
+		var traceInfo = new TraceInfoBuilder(handlerContext.HostInfo.HostName, TraceFrame.Create(), handlerContext.TraceInfo).Build();
 		using var scope = Logger.BeginMethodCallScope(traceInfo);
 
 		Logger.LogTraceMessage(
@@ -51,7 +51,7 @@ public abstract class EventHandlerInterceptor<TEvent, TContext> : IEventHandlerI
 			{
 				var executeResult = next(@event!, handlerContext);
 				if (executeResult == null)
-					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<Guid>).FullName}");
+					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult).FullName}");
 
 				resultBuilder.MergeAllHasError(executeResult);
 
@@ -60,7 +60,7 @@ public abstract class EventHandlerInterceptor<TEvent, TContext> : IEventHandlerI
 					foreach (var errMsg in result.ErrorMessages)
 					{
 						if (string.IsNullOrWhiteSpace(errMsg.ClientMessage))
-							errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+							errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
 						if (!errMsg.IdCommandQuery.HasValue)
 							errMsg.IdCommandQuery = idEvent;
@@ -83,7 +83,7 @@ public abstract class EventHandlerInterceptor<TEvent, TContext> : IEventHandlerI
 				if (handlerContext.TransactionContext != null)
 					handlerContext.TransactionContext.TryRollback(executeEx);
 
-				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
 				result = new ResultBuilder<Guid>()
 					.WithError(traceInfo,
@@ -127,7 +127,7 @@ public abstract class EventHandlerInterceptor<TEvent, TContext> : IEventHandlerI
 			foreach (var errMsg in result.ErrorMessages)
 			{
 				if (string.IsNullOrWhiteSpace(errMsg.ClientMessage))
-					errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+					errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
 				if (!errMsg.IdCommandQuery.HasValue)
 					errMsg.IdCommandQuery = idEvent;

@@ -20,6 +20,3 @@
 
 osetri ked nastane cancellation - najma pri spracovani message v ExchangeMessageBrokeri a aj v MessageQueueMessageHandleri
 
-
-zrus IResult<TIdentity> ... nahrad za TResult<Guid> resp. TResult
-

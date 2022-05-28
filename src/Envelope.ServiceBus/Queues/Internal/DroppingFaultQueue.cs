@@ -20,8 +20,8 @@ internal class DroppingFaultQueue : IFaultQueue
 
 	public QueueType QueueType => QueueType.Parallel;
 
-	public Task<IResult<Guid>> EnqueueAsync(IMessage? message, IFaultQueueContext context, CancellationToken cancellationToken)
-		=> Task.FromResult((IResult<Guid>)new ResultBuilder<Guid>().Build());
+	public Task<IResult> EnqueueAsync(IMessage? message, IFaultQueueContext context, CancellationToken cancellationToken)
+		=> Task.FromResult((IResult)new ResultBuilder<Guid>().Build());
 
 	public DroppingFaultQueue()
 	{

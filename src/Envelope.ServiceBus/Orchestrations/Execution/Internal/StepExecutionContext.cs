@@ -5,7 +5,7 @@ namespace Envelope.ServiceBus.Orchestrations.Execution.Internal;
 
 internal class StepExecutionContext : IStepExecutionContext
 {
-	public ITraceInfo<Guid> TraceInfo { get; }
+	public ITraceInfo TraceInfo { get; }
 
 	public IOrchestrationInstance Orchestration { get; set; }
 
@@ -19,7 +19,7 @@ internal class StepExecutionContext : IStepExecutionContext
 	IOrchestrationStep IStepExecutionContext.Step => Step;
 	IExecutionPointer IStepExecutionContext.ExecutionPointer => ExecutionPointer;
 
-	public StepExecutionContext(IOrchestrationInstance orchestration, ExecutionPointer executionPointer, ITraceInfo<Guid> traceInfo)
+	public StepExecutionContext(IOrchestrationInstance orchestration, ExecutionPointer executionPointer, ITraceInfo traceInfo)
 	{
 		TraceInfo = traceInfo ?? throw new ArgumentNullException(nameof(traceInfo));
 		Orchestration = orchestration ?? throw new ArgumentNullException(nameof(orchestration));

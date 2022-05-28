@@ -31,7 +31,7 @@ public class MessageBus : IMessageBus
 		MessageHandlerRegistry = messageHandlerRegistry ?? throw new ArgumentNullException(nameof(messageHandlerRegistry));
 	}
 
-	public Task<IResult<Guid, Guid>> SendAsync(
+	public Task<IResult<Guid>> SendAsync(
 		IRequestMessage message,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
@@ -39,30 +39,30 @@ public class MessageBus : IMessageBus
 		[CallerLineNumber] int sourceLineNumber = 0)
 		=> SendAsync(message, null!, cancellationToken, memberName, sourceFilePath, sourceLineNumber);
 
-	public Task<IResult<Guid, Guid>> SendAsync(
+	public Task<IResult<Guid>> SendAsync(
 		IRequestMessage message,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
-		=> SendAsync(message, optionsBuilder, TraceInfo<Guid>.Create(null, MessageBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber), cancellationToken);
+		=> SendAsync(message, optionsBuilder, TraceInfo.Create(null, MessageBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber), cancellationToken);
 
-	public Task<IResult<Guid, Guid>> SendAsync(
+	public Task<IResult<Guid>> SendAsync(
 		IRequestMessage message,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 		=> SendAsync(message, (Action<MessageOptionsBuilder>?)null, traceInfo, cancellationToken);
 
-	public async Task<IResult<Guid, Guid>> SendAsync(
+	public async Task<IResult<Guid>> SendAsync(
 		IRequestMessage message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 	{
 		if (message == null)
 		{
-			var result = new ResultBuilder<Guid, Guid>();
+			var result = new ResultBuilder<Guid>();
 			return result.WithArgumentNullException(traceInfo, nameof(message));
 		}
 
@@ -80,23 +80,23 @@ public class MessageBus : IMessageBus
 		return await SendAsync(message, options, isLocalTransactionContext, traceInfo, cancellationToken);
 	}
 
-	protected async Task<IResult<Guid, Guid>> SendAsync(
+	protected async Task<IResult<Guid>> SendAsync(
 		IRequestMessage message,
 		IMessageOptions options,
 		bool isLocalTransactionContext,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 	{
-		var result = new ResultBuilder<Guid, Guid>();
+		var result = new ResultBuilder<Guid>();
 
 		if (message == null)
 			return result.WithArgumentNullException(traceInfo, nameof(message));
 		if (options == null)
 			return result.WithArgumentNullException(traceInfo, nameof(options));
 		if (traceInfo == null)
-			return result.WithArgumentNullException(TraceInfo<Guid>.Create(MessageBusOptions.HostInfo.HostName), nameof(traceInfo));
+			return result.WithArgumentNullException(TraceInfo.Create(MessageBusOptions.HostInfo.HostName), nameof(traceInfo));
 
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		var transactionContext = options.TransactionContext;
 		try
@@ -253,7 +253,7 @@ public class MessageBus : IMessageBus
 		}
 	}
 
-	public Task<IResult<ISendResponse<TResponse>, Guid>> SendAsync<TResponse>(
+	public Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
@@ -261,30 +261,30 @@ public class MessageBus : IMessageBus
 		[CallerLineNumber] int sourceLineNumber = 0)
 		=> SendAsync(message, null!, cancellationToken, memberName, sourceFilePath, sourceLineNumber);
 
-	public Task<IResult<ISendResponse<TResponse>, Guid>> SendAsync<TResponse>(
+	public Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
-		=> SendAsync(message, optionsBuilder, TraceInfo<Guid>.Create(null, MessageBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber), cancellationToken);
+		=> SendAsync(message, optionsBuilder, TraceInfo.Create(null, MessageBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber), cancellationToken);
 
-	public Task<IResult<ISendResponse<TResponse>, Guid>> SendAsync<TResponse>(
+	public Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 		=> SendAsync(message, null, traceInfo, cancellationToken);
 
-	public async Task<IResult<ISendResponse<TResponse>, Guid>> SendAsync<TResponse>(
+	public async Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 	{
 		if (message == null)
 		{
-			var result = new ResultBuilder<ISendResponse<TResponse>, Guid>();
+			var result = new ResultBuilder<ISendResponse<TResponse>>();
 			return result.WithArgumentNullException(traceInfo, nameof(message));
 		}
 
@@ -302,23 +302,23 @@ public class MessageBus : IMessageBus
 		return await SendAsync(message, options, isLocalTransactionContext, traceInfo, cancellationToken);
 	}
 
-	protected async Task<IResult<ISendResponse<TResponse>, Guid>> SendAsync<TResponse>(
+	protected async Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		IMessageOptions options,
 		bool isLocalTransactionContext,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 	{
-		var result = new ResultBuilder<ISendResponse<TResponse>, Guid>();
+		var result = new ResultBuilder<ISendResponse<TResponse>>();
 
 		if (message == null)
 			return result.WithArgumentNullException(traceInfo, nameof(message));
 		if (options == null)
 			return result.WithArgumentNullException(traceInfo, nameof(options));
 		if (traceInfo == null)
-			return result.WithArgumentNullException(TraceInfo<Guid>.Create(MessageBusOptions.HostInfo.HostName), nameof(traceInfo));
+			return result.WithArgumentNullException(TraceInfo.Create(MessageBusOptions.HostInfo.HostName), nameof(traceInfo));
 
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		var transactionContext = options.TransactionContext;
 		try
@@ -461,11 +461,11 @@ public class MessageBus : IMessageBus
 	protected virtual Task<ITransactionContext> CreateTransactionContextAsync(CancellationToken cancellationToken = default)
 		=> Task.FromResult(ServiceProvider.GetService<ITransactionContextFactory>()?.Create() ?? TransactionContextFactory.CreateTransactionContext());
 
-	protected virtual async Task<IResult<ISavedMessage<TMessage>, Guid>> SaveRequestMessageAsync<TMessage, TResponse>(TMessage requestMessage, IMessageOptions options, ITraceInfo<Guid> traceInfo, CancellationToken cancellation = default)
+	protected virtual async Task<IResult<ISavedMessage<TMessage>>> SaveRequestMessageAsync<TMessage, TResponse>(TMessage requestMessage, IMessageOptions options, ITraceInfo traceInfo, CancellationToken cancellation = default)
 		where TMessage : class, IRequestMessage<TResponse>
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<ISavedMessage<TMessage>, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<ISavedMessage<TMessage>>();
 
 		var utcNow = DateTime.UtcNow;
 		var metadata = new MessageMetadata<TMessage>
@@ -502,11 +502,11 @@ public class MessageBus : IMessageBus
 		return result.WithData(metadata).Build();
 	}
 
-	protected virtual async Task<IResult<ISavedMessage<TMessage>, Guid>> SaveRequestMessageAsync<TMessage>(TMessage requestMessage, IMessageOptions options, ITraceInfo<Guid> traceInfo, CancellationToken cancellation = default)
+	protected virtual async Task<IResult<ISavedMessage<TMessage>>> SaveRequestMessageAsync<TMessage>(TMessage requestMessage, IMessageOptions options, ITraceInfo traceInfo, CancellationToken cancellation = default)
 		where TMessage : class, IRequestMessage
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<ISavedMessage<TMessage>, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<ISavedMessage<TMessage>>();
 
 		var utcNow = DateTime.UtcNow;
 		var metadata = new MessageMetadata<TMessage>
@@ -543,10 +543,10 @@ public class MessageBus : IMessageBus
 		return result.WithData(metadata).Build();
 	}
 
-	protected virtual async Task<IResult<Guid, Guid>> SaveResponseMessageAsync<TResponse>(TResponse responseMessage, IMessageHandlerContext handlerContext, ITraceInfo<Guid> traceInfo, CancellationToken cancellation = default)
+	protected virtual async Task<IResult<Guid>> SaveResponseMessageAsync<TResponse>(TResponse responseMessage, IMessageHandlerContext handlerContext, ITraceInfo traceInfo, CancellationToken cancellation = default)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<Guid, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<Guid>();
 
 		if (MessageBusOptions.MessageBodyProvider != null)
 		{

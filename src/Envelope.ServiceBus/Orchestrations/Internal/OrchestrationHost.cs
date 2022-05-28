@@ -41,12 +41,12 @@ internal class OrchestrationHost : BackgroundService, IOrchestrationHost, IDispo
 		throw new NotImplementedException();
 	}
 
-	public Task<IResult<Guid, Guid>> StartOrchestrationAsync<TData>(
+	public Task<IResult<Guid>> StartOrchestrationAsync<TData>(
 		Guid idOrchestrationDefinition,
 		string orchestrationKey,
 		TData data,
 		string lockOwner,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		TimeSpan? workerIdleTimeout = null)
 		=> _orchestrationController.StartOrchestrationAsync(
 			idOrchestrationDefinition,
@@ -57,13 +57,13 @@ internal class OrchestrationHost : BackgroundService, IOrchestrationHost, IDispo
 			traceInfo,
 			workerIdleTimeout);
 
-	public Task<IResult<Guid, Guid>> StartOrchestrationAsync<TData>(
+	public Task<IResult<Guid>> StartOrchestrationAsync<TData>(
 		Guid idOrchestrationDefinition,
 		string orchestrationKey,
 		int? version,
 		TData data,
 		string lockOwner,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		TimeSpan? workerIdleTimeout = null)
 		=> _orchestrationController.StartOrchestrationAsync(
 			idOrchestrationDefinition,
@@ -81,15 +81,15 @@ internal class OrchestrationHost : BackgroundService, IOrchestrationHost, IDispo
 	public Task<IOrchestrationInstance?> GetOrchestrationInstanceAsync(Guid idOrchestrationInstance)
 		=> _orchestrationController.GetOrchestrationInstanceAsync(idOrchestrationInstance);
 
-	public Task<IResult<bool, Guid>> SuspendOrchestrationAsync(Guid orchestrationId, string lockOwner, ITraceInfo<Guid> traceInfo)
+	public Task<IResult<bool>> SuspendOrchestrationAsync(Guid orchestrationId, string lockOwner, ITraceInfo traceInfo)
 		=> _orchestrationController.SuspendOrchestrationAsync(orchestrationId, lockOwner, traceInfo);
 
-	public Task<IResult<bool, Guid>> ResumeOrchestrationAsync(Guid orchestrationId, string lockOwner, ITraceInfo<Guid> traceInfo)
+	public Task<IResult<bool>> ResumeOrchestrationAsync(Guid orchestrationId, string lockOwner, ITraceInfo traceInfo)
 		=> _orchestrationController.ResumeOrchestrationAsync(orchestrationId, lockOwner, traceInfo);
 
-	public Task<IResult<bool, Guid>> TerminateOrchestrationAsync(Guid orchestrationId, string lockOwner, ITraceInfo<Guid> traceInfo)
+	public Task<IResult<bool>> TerminateOrchestrationAsync(Guid orchestrationId, string lockOwner, ITraceInfo traceInfo)
 		=> _orchestrationController.TerminateOrchestrationAsync(orchestrationId, lockOwner, traceInfo);
 
-	Task IOrchestrationController.PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo<Guid> traceInfo)
+	Task IOrchestrationController.PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo)
 		=> _orchestrationController.PublishLifeCycleEventAsync(lifeCycleEvent, traceInfo);
 }

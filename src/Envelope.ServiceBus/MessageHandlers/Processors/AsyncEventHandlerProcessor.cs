@@ -8,7 +8,7 @@ namespace Envelope.ServiceBus.MessageHandlers.Processors;
 
 internal abstract class AsyncEventHandlerProcessor : EventHandlerProcessorBase
 {
-	public abstract Task<IResult<Guid>> HandleAsync(
+	public abstract Task<IResult> HandleAsync(
 		IEvent @event,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
@@ -28,14 +28,14 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 		return handlers;
 	}
 
-	public override Task<IResult<Guid>> HandleAsync(
+	public override Task<IResult> HandleAsync(
 		IEvent @event,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
 		CancellationToken cancellationToken = default)
 		=> HandleAsync((TEvent)@event, (TContext)handlerContext, serviceProvider, cancellationToken);
 
-	public async Task<IResult<Guid>> HandleAsync(
+	public async Task<IResult> HandleAsync(
 		TEvent @event,
 		TContext handlerContext,
 		IServiceProvider serviceProvider,
@@ -48,12 +48,12 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 		}
 		catch (Exception exHandler)
 		{
-			handlerContext.LogError(TraceInfo<Guid>.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), $"PublishAsync<IEvent> {nameof(CreateHandlers)} error", null);
+			handlerContext.LogError(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), $"PublishAsync<IEvent> {nameof(CreateHandlers)} error", null);
 			throw;
 		}
 
 		var resultBuilder = new ResultBuilder<Guid>();
-		IResult<Guid>? result = null;
+		IResult? result = null;
 		foreach (var handler in handlers)
 		{
 			try
@@ -76,7 +76,7 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 			}
 			catch (Exception exHandler)
 			{
-				await handlerContext.LogErrorAsync(TraceInfo<Guid>.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null, cancellationToken);
+				await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null, cancellationToken);
 				throw;
 			}
 		}

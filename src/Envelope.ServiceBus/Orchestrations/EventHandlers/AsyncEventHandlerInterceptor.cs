@@ -11,7 +11,7 @@
 //	{
 //	}
 
-//	//public override async Task<IResult<Guid>> InterceptHandleAsync(TEvent message, OrchestrationEventHandlerContext handlerContext, Func<TEvent, OrchestrationEventHandlerContext, CancellationToken, Task<IResult<Guid>>> next, CancellationToken cancellationToken)
+//	//public override async Task<IResult> InterceptHandleAsync(TEvent message, OrchestrationEventHandlerContext handlerContext, Func<TEvent, OrchestrationEventHandlerContext, CancellationToken, Task<IResult>> next, CancellationToken cancellationToken)
 //	//{
 //	//	var result = await base.InterceptHandleAsync(message, handlerContext, next, cancellationToken);
 //	//	return result;

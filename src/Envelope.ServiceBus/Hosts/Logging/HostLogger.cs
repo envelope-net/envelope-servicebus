@@ -17,8 +17,8 @@ public class HostLogger : IHostLogger
 		_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 
-	private static Action<LogMessageBuilder<Guid>> AppendToBuilder(
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+	private static Action<LogMessageBuilder> AppendToBuilder(
+		Action<LogMessageBuilder> messageBuilder,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
 		string? detail)
@@ -35,8 +35,8 @@ public class HostLogger : IHostLogger
 		return messageBuilder;
 	}
 
-	private static Action<ErrorMessageBuilder<Guid>> AppendToBuilder(
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+	private static Action<ErrorMessageBuilder> AppendToBuilder(
+		Action<ErrorMessageBuilder> messageBuilder,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
 		string? detail)
@@ -53,11 +53,11 @@ public class HostLogger : IHostLogger
 		return messageBuilder;
 	}
 
-	public ILogMessage<Guid>? LogTrace(
-		ITraceInfo<Guid> traceInfo,
+	public ILogMessage? LogTrace(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -66,11 +66,11 @@ public class HostLogger : IHostLogger
 		return msg;
 	}
 
-	public ILogMessage<Guid>? LogDebug(
-		ITraceInfo<Guid> traceInfo,
+	public ILogMessage? LogDebug(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -79,11 +79,11 @@ public class HostLogger : IHostLogger
 		return msg;
 	}
 
-	public ILogMessage<Guid>? LogInformation(
-		ITraceInfo<Guid> traceInfo,
+	public ILogMessage? LogInformation(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -92,11 +92,11 @@ public class HostLogger : IHostLogger
 		return msg;
 	}
 
-	public ILogMessage<Guid>? LogWarning(
-		ITraceInfo<Guid> traceInfo,
+	public ILogMessage? LogWarning(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -105,11 +105,11 @@ public class HostLogger : IHostLogger
 		return msg;
 	}
 
-	public IErrorMessage<Guid> LogError(
-		ITraceInfo<Guid> traceInfo,
+	public IErrorMessage LogError(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -118,11 +118,11 @@ public class HostLogger : IHostLogger
 		return msg;
 	}
 
-	public IErrorMessage<Guid> LogCritical(
-		ITraceInfo<Guid> traceInfo,
+	public IErrorMessage LogCritical(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 	{
@@ -132,20 +132,20 @@ public class HostLogger : IHostLogger
 	}
 
 	public void LogResultErrorMessages(
-		IResult<Guid> result,
+		IResult result,
 		ITransactionContext? transactionContext = null)
 		=> _logger.LogResultErrorMessages(result, true);
 
 	public void LogResultAllMessages(
-		IResult<Guid> result,
+		IResult result,
 		ITransactionContext? transactionContext = null)
 		=> _logger.LogResultAllMessages(result, true);
 
-	public Task<ILogMessage<Guid>?> LogTraceAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogTraceAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -155,11 +155,11 @@ public class HostLogger : IHostLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<ILogMessage<Guid>?> LogDebugAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogDebugAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -169,11 +169,11 @@ public class HostLogger : IHostLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<ILogMessage<Guid>?> LogInformationAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogInformationAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -183,11 +183,11 @@ public class HostLogger : IHostLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<ILogMessage<Guid>?> LogWarningAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<ILogMessage?> LogWarningAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -197,11 +197,11 @@ public class HostLogger : IHostLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<IErrorMessage<Guid>> LogErrorAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<IErrorMessage> LogErrorAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -211,11 +211,11 @@ public class HostLogger : IHostLogger
 		return Task.FromResult(msg);
 	}
 
-	public Task<IErrorMessage<Guid>> LogCriticalAsync(
-		ITraceInfo<Guid> traceInfo,
+	public Task<IErrorMessage> LogCriticalAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
@@ -226,7 +226,7 @@ public class HostLogger : IHostLogger
 	}
 
 	public Task LogResultErrorMessagesAsync(
-		IResult<Guid> result,
+		IResult result,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
 	{
@@ -235,7 +235,7 @@ public class HostLogger : IHostLogger
 	}
 
 	public Task LogResultAllMessagesAsync(
-		IResult<Guid> result,
+		IResult result,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
 	{

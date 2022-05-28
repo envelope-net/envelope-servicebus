@@ -118,7 +118,7 @@ internal class OrchestrationInstance : IOrchestrationInstance
 	private async Task<bool> OnTimerAsync(object? state)
 	{
 		nextTimerStart = false;
-		var traceInfo = TraceInfo<Guid>.Create(_hostInfo.HostName);
+		var traceInfo = TraceInfo.Create(_hostInfo.HostName);
 		await _executor.ExecuteAsync(this, traceInfo);
 		return nextTimerStart;
 	}

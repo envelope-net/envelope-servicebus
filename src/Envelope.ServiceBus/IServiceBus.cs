@@ -17,7 +17,7 @@ public interface IServiceBus : IEventPublisher
 	/// <param name="memberName">Allows you to obtain the method or property name of the caller to the method.</param>
 	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
 	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
-	Task<IResult<List<Guid>, Guid>> PublishAsync<TMessage>(
+	Task<IResult<List<Guid>>> PublishAsync<TMessage>(
 		TMessage message,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
@@ -34,7 +34,7 @@ public interface IServiceBus : IEventPublisher
 	/// <param name="memberName">Allows you to obtain the method or property name of the caller to the method.</param>
 	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
 	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
-	Task<IResult<List<Guid>, Guid>> PublishAsync<TMessage>(
+	Task<IResult<List<Guid>>> PublishAsync<TMessage>(
 		TMessage message,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		CancellationToken cancellationToken = default,
@@ -49,9 +49,9 @@ public interface IServiceBus : IEventPublisher
 	/// <param name="message">The message</param>
 	/// <param name="traceInfo"></param>
 	/// <param name="cancellationToken"></param>
-	Task<IResult<List<Guid>, Guid>> PublishAsync<TMessage>(
+	Task<IResult<List<Guid>>> PublishAsync<TMessage>(
 		TMessage message,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 		where TMessage : class, IMessage;
 
@@ -62,10 +62,10 @@ public interface IServiceBus : IEventPublisher
 	/// <param name="optionsBuilder">Configure the message sending options</param>
 	/// <param name="traceInfo"></param>
 	/// <param name="cancellationToken"></param>
-	Task<IResult<List<Guid>, Guid>> PublishAsync<TMessage>(
+	Task<IResult<List<Guid>>> PublishAsync<TMessage>(
 		TMessage message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 		where TMessage : class, IMessage;
 }

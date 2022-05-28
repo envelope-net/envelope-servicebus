@@ -8,7 +8,7 @@ namespace Envelope.ServiceBus.MessageHandlers.Processors;
 
 internal abstract class AsyncVoidMessageHandlerProcessor : MessageHandlerProcessorBase
 {
-	public abstract Task<IResult<Guid>> HandleAsync(
+	public abstract Task<IResult> HandleAsync(
 		Messages.IRequestMessage message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
@@ -28,14 +28,14 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 		return handler;
 	}
 
-	public override Task<IResult<Guid>> HandleAsync(
+	public override Task<IResult> HandleAsync(
 		Messages.IRequestMessage message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
 		CancellationToken cancellationToken = default)
 		=> HandleAsync((TRequestMessage)message, (TContext)handlerContext, serviceProvider, cancellationToken);
 
-	public async Task<IResult<Guid>> HandleAsync(
+	public async Task<IResult> HandleAsync(
 		TRequestMessage message,
 		TContext handlerContext,
 		IServiceProvider serviceProvider,
@@ -45,7 +45,7 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 		{
 			var handler = (IAsyncMessageHandler<TRequestMessage, TContext>)CreateHandler(serviceProvider);
 
-			IResult<Guid> result;
+			IResult result;
 			var interceptorType = handler.InterceptorType;
 			if (interceptorType == null)
 			{
@@ -64,7 +64,7 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 		}
 		catch (Exception exHandler)
 		{
-			await handlerContext.LogErrorAsync(TraceInfo<Guid>.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage> error", null, cancellationToken);
+			await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage> error", null, cancellationToken);
 			throw;
 		}
 	}

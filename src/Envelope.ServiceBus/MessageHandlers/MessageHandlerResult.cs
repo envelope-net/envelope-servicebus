@@ -11,7 +11,7 @@ public class MessageHandlerResult
 
 	public MessageStatus MessageStatus { get; internal set; }
 
-	public IResult<Guid>? ErrorResult { get; internal set; }
+	public IResult? ErrorResult { get; internal set; }
 
 	public bool Retry { get; internal set; }
 

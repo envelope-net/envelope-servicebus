@@ -69,10 +69,10 @@ internal partial class InMemoryExchange<TMessage> : IExchange<TMessage>, IQueueI
 	}
 
 	/// <inheritdoc/>
-	public async Task<IResult<List<Guid>, Guid>> EnqueueAsync(TMessage? message, IExchangeEnqueueContext context, CancellationToken cancellationToken)
+	public async Task<IResult<List<Guid>>> EnqueueAsync(TMessage? message, IExchangeEnqueueContext context, CancellationToken cancellationToken)
 	{
-		var traceInfo = TraceInfo<Guid>.Create(context.TraceInfo);
-		var result = new ResultBuilder<List<Guid>, Guid>();
+		var traceInfo = TraceInfo.Create(context.TraceInfo);
+		var result = new ResultBuilder<List<Guid>>();
 
 		if (disposed)
 			return result.WithInvalidOperationException(traceInfo, $"ExchangeName = {_exchangeContext.ExchangeName}", new ObjectDisposedException(GetType().FullName));
@@ -150,9 +150,9 @@ internal partial class InMemoryExchange<TMessage> : IExchange<TMessage>, IQueueI
 	}
 
 	/// <inheritdoc/>
-	public async Task<IResult<Guid>> TryRemoveAsync(IExchangeMessage<TMessage> message, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	public async Task<IResult> TryRemoveAsync(IExchangeMessage<TMessage> message, ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder<Guid>();
 
 		if (disposed)
@@ -164,14 +164,14 @@ internal partial class InMemoryExchange<TMessage> : IExchange<TMessage>, IQueueI
 			await PublishExchangeEventAsync(
 				traceInfo,
 				ExchangeEventType.Remove,
-				(IResult<Guid>)result.Build());
+				(IResult)result.Build());
 	}
 
 	/// <inheritdoc/>
-	public async Task<IResult<IExchangeMessage<TMessage>?, Guid>> TryPeekAsync(ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	public async Task<IResult<IExchangeMessage<TMessage>?>> TryPeekAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<IExchangeMessage<TMessage>?, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<IExchangeMessage<TMessage>?>();
 
 		if (disposed)
 			return result.WithInvalidOperationException(traceInfo, $"ExchangeName = {_exchangeContext.ExchangeName}", new ObjectDisposedException(GetType().FullName));
@@ -228,12 +228,12 @@ internal partial class InMemoryExchange<TMessage> : IExchange<TMessage>, IQueueI
 	}
 
 	private readonly AsyncLock _onMessageLock = new();
-	private async Task OnMessageAsync(ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	private async Task OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
 		if (disposed)
 			return;
 		
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		using (await _onMessageLock.LockAsync().ConfigureAwait(false))
 		{
@@ -292,14 +292,14 @@ internal partial class InMemoryExchange<TMessage> : IExchange<TMessage>, IQueueI
 		}
 	}
 
-	private async Task<IResult<IMessageMetadataUpdate, Guid>> ProcessMessageHandlerResultAsync(
+	private async Task<IResult<IMessageMetadataUpdate>> ProcessMessageHandlerResultAsync(
 		IExchangeMessage<TMessage> message,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		MessageHandlerResult brokerResult,
 		CancellationToken cancellationToken)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<IMessageMetadataUpdate, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<IMessageMetadataUpdate>();
 
 		var hasError = brokerResult.ErrorResult?.HasError == true;
 
@@ -352,8 +352,8 @@ internal partial class InMemoryExchange<TMessage> : IExchange<TMessage>, IQueueI
 			result.WithData(update).Build());
 	}
 
-	private async Task<TResult> PublishExchangeEventAsync<TResult>(ITraceInfo<Guid> traceInfo, ExchangeEventType exchangeEventType, TResult result)
-		where TResult : IResult<Guid>
+	private async Task<TResult> PublishExchangeEventAsync<TResult>(ITraceInfo traceInfo, ExchangeEventType exchangeEventType, TResult result)
+		where TResult : IResult
 	{
 		IExchangeEvent exchangeEvent;
 		if (result.HasError)

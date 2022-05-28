@@ -20,17 +20,17 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 		Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 
-	public virtual async Task<IResult<TResponse, Guid>> InterceptHandleAsync(
+	public virtual async Task<IResult<TResponse>> InterceptHandleAsync(
 		TRequestMessage message,
 		TContext handlerContext,
-		Func<TRequestMessage, TContext, CancellationToken, Task<IResult<TResponse, Guid>>> next,
+		Func<TRequestMessage, TContext, CancellationToken, Task<IResult<TResponse>>> next,
 		CancellationToken cancellationToken)
 	{
 		long callStartTicks = StaticWatch.CurrentTicks;
 		long callEndTicks;
 		decimal methodCallElapsedMilliseconds = -1;
 		Type? messageType = message?.GetType();
-		var traceInfo = new TraceInfoBuilder<Guid>(handlerContext.HostInfo.HostName, TraceFrame.Create(), handlerContext.TraceInfo).Build();
+		var traceInfo = new TraceInfoBuilder(handlerContext.HostInfo.HostName, TraceFrame.Create(), handlerContext.TraceInfo).Build();
 		using var scope = Logger.BeginMethodCallScope(traceInfo);
 
 		Logger.LogTraceMessage(
@@ -39,7 +39,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 					.CommandQueryName(messageType?.FullName),
 			true);
 
-		var resultBuilder = new ResultBuilder<TResponse, Guid>();
+		var resultBuilder = new ResultBuilder<TResponse>();
 		var result = resultBuilder.Build();
 		Guid? idCommand = null;
 
@@ -52,7 +52,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 			{
 				var executeResult = await next(message!, handlerContext, cancellationToken);
 				if (executeResult == null)
-					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse, Guid>).FullName}");
+					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse>).FullName}");
 
 				resultBuilder.MergeAllHasError(executeResult);
 
@@ -61,7 +61,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 					foreach (var errMsg in result.ErrorMessages)
 					{
 						if (string.IsNullOrWhiteSpace(errMsg.ClientMessage))
-							errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+							errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
 						if (!errMsg.IdCommandQuery.HasValue)
 							errMsg.IdCommandQuery = idCommand;
@@ -84,9 +84,9 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 				if (handlerContext.TransactionContext != null)
 					await handlerContext.TransactionContext.TryRollbackAsync(executeEx, cancellationToken);
 
-				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
-				result = new ResultBuilder<TResponse, Guid>()
+				result = new ResultBuilder<TResponse>()
 					.WithError(traceInfo,
 						x =>
 							x.ExceptionInfo(executeEx)
@@ -117,7 +117,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 			callEndTicks = StaticWatch.CurrentTicks;
 			methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
-			result = new ResultBuilder<TResponse, Guid>()
+			result = new ResultBuilder<TResponse>()
 				.WithError(traceInfo,
 					x =>
 						x.ExceptionInfo(interEx)
@@ -128,7 +128,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 			foreach (var errMsg in result.ErrorMessages)
 			{
 				if (string.IsNullOrWhiteSpace(errMsg.ClientMessage))
-					errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext<Guid>>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
+					errMsg.ClientMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
 				if (!errMsg.IdCommandQuery.HasValue)
 					errMsg.IdCommandQuery = idCommand;

@@ -231,6 +231,8 @@ public class MessageBusConfigurationBuilder : MessageBusConfigurationBuilderBase
 
 	internal static MessageBusConfigurationBuilder GetDefaultBuilder()
 		=> new MessageBusConfigurationBuilder()
+			//.MessageTypeResolver()
+			//.MessageHandlerAssemblies()
 			//.MessageBusName(null)
 			//.MessageHandlerContextFactory(null)
 			//.MessageBodyProvider(null)

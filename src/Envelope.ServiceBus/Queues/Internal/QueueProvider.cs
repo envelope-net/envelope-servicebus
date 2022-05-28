@@ -50,7 +50,7 @@ internal class QueueProvider : IQueueProvider
 			throw new InvalidOperationException($"Queue with name {queueName} cannot store message type {typeof(TMessage).FullName}");
 	}
 
-	public IQueueEnqueueContext CreateQueueEnqueueContext<TMessage>(ITraceInfo<Guid> traceInfo, Exchange.IExchangeMessage<TMessage> exchangeMessage)
+	public IQueueEnqueueContext CreateQueueEnqueueContext<TMessage>(ITraceInfo traceInfo, Exchange.IExchangeMessage<TMessage> exchangeMessage)
 		where TMessage : class, IMessage
 	{
 		if (traceInfo == null)
@@ -84,7 +84,7 @@ internal class QueueProvider : IQueueProvider
 		return ctx;
 	}
 
-	public IFaultQueueContext CreateFaultQueueContext<TMessage>(ITraceInfo<Guid> traceInfo, Exchange.IExchangeMessage<TMessage> exchangeMessage)
+	public IFaultQueueContext CreateFaultQueueContext<TMessage>(ITraceInfo traceInfo, Exchange.IExchangeMessage<TMessage> exchangeMessage)
 		where TMessage : class, IMessage
 	{
 		if (traceInfo == null)

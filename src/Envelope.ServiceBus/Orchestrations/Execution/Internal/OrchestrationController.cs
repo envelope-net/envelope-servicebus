@@ -54,26 +54,26 @@ internal class OrchestrationController : IOrchestrationController
 		_registry.RegisterOrchestration(orchestration);
 	}
 
-	public Task<IResult<Guid, Guid>> StartOrchestrationAsync<TData>(
+	public Task<IResult<Guid>> StartOrchestrationAsync<TData>(
 		Guid idOrchestrationDefinition,
 		string orchestrationKey,
 		TData data,
 		string lockOwner,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		TimeSpan? workerIdleTimeout = null)
 		=> StartOrchestrationAsync(idOrchestrationDefinition, orchestrationKey, null, data, lockOwner, traceInfo, workerIdleTimeout);
 
-	public async Task<IResult<Guid, Guid>> StartOrchestrationAsync<TData>(
+	public async Task<IResult<Guid>> StartOrchestrationAsync<TData>(
 		Guid idOrchestrationDefinition,
 		string orchestrationKey,
 		int? version,
 		TData data,
 		string lockOwner,
-		ITraceInfo<Guid> traceInfo,
+		ITraceInfo traceInfo,
 		TimeSpan? workerIdleTimeout = null)
 	{
-		var result = new ResultBuilder<Guid, Guid>();
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		var result = new ResultBuilder<Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		if (data == null)
 			return result.WithArgumentNullException(traceInfo, nameof(data));
@@ -125,10 +125,10 @@ internal class OrchestrationController : IOrchestrationController
 	public Task<IOrchestrationInstance?> GetOrchestrationInstanceAsync(Guid idOrchestrationInstance)
 		=> _orchestrationRepository.GetOrchestrationInstanceAsync(idOrchestrationInstance);
 
-	public async Task<IResult<bool, Guid>> SuspendOrchestrationAsync(Guid idOrchestrationInstance, string lockOwner, ITraceInfo<Guid> traceInfo)
+	public async Task<IResult<bool>> SuspendOrchestrationAsync(Guid idOrchestrationInstance, string lockOwner, ITraceInfo traceInfo)
 	{
-		var result = new ResultBuilder<bool, Guid>();
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		var result = new ResultBuilder<bool>();
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		IOrchestrationInstance? orchestrationInstance = null;
 
@@ -188,10 +188,10 @@ internal class OrchestrationController : IOrchestrationController
 		}
 	}
 
-	public async Task<IResult<bool, Guid>> ResumeOrchestrationAsync(Guid idOrchestrationInstance, string lockOwner, ITraceInfo<Guid> traceInfo)
+	public async Task<IResult<bool>> ResumeOrchestrationAsync(Guid idOrchestrationInstance, string lockOwner, ITraceInfo traceInfo)
 	{
-		var result = new ResultBuilder<bool, Guid>();
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		var result = new ResultBuilder<bool>();
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		IOrchestrationInstance? orchestrationInstance = null;
 
@@ -250,10 +250,10 @@ internal class OrchestrationController : IOrchestrationController
 		}
 	}
 
-	public async Task<IResult<bool, Guid>> TerminateOrchestrationAsync(Guid idOrchestrationInstance, string lockOwner, ITraceInfo<Guid> traceInfo)
+	public async Task<IResult<bool>> TerminateOrchestrationAsync(Guid idOrchestrationInstance, string lockOwner, ITraceInfo traceInfo)
 	{
-		var result = new ResultBuilder<bool, Guid>();
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		var result = new ResultBuilder<bool>();
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		IOrchestrationInstance? orchestrationInstance = null;
 
@@ -312,11 +312,11 @@ internal class OrchestrationController : IOrchestrationController
 		}
 	}
 
-	private async Task PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo<Guid> traceInfo)
+	private async Task PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo)
 	{
 		if (OnLifeCycleEvent != null)
 		{
-			traceInfo = TraceInfo<Guid>.Create(traceInfo);
+			traceInfo = TraceInfo.Create(traceInfo);
 
 			try
 			{
@@ -348,6 +348,6 @@ internal class OrchestrationController : IOrchestrationController
 		}
 	}
 
-	Task IOrchestrationController.PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo<Guid> traceInfo)
+	Task IOrchestrationController.PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo)
 		=> PublishLifeCycleEventAsync(lifeCycleEvent, traceInfo);
 }

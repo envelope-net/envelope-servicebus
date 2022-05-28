@@ -231,6 +231,8 @@ public class EventBusConfigurationBuilder : EventBusConfigurationBuilderBase<Eve
 
 	internal static EventBusConfigurationBuilder GetDefaultBuilder()
 		=> new EventBusConfigurationBuilder()
+			//.EventTypeResolver()
+			//.EventHandlerAssemblies()
 			//.EventBusName(null)
 			//.EventBodyProvider(null)
 			.HostLogger(sp => new HostLogger(sp.GetRequiredService<ILogger<HostLogger>>()))

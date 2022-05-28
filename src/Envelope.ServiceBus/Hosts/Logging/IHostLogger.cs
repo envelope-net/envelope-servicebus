@@ -7,123 +7,123 @@ namespace Envelope.ServiceBus.Hosts.Logging;
 
 public interface IHostLogger
 {
-	ILogMessage<Guid>? LogTrace(
-		ITraceInfo<Guid> traceInfo,
+	ILogMessage? LogTrace(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null);
 
-	ILogMessage<Guid>? LogDebug(
-		ITraceInfo<Guid> traceInfo,
+	ILogMessage? LogDebug(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null);
 
-	ILogMessage<Guid>? LogInformation(
-		ITraceInfo<Guid> traceInfo,
+	ILogMessage? LogInformation(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null);
 
-	ILogMessage<Guid>? LogWarning(
-		ITraceInfo<Guid> traceInfo,
+	ILogMessage? LogWarning(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null);
 
-	IErrorMessage<Guid> LogError(
-		ITraceInfo<Guid> traceInfo,
+	IErrorMessage LogError(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null);
 
-	IErrorMessage<Guid> LogCritical(
-		ITraceInfo<Guid> traceInfo,
+	IErrorMessage LogCritical(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null);
 
 	void LogResultErrorMessages(
-		IResult<Guid> result,
+		IResult result,
 		ITransactionContext? transactionContext = null);
 
 	void LogResultAllMessages(
-		IResult<Guid> result,
+		IResult result,
 		ITransactionContext? transactionContext = null);
 
-	Task<ILogMessage<Guid>?> LogTraceAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<ILogMessage?> LogTraceAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
-	Task<ILogMessage<Guid>?> LogDebugAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<ILogMessage?> LogDebugAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
-	Task<ILogMessage<Guid>?> LogInformationAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<ILogMessage?> LogInformationAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
-	Task<ILogMessage<Guid>?> LogWarningAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<ILogMessage?> LogWarningAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
-	Task<IErrorMessage<Guid>> LogErrorAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<IErrorMessage> LogErrorAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
-	Task<IErrorMessage<Guid>> LogCriticalAsync(
-		ITraceInfo<Guid> traceInfo,
+	Task<IErrorMessage> LogCriticalAsync(
+		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
 		HostStatus hostStatus,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
 	Task LogResultErrorMessagesAsync(
-		IResult<Guid> result,
+		IResult result,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 
 	Task LogResultAllMessagesAsync(
-		IResult<Guid> result,
+		IResult result,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default);
 }

@@ -22,7 +22,7 @@ public abstract class MessageHandlerContext : IMessageHandlerContext, IMessageMe
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	public IMessageHandlerResultFactory MessageHandlerResultFactory { get; internal set; }
 
-	public ITraceInfo<Guid> TraceInfo { get; internal set; }
+	public ITraceInfo TraceInfo { get; internal set; }
 
 	public IHostInfo HostInfo { get; internal set; }
 
@@ -82,7 +82,7 @@ public abstract class MessageHandlerContext : IMessageHandlerContext, IMessageMe
 		DelayedToUtc = delayedToUtc;
 	}
 
-	public MethodLogScope<Guid> CreateScope(
+	public MethodLogScope CreateScope(
 		ILogger logger,
 		IEnumerable<MethodParameter>? methodParameters = null,
 		[CallerMemberName] string memberName = "",
@@ -93,7 +93,7 @@ public abstract class MessageHandlerContext : IMessageHandlerContext, IMessageMe
 			throw new ArgumentNullException(nameof(logger));
 
 		var traceInfo =
-			new TraceInfoBuilder<Guid>(
+			new TraceInfoBuilder(
 				HostInfo.HostName,
 				new TraceFrameBuilder(TraceInfo?.TraceFrame)
 					.CallerMemberName(memberName)
@@ -110,128 +110,128 @@ public abstract class MessageHandlerContext : IMessageHandlerContext, IMessageMe
 			[nameof(ILogMessage.TraceInfo.CorrelationId)] = traceInfo.CorrelationId
 		});
 
-		var scope = new MethodLogScope<Guid>(traceInfo, disposable);
+		var scope = new MethodLogScope(traceInfo, disposable);
 		return scope;
 	}
 
-	public virtual IErrorMessage<Guid>? LogCritical(
-		ITraceInfo<Guid> traceInfo,
+	public virtual IErrorMessage? LogCritical(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 		=> HandlerLogger?.LogCritical(traceInfo, messageMetadata, messageBuilder, detail, transactionContext);
 
-	public virtual Task<IErrorMessage<Guid>?> LogCriticalAsync(
-		ITraceInfo<Guid> traceInfo,
+	public virtual Task<IErrorMessage?> LogCriticalAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
 	{
 		if (HandlerLogger == null)
-			return Task.FromResult((IErrorMessage<Guid>?)null);
+			return Task.FromResult((IErrorMessage?)null);
 		else
 			return HandlerLogger.LogCriticalAsync(traceInfo, messageMetadata, messageBuilder, detail, transactionContext, cancellationToken)!;
 	}
 
-	public virtual ILogMessage<Guid>? LogDebug(
-		ITraceInfo<Guid> traceInfo,
+	public virtual ILogMessage? LogDebug(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 		=> HandlerLogger?.LogDebug(traceInfo, messageMetadata, messageBuilder, detail, transactionContext);
 
-	public virtual Task<ILogMessage<Guid>?> LogDebugAsync(
-		ITraceInfo<Guid> traceInfo,
+	public virtual Task<ILogMessage?> LogDebugAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
 		=> HandlerLogger == null
-			? Task.FromResult((ILogMessage<Guid>?)null)
+			? Task.FromResult((ILogMessage?)null)
 			: HandlerLogger.LogDebugAsync(traceInfo, messageMetadata, messageBuilder, detail, transactionContext, cancellationToken);
 
-	public virtual IErrorMessage<Guid>? LogError(
-		ITraceInfo<Guid> traceInfo,
+	public virtual IErrorMessage? LogError(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 		=> HandlerLogger?.LogError(traceInfo, messageMetadata, messageBuilder, detail, transactionContext);
 
-	public virtual Task<IErrorMessage<Guid>?> LogErrorAsync(
-		ITraceInfo<Guid> traceInfo,
+	public virtual Task<IErrorMessage?> LogErrorAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<ErrorMessageBuilder<Guid>> messageBuilder,
+		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
 	{
 		if (HandlerLogger == null)
-			return Task.FromResult((IErrorMessage<Guid>?)null);
+			return Task.FromResult((IErrorMessage?)null);
 		else
 			return HandlerLogger.LogErrorAsync(traceInfo, messageMetadata, messageBuilder, detail, transactionContext, cancellationToken)!;
 	}
 
-	public virtual ILogMessage<Guid>? LogInformation(
-		ITraceInfo<Guid> traceInfo,
+	public virtual ILogMessage? LogInformation(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 		=> HandlerLogger?.LogInformation(traceInfo, messageMetadata, messageBuilder, detail, transactionContext);
 
-	public virtual Task<ILogMessage<Guid>?> LogInformationAsync(
-		ITraceInfo<Guid> traceInfo,
+	public virtual Task<ILogMessage?> LogInformationAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
 		=> HandlerLogger == null
-			? Task.FromResult((ILogMessage<Guid>?)null)
+			? Task.FromResult((ILogMessage?)null)
 			: HandlerLogger.LogInformationAsync(traceInfo, messageMetadata, messageBuilder, detail, transactionContext, cancellationToken);
 
-	public virtual ILogMessage<Guid>? LogTrace(
-		ITraceInfo<Guid> traceInfo,
+	public virtual ILogMessage? LogTrace(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 		=> HandlerLogger?.LogTrace(traceInfo, messageMetadata, messageBuilder, detail, transactionContext);
 
-	public virtual Task<ILogMessage<Guid>?> LogTraceAsync(
-		ITraceInfo<Guid> traceInfo,
+	public virtual Task<ILogMessage?> LogTraceAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
 		=> HandlerLogger == null
-			? Task.FromResult((ILogMessage<Guid>?)null)
+			? Task.FromResult((ILogMessage?)null)
 			: HandlerLogger.LogTraceAsync(traceInfo, messageMetadata, messageBuilder, detail, transactionContext, cancellationToken);
 
-	public virtual ILogMessage<Guid>? LogWarning(
-		ITraceInfo<Guid> traceInfo,
+	public virtual ILogMessage? LogWarning(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null)
 		=> HandlerLogger?.LogWarning(traceInfo, messageMetadata, messageBuilder, detail, transactionContext);
 
-	public virtual Task<ILogMessage<Guid>?> LogWarningAsync(
-		ITraceInfo<Guid> traceInfo,
+	public virtual Task<ILogMessage?> LogWarningAsync(
+		ITraceInfo traceInfo,
 		IMessageMetadata? messageMetadata,
-		Action<LogMessageBuilder<Guid>> messageBuilder,
+		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionContext? transactionContext = null,
 		CancellationToken cancellationToken = default)
 		=> HandlerLogger == null
-			? Task.FromResult((ILogMessage<Guid>?)null)
+			? Task.FromResult((ILogMessage?)null)
 			: HandlerLogger.LogWarningAsync(traceInfo, messageMetadata, messageBuilder, detail, transactionContext, cancellationToken);
 }
 

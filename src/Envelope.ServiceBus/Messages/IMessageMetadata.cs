@@ -24,7 +24,7 @@ public interface IMessageMetadata : IMessageInfo
 	/// <summary>
 	/// Publisher source trace frame
 	/// </summary>
-	ITraceInfo<Guid> TraceInfo { get; }
+	ITraceInfo TraceInfo { get; }
 
 	/// <summary>
 	/// The time after which the message will be deprecated

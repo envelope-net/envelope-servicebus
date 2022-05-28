@@ -24,19 +24,19 @@ internal class InMemoryFIFOQueue : IQueue, IDisposable
 
 	private readonly object _enqueueLock = new();
 	/// <inheritdoc/>
-	public Task<IResult<Guid>> EnqueueAsync(List<IMessageMetadata> messagesMetadata, ITraceInfo<Guid> traceInfo)
+	public Task<IResult> EnqueueAsync(List<IMessageMetadata> messagesMetadata, ITraceInfo traceInfo)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder<Guid>();
 
 		if (messagesMetadata == null)
-			return Task.FromResult((IResult<Guid>)result.WithArgumentNullException(traceInfo, nameof(messagesMetadata)));
+			return Task.FromResult((IResult)result.WithArgumentNullException(traceInfo, nameof(messagesMetadata)));
 
 		if (messagesMetadata.Count == 0)
-			return Task.FromResult((IResult<Guid>)result.Build());
+			return Task.FromResult((IResult)result.Build());
 
 		if (_messages.Count == MaxSize)
-			return Task.FromResult((IResult<Guid>)result.WithInvalidOperationException(traceInfo, $"Max size exceeded. Count = {MaxSize}"));
+			return Task.FromResult((IResult)result.WithInvalidOperationException(traceInfo, $"Max size exceeded. Count = {MaxSize}"));
 
 		if (messagesMetadata.Count == 1)
 		{
@@ -51,17 +51,17 @@ internal class InMemoryFIFOQueue : IQueue, IDisposable
 			}
 		}
 
-		return Task.FromResult((IResult<Guid>)result.Build());
+		return Task.FromResult((IResult)result.Build());
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult<Guid>> TryRemoveAsync(IMessageMetadata messageMetadata, ITraceInfo<Guid> traceInfo)
+	public Task<IResult> TryRemoveAsync(IMessageMetadata messageMetadata, ITraceInfo traceInfo)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder<Guid>();
 
 		if (messageMetadata == null)
-			return Task.FromResult((IResult<Guid>)result.WithArgumentNullException(traceInfo, nameof(messageMetadata)));
+			return Task.FromResult((IResult)result.WithArgumentNullException(traceInfo, nameof(messageMetadata)));
 
 		//_messages.TryPeek(out var messageHeader);
 		//if (messageHeader != null && messageHeader.MessageId != message.MessageId)
@@ -75,13 +75,13 @@ internal class InMemoryFIFOQueue : IQueue, IDisposable
 
 		_messages.TryDequeue(out var _);
 
-		return Task.FromResult((IResult<Guid>)result.Build());
+		return Task.FromResult((IResult)result.Build());
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult<IMessageMetadata?, Guid>> TryPeekAsync(ITraceInfo<Guid> traceInfo)
+	public Task<IResult<IMessageMetadata?>> TryPeekAsync(ITraceInfo traceInfo)
 	{
-		var result = new ResultBuilder<IMessageMetadata?, Guid>();
+		var result = new ResultBuilder<IMessageMetadata?>();
 		_messages.TryPeek(out var messageMetadata);
 		return Task.FromResult(result.WithData(messageMetadata).Build());
 	}

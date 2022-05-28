@@ -21,7 +21,7 @@ public interface IExchangeProvider
 	IExchange<TMessage>? GetExchange<TMessage>(string exchangeName)
 		where TMessage : class, IMessage;
 
-	IResult<IExchangeEnqueueContext, Guid> CreateExchangeEnqueueContext(ITraceInfo<Guid> traceInfo, IMessageOptions options, ExchangeType exchangeType);
+	IResult<IExchangeEnqueueContext> CreateExchangeEnqueueContext(ITraceInfo traceInfo, IMessageOptions options, ExchangeType exchangeType);
 
-	IFaultQueueContext CreateFaultQueueContext(ITraceInfo<Guid> traceInfo, IMessageOptions options);
+	IFaultQueueContext CreateFaultQueueContext(ITraceInfo traceInfo, IMessageOptions options);
 }

@@ -5,7 +5,7 @@ namespace Envelope.ServiceBus.Internals;
 
 internal static class PublisherHelper
 {
-	public static string GetPublisherIdentifier(IHostInfo hostInfo, ITraceInfo<Guid> traceInfo)
+	public static string GetPublisherIdentifier(IHostInfo hostInfo, ITraceInfo traceInfo)
 	{
 		if (hostInfo == null)
 			throw new ArgumentNullException(nameof(hostInfo));

@@ -77,9 +77,9 @@ internal class InMemoryMessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueI
 	}
 
 	/// <inheritdoc/>
-	public async Task<IResult<Guid>> EnqueueAsync(TMessage? message, IQueueEnqueueContext context, CancellationToken cancellationToken)
+	public async Task<IResult> EnqueueAsync(TMessage? message, IQueueEnqueueContext context, CancellationToken cancellationToken)
 	{
-		var traceInfo = TraceInfo<Guid>.Create(context.TraceInfo);
+		var traceInfo = TraceInfo.Create(context.TraceInfo);
 		var result = new ResultBuilder<Guid>();
 
 		if (disposed)
@@ -149,9 +149,9 @@ internal class InMemoryMessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueI
 	}
 
 	/// <inheritdoc/>
-	public async Task<IResult<Guid>> TryRemoveAsync(IQueuedMessage<TMessage> message, ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	public async Task<IResult> TryRemoveAsync(IQueuedMessage<TMessage> message, ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder<Guid>();
 
 		if (disposed)
@@ -161,21 +161,21 @@ internal class InMemoryMessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueI
 			return await PublishQueueEventAsync(
 				traceInfo,
 				QueueEventType.Remove,
-				(IResult<Guid>)result.WithInvalidOperationException(traceInfo, $"QueueName = {_configuration.QueueName} | { nameof(TryRemoveAsync)}: {nameof(IsPull)} = {IsPull}"));
+				(IResult)result.WithInvalidOperationException(traceInfo, $"QueueName = {_configuration.QueueName} | { nameof(TryRemoveAsync)}: {nameof(IsPull)} = {IsPull}"));
 
 		var removeResult = await _queue.TryRemoveAsync(message, traceInfo);
 		result.MergeHasError(removeResult);
 		return await PublishQueueEventAsync(
 			traceInfo,
 			QueueEventType.Remove,
-			(IResult<Guid>)result.Build());
+			(IResult)result.Build());
 	}
 
 	/// <inheritdoc/>
-	public async Task<IResult<IQueuedMessage<TMessage>?, Guid>> TryPeekAsync(ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	public async Task<IResult<IQueuedMessage<TMessage>?>> TryPeekAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<IQueuedMessage<TMessage>?, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<IQueuedMessage<TMessage>?>();
 
 		if (disposed)
 			return result.WithInvalidOperationException(traceInfo, $"QueueName = {_configuration.QueueName}", new ObjectDisposedException(GetType().FullName));
@@ -237,12 +237,12 @@ internal class InMemoryMessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueI
 	}
 
 	private readonly AsyncLock _onMessageLock = new();
-	private async Task OnMessageAsync(ITraceInfo<Guid> traceInfo, CancellationToken cancellationToken)
+	private async Task OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
 		if (disposed)
 			return;
 
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
+		traceInfo = TraceInfo.Create(traceInfo);
 
 		using (await _onMessageLock.LockAsync().ConfigureAwait(false))
 		{
@@ -298,10 +298,10 @@ internal class InMemoryMessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueI
 		}
 	}
 
-	private async Task<IResult<IMessageMetadataUpdate, Guid>> HandleMessageAsync(IQueuedMessage<TMessage> message, ITraceInfo<Guid> traceInfo,CancellationToken cancellationToken)
+	private async Task<IResult<IMessageMetadataUpdate>> HandleMessageAsync(IQueuedMessage<TMessage> message, ITraceInfo traceInfo,CancellationToken cancellationToken)
 	{
-		traceInfo = TraceInfo<Guid>.Create(traceInfo);
-		var result = new ResultBuilder<IMessageMetadataUpdate, Guid>();
+		traceInfo = TraceInfo.Create(traceInfo);
+		var result = new ResultBuilder<IMessageMetadataUpdate>();
 
 		var processingTimeout = DefaultProcessingTimeout;
 
@@ -309,7 +309,7 @@ internal class InMemoryMessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueI
 		handlerContext.MessageHandlerResultFactory = _configuration.ServiceBusOptions.MessageHandlerResultFactory;
 		handlerContext.TransactionContext = null;                                                                  //TODO:  transactionContext;
 		handlerContext.ServiceProvider = _configuration.ServiceBusOptions.ServiceProvider;
-		handlerContext.TraceInfo = TraceInfo<Guid>.Create(traceInfo);
+		handlerContext.TraceInfo = TraceInfo.Create(traceInfo);
 		handlerContext.HostInfo = _configuration.ServiceBusOptions.HostInfo;
 		handlerContext.HandlerLogger = _configuration.ServiceBusOptions.HandlerLogger;
 		handlerContext.MessageId = message.MessageId;
@@ -395,8 +395,8 @@ internal class InMemoryMessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueI
 			result.WithData(update).Build());
 	}
 
-	private async Task<TResult> PublishQueueEventAsync<TResult>(ITraceInfo<Guid> traceInfo, QueueEventType queueEventType, TResult? result)
-		where TResult : IResult<Guid>
+	private async Task<TResult> PublishQueueEventAsync<TResult>(ITraceInfo traceInfo, QueueEventType queueEventType, TResult? result)
+		where TResult : IResult
 	{
 		IQueueEvent queueEvent;
 		if (result?.HasError == true)

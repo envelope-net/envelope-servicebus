@@ -30,7 +30,7 @@ public interface IMessageHandler<TRequestMessage, TResponse, TContext> : IMessag
 	/// Handles a request message
 	/// </summary>
 	/// <returns>Response from the request message</returns>
-	IResult<TResponse, Guid> Handle(TRequestMessage message, TContext handlerContext);
+	IResult<TResponse> Handle(TRequestMessage message, TContext handlerContext);
 }
 
 /// <summary>
@@ -52,7 +52,7 @@ public interface IAsyncMessageHandler<TRequestMessage, TResponse, TContext> : IM
 	/// Handles a request message
 	/// </summary>
 	/// <returns>Response from the request message</returns>
-	Task<IResult<TResponse, Guid>> HandleAsync(TRequestMessage message, TContext handlerContext, CancellationToken cancellationToken = default);
+	Task<IResult<TResponse>> HandleAsync(TRequestMessage message, TContext handlerContext, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -73,7 +73,7 @@ public interface IMessageHandler<TRequestMessage, TContext> : IMessageHandler
 	/// Handles a request message
 	/// </summary>
 	/// <returns>Response from the request message</returns>
-	IResult<Guid> Handle(TRequestMessage message, TContext handlerContext);
+	IResult Handle(TRequestMessage message, TContext handlerContext);
 }
 
 /// <summary>
@@ -94,6 +94,6 @@ public interface IAsyncMessageHandler<TRequestMessage, TContext> : IMessageHandl
 	/// Handles a request message
 	/// </summary>
 	/// <returns>Response from the request message</returns>
-	Task<IResult<Guid>> HandleAsync(TRequestMessage message, TContext handlerContext, CancellationToken cancellationToken = default);
+	Task<IResult> HandleAsync(TRequestMessage message, TContext handlerContext, CancellationToken cancellationToken = default);
 }
 
