@@ -63,8 +63,8 @@ public static partial class ServiceCollectionExtensions
 			typeof(IMessageBus),
 			sp =>
 			{
-				var options = builder.Build().BuildOptions(sp);
-				var messageBus = new MessageBus(sp, options, registry);
+				var cfg = builder.Build();
+				var messageBus = new MessageBus(sp, cfg, registry);
 				return messageBus;
 			},
 			messageBusLifetime));

@@ -6,8 +6,6 @@ using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Orchestrations.Model;
 using Envelope.ServiceBus.Queues;
 using Envelope.ServiceBus.Queues.Internal;
-using Envelope.Validation;
-using System.Text;
 
 namespace Envelope.ServiceBus.Exchange.Configuration;
 
@@ -17,14 +15,19 @@ public interface IExchangeProviderConfigurationBuilder<TBuilder, TObject>
 {
 	TBuilder Object(TObject exchangeProviderConfiguration);
 
+	TObject Internal();
+
 	TObject Build(bool finalize = false);
 
-	TBuilder FaultQueue(Func<IServiceProvider, IFaultQueue> faultQueue, bool force = false);
+	TBuilder FaultQueue(Func<IServiceProvider, IFaultQueue> faultQueue, bool force = true);
 
-	TBuilder RegisterDefaultExchange<TMessage>(Action<ExchangeRouterBuilder>? configureBindings = null, bool force = false)
+	TBuilder RegisterInMemoryExchange<TMessage>(Action<ExchangeRouterBuilder>? configureBindings = null, bool force = true)
 		where TMessage : class, IMessage;
 
-	TBuilder RegisterExchange<TMessage>(string exchangeName, Func<IServiceProvider, IExchange<TMessage>> exchange, bool force = false)
+	TBuilder RegisterExchange<TMessage>(Action<ExchangeConfigurationBuilder<TMessage>> configure, bool force = true)
+		where TMessage : class, IMessage;
+
+	TBuilder RegisterExchange<TMessage>(string exchangeName, Func<IServiceProvider, IExchange<TMessage>> exchange, bool force = true)
 		where TMessage : class, IMessage;
 }
 
@@ -48,6 +51,9 @@ public abstract class ExchangeProviderConfigurationBuilderBase<TBuilder, TObject
 		return _builder;
 	}
 
+	public TObject Internal()
+		=> _exchangeProviderConfiguration;
+
 	public TObject Build(bool finalize = false)
 	{
 		if (_finalized)
@@ -62,7 +68,7 @@ public abstract class ExchangeProviderConfigurationBuilderBase<TBuilder, TObject
 		return _exchangeProviderConfiguration;
 	}
 
-	public TBuilder FaultQueue(Func<IServiceProvider, IFaultQueue> faultQueue, bool force = false)
+	public TBuilder FaultQueue(Func<IServiceProvider, IFaultQueue> faultQueue, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -73,7 +79,7 @@ public abstract class ExchangeProviderConfigurationBuilderBase<TBuilder, TObject
 		return _builder;
 	}
 
-	public TBuilder RegisterDefaultExchange<TMessage>(Action<ExchangeRouterBuilder>? configureBindings = null, bool force = false)
+	public TBuilder RegisterInMemoryExchange<TMessage>(Action<ExchangeRouterBuilder>? configureBindings = null, bool force = true)
 		where TMessage : class, IMessage
 		=> RegisterExchange(
 			typeof(TMessage).FullName!,
@@ -83,11 +89,28 @@ public abstract class ExchangeProviderConfigurationBuilderBase<TBuilder, TObject
 					.GetDefaultBuilder(_exchangeProviderConfiguration.ServiceBusOptions, configureBindings)
 					.Build();
 				var context = new ExchangeContext<TMessage>(exchangeConfiguration);
-				return new InMemoryExchange<TMessage>(context);
+				return new Exchange<TMessage>(context);
 			},
 			force);
 
-	public TBuilder RegisterExchange<TMessage>(string exchangeName, Func<IServiceProvider, IExchange<TMessage>> exchange, bool force = false)
+	public TBuilder RegisterExchange<TMessage>(Action<ExchangeConfigurationBuilder<TMessage>> configure, bool force = true)
+		where TMessage : class, IMessage
+		=> configure != null
+			? RegisterExchange(
+				typeof(TMessage).FullName!,
+				sp =>
+				{
+					var builder = ExchangeConfigurationBuilder<TMessage>
+						.GetDefaultBuilder(_exchangeProviderConfiguration.ServiceBusOptions, null);
+					configure.Invoke(builder);
+					var exchangeConfiguration = builder.Build();
+					var context = new ExchangeContext<TMessage>(exchangeConfiguration);
+					return new Exchange<TMessage>(context);
+				},
+				force)
+			: throw new ArgumentNullException(nameof(configure));
+
+	public TBuilder RegisterExchange<TMessage>(string exchangeName, Func<IServiceProvider, IExchange<TMessage>> exchange, bool force = true)
 		where TMessage : class, IMessage
 	{
 		if (_finalized)
@@ -130,8 +153,15 @@ public class ExchangeProviderConfigurationBuilder : ExchangeProviderConfiguratio
 		return new ExchangeProviderConfigurationBuilder(exchangeProviderConfiguration);
 	}
 
-	internal static ExchangeProviderConfigurationBuilder GetDefaultBuilder(IServiceBusOptions serviceBusOptions)
-		=> new ExchangeProviderConfigurationBuilder(serviceBusOptions)
-			.RegisterDefaultExchange<OrchestrationEvent>()
-			.FaultQueue(sp => new DroppingFaultQueue());
+	internal static ExchangeProviderConfigurationBuilder GetDefaultBuilder(
+		IServiceBusOptions serviceBusOptions,
+		Action<ExchangeConfigurationBuilder<OrchestrationEvent>>? orchestrationExchange = null,
+		Func<IServiceProvider, IFaultQueue>? orchestrationEventsFaultQueue = null)
+		=> orchestrationExchange != null
+			? new ExchangeProviderConfigurationBuilder(serviceBusOptions)
+				.RegisterExchange(orchestrationExchange)
+				.FaultQueue(orchestrationEventsFaultQueue ?? (sp => new DroppingFaultQueue()))
+			: new ExchangeProviderConfigurationBuilder(serviceBusOptions)
+				.RegisterInMemoryExchange<OrchestrationEvent>()
+				.FaultQueue(sp => new DroppingFaultQueue());
 }

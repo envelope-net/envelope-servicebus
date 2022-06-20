@@ -2,7 +2,7 @@
 
 namespace Envelope.ServiceBus.Exchange;
 
-public interface IExchangeMessage<TMessage> : IMessageMetadata, ISavedMessage<TMessage>, IMessageInfo
+public interface IExchangeMessage<out TMessage> : IMessageMetadata, ISavedMessage<TMessage>, IMessageInfo
 	where TMessage : class, IMessage
 {
 	string ExchangeName { get; }

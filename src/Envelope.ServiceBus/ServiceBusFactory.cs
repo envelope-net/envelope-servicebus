@@ -1,6 +1,6 @@
 ﻿using Envelope.ServiceBus.Configuration;
 
-namespace Envelope.ServiceBus.Internal;
+namespace Envelope.ServiceBus;
 
 public class ServiceBusFactory : IServiceBusFactory
 {
@@ -12,7 +12,18 @@ public class ServiceBusFactory : IServiceBusFactory
 		var builder = ServiceBusConfigurationBuilder.GetDefaultBuilder();
 		configure(builder);
 		var configuration = builder.Build();
-		var options = configuration.BuildOptions(serviceProvider);
+
+		var serviceBus = new ServiceBus(serviceProvider, configuration);
+		return serviceBus;
+	}
+
+	public IServiceBus Create(IServiceProvider serviceProvider, IServiceBusConfiguration configuration)
+		=> new ServiceBus(serviceProvider, configuration);
+
+	public IServiceBus Create(IServiceBusOptions options)
+	{
+		if (options == null)
+			throw new ArgumentNullException(nameof(options));
 
 		var serviceBus = new ServiceBus(options);
 		return serviceBus;

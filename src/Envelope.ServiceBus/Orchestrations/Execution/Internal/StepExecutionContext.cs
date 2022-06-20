@@ -13,18 +13,25 @@ internal class StepExecutionContext : IStepExecutionContext
 
 	public ExecutionPointer ExecutionPointer { get; set; }
 
+	public List<Guid> FinalizedBrancheIds { get; }
+
 	public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
 
 	IOrchestrationInstance IStepExecutionContext.Orchestration => Orchestration;
 	IOrchestrationStep IStepExecutionContext.Step => Step;
 	IExecutionPointer IStepExecutionContext.ExecutionPointer => ExecutionPointer;
 
-	public StepExecutionContext(IOrchestrationInstance orchestration, ExecutionPointer executionPointer, ITraceInfo traceInfo)
+	public StepExecutionContext(
+		IOrchestrationInstance orchestration,
+		ExecutionPointer executionPointer,
+		List<Guid> finalizedBrancheIds,
+		ITraceInfo traceInfo)
 	{
 		TraceInfo = traceInfo ?? throw new ArgumentNullException(nameof(traceInfo));
 		Orchestration = orchestration ?? throw new ArgumentNullException(nameof(orchestration));
 		ExecutionPointer = executionPointer ?? throw new ArgumentNullException(nameof(executionPointer));
-		Step = ExecutionPointer.Step;
+		Step = ExecutionPointer.GetStep();
+		FinalizedBrancheIds = finalizedBrancheIds ?? new List<Guid>();
 	}
 
 	public TData GetData<TData>()

@@ -1,4 +1,5 @@
 ﻿using Envelope.ServiceBus.Messages;
+using Envelope.ServiceBus.Queues;
 using Envelope.Services;
 using Envelope.Trace;
 using System.Runtime.CompilerServices;
@@ -17,7 +18,7 @@ internal class MessageHandlerResultFactory : IMessageHandlerResultFactory
 		if (result == null)
 		{
 			ITraceInfo traceInfo = TraceInfo.Create($"---{nameof(ServiceBus)}---", (Guid?)null, null, null, memberName, sourceFilePath, sourceLineNumber);
-			var resultBuilder = new ResultBuilder<Guid>();
+			var resultBuilder = new ResultBuilder();
 			result = resultBuilder.WithArgumentNullException(traceInfo, nameof(result));
 		}
 
@@ -44,7 +45,7 @@ internal class MessageHandlerResultFactory : IMessageHandlerResultFactory
 			if (traceInfo == null)
 				traceInfo = TraceInfo.Create($"---{nameof(ServiceBus)}---", (Guid?)null, null, null, memberName, sourceFilePath, sourceLineNumber);
 
-			var resultBuilder = new ResultBuilder<Guid>();
+			var resultBuilder = new ResultBuilder();
 			result = resultBuilder.WithArgumentNullException(traceInfo, nameof(result));
 		}
 
@@ -106,11 +107,12 @@ internal class MessageHandlerResultFactory : IMessageHandlerResultFactory
 		};
 	}
 
-	public MessageHandlerResult DeliveredInternal()
+	public MessageHandlerResult DeliveredInternal(IMessageQueue? onMessageQueue)
 	{
 		return new MessageHandlerResult
 		{
 			Processed = true,
+			OnMessageQueue = onMessageQueue,
 			MessageStatus = MessageStatus.Delivered,
 			ErrorResult = null,
 			Retry = false,

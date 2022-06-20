@@ -34,9 +34,9 @@ public class ExchangeConfiguration<TMessage> : IExchangeConfiguration<TMessage>,
 
 	public Func<IServiceProvider, IMessageBrokerHandler<TMessage>> MessageBrokerHandler { get; set; }
 
-	public Func<IServiceProvider, IQueue> FIFOQueue { get; set; }
+	public Func<IServiceProvider, int?, IQueue<IExchangeMessage<TMessage>>> FIFOQueue { get; set; }
 
-	public Func<IServiceProvider, IQueue> DelayableQueue { get; set; }
+	public Func<IServiceProvider, int?, IQueue<IExchangeMessage<TMessage>>> DelayableQueue { get; set; }
 
 	/// <inheritdoc/>
 	public Func<IServiceProvider, IMessageBodyProvider> MessageBodyProvider { get; set; }

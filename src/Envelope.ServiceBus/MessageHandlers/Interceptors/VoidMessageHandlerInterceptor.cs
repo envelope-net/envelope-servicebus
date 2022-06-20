@@ -6,6 +6,7 @@ using Envelope.Logging;
 using Envelope.Logging.Extensions;
 using Envelope.Trace;
 using Envelope.ServiceBus.Messages;
+using Envelope.Extensions;
 
 namespace Envelope.ServiceBus.MessageHandlers.Interceptors;
 
@@ -38,7 +39,7 @@ public abstract class VoidMessageHandlerInterceptor<TRequestMessage, TContext> :
 					.CommandQueryName(messageType?.FullName),
 			true);
 
-		var resultBuilder = new ResultBuilder<Guid>();
+		var resultBuilder = new ResultBuilder();
 		var result = resultBuilder.Build();
 		Guid? idCommand = null;
 
@@ -69,7 +70,7 @@ public abstract class VoidMessageHandlerInterceptor<TRequestMessage, TContext> :
 					}
 
 					if (handlerContext.TransactionContext != null)
-						handlerContext.TransactionContext.TryRollback(result.ToException());
+						handlerContext.TransactionContext.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 
 				callEndTicks = StaticWatch.CurrentTicks;
@@ -81,11 +82,11 @@ public abstract class VoidMessageHandlerInterceptor<TRequestMessage, TContext> :
 				methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
 				if (handlerContext.TransactionContext != null)
-					handlerContext.TransactionContext.TryRollback(executeEx);
+					handlerContext.TransactionContext.ScheduleRollback(executeEx.ToStringTrace());
 
 				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
-				result = new ResultBuilder<Guid>()
+				result = new ResultBuilder()
 					.WithError(traceInfo,
 						x =>
 							x.ExceptionInfo(executeEx)
@@ -116,7 +117,7 @@ public abstract class VoidMessageHandlerInterceptor<TRequestMessage, TContext> :
 			callEndTicks = StaticWatch.CurrentTicks;
 			methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
-			result = new ResultBuilder<Guid>()
+			result = new ResultBuilder()
 				.WithError(traceInfo,
 					x =>
 						x.ExceptionInfo(interEx)

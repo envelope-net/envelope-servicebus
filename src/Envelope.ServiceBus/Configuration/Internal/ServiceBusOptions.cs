@@ -7,6 +7,7 @@ using Envelope.ServiceBus.MessageHandlers.Logging;
 using Envelope.ServiceBus.Messages.Resolvers;
 using Envelope.ServiceBus.Queues;
 using Envelope.Text;
+using Envelope.Transactions;
 using System.Text;
 
 namespace Envelope.ServiceBus.Configuration.Internal;
@@ -17,6 +18,8 @@ internal class ServiceBusOptions : IServiceBusOptions
 	public IHostInfo HostInfo { get; set; }
 	public IMessageTypeResolver MessageTypeResolver { get; set; }
 	public IHostLogger HostLogger { get; set; }
+	public ITransactionManagerFactory TransactionManagerFactory { get; set; }
+	public Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
 	public IExchangeProvider ExchangeProvider { get; set; }
 	public IQueueProvider QueueProvider { get; set; }
 	public Type MessageHandlerContextType { get; set; }
@@ -65,6 +68,22 @@ internal class ServiceBusOptions : IServiceBusOptions
 				parentErrorBuffer = new StringBuilder();
 
 			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HostLogger))} == null");
+		}
+
+		if (TransactionManagerFactory == null)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new StringBuilder();
+
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionManagerFactory))} == null");
+		}
+
+		if (TransactionContextFactory == null)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new StringBuilder();
+
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionContextFactory))} == null");
 		}
 
 		if (ExchangeProvider == null)

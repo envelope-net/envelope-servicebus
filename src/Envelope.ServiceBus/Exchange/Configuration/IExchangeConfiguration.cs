@@ -38,9 +38,9 @@ public interface IExchangeConfiguration<TMessage> : IValidable
 
 	Func<IServiceProvider, IMessageBrokerHandler<TMessage>> MessageBrokerHandler { get; set; }
 
-	Func<IServiceProvider, IQueue> FIFOQueue { get; set; }
+	Func<IServiceProvider, int?, IQueue<IExchangeMessage<TMessage>>> FIFOQueue { get; set; }
 
-	Func<IServiceProvider, IQueue> DelayableQueue { get; set; }
+	Func<IServiceProvider, int?, IQueue<IExchangeMessage<TMessage>>> DelayableQueue { get; set; }
 
 	/// <summary>
 	/// <see cref="IMessageBodyProvider"/> is responsible for message body saving

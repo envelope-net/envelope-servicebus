@@ -2,8 +2,15 @@
 using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.DistributedCoordinator;
 using Envelope.ServiceBus.DistributedCoordinator.Internal;
-using Envelope.ServiceBus.Orchestrations.Persistence;
-using Envelope.ServiceBus.Orchestrations.Persistence.Internal;
+using Envelope.ServiceBus.Internals;
+using Envelope.ServiceBus.Orchestrations.Configuration.Internal;
+using Envelope.ServiceBus.Orchestrations.Execution;
+using Envelope.ServiceBus.Orchestrations.Execution.Internal;
+using Envelope.ServiceBus.Orchestrations.Internal;
+using Envelope.ServiceBus.Orchestrations.Logging;
+using Envelope.Transactions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Envelope.ServiceBus.Orchestrations.Configuration;
 
@@ -15,17 +22,25 @@ public interface IOrchestrationHostConfigurationBuilder<TBuilder, TObject>
 
 	TObject Build(bool finalize = false);
 
-	TBuilder HostName(string hostName, bool force = false);
-
 	TBuilder RegisterAsHostedService(bool asHostedService);
 
-	TBuilder OrchestrationRepositoryFactory(Func<IServiceProvider, IOrchestrationRepository> orchestrationRepositoryFactory, bool force = false);
+	TBuilder TransactionManagerFactory(ITransactionManagerFactory transactionManagerFactory, bool force = true);
 
-	TBuilder DistributedLockProviderFactory(Func<IServiceProvider, IDistributedLockProvider> distributedLockProviderFactory, bool force = false);
+	TBuilder TransactionContextFactory(Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> transactionContextFactory, bool force = true);
 
-	TBuilder EventPublisherFactory(Func<IServiceProvider, IEventPublisher> eventPublisherFactory, bool force = false);
+	TBuilder OrchestrationRegistry(Func<IServiceProvider, IOrchestrationRegistry> orchestrationRegistry, bool force = true);
 
-	TBuilder ErrorHandlerConfigurationBuilder(ErrorHandlerConfigurationBuilder errorHandlerConfigurationBuilder, bool force = false);
+	TBuilder ExecutionPointerFactory(Func<IServiceProvider, IExecutionPointerFactory> executionPointerFactory, bool force = true);
+
+	TBuilder OrchestrationRepositoryFactory(Func<IServiceProvider, IOrchestrationRegistry, IOrchestrationRepository> orchestrationRepositoryFactory, bool force = true);
+
+	TBuilder DistributedLockProviderFactory(Func<IServiceProvider, IDistributedLockProvider> distributedLockProviderFactory, bool force = true);
+
+	TBuilder OrchestrationLogger(Func<IServiceProvider, IOrchestrationLogger> orchestrationLogger, bool force = true);
+
+	TBuilder EventPublisherFactory(Func<IServiceProvider, IEventPublisher> eventPublisherFactory, bool force = true);
+
+	TBuilder ErrorHandlerConfigurationBuilder(ErrorHandlerConfigurationBuilder errorHandlerConfigurationBuilder, bool force = true);
 }
 
 public abstract class OrchestrationHostConfigurationBuilderBase<TBuilder, TObject> : IOrchestrationHostConfigurationBuilder<TBuilder, TObject>
@@ -62,17 +77,6 @@ public abstract class OrchestrationHostConfigurationBuilderBase<TBuilder, TObjec
 		return _orchestrationHostConfiguration;
 	}
 
-	public TBuilder HostName(string hostName, bool force = false)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || string.IsNullOrWhiteSpace(_orchestrationHostConfiguration.HostName))
-			_orchestrationHostConfiguration.HostName = hostName;
-
-		return _builder;
-	}
-
 	public TBuilder RegisterAsHostedService(bool asHostedService)
 	{
 		if (_finalized)
@@ -82,7 +86,51 @@ public abstract class OrchestrationHostConfigurationBuilderBase<TBuilder, TObjec
 		return _builder;
 	}
 
-	public TBuilder OrchestrationRepositoryFactory(Func<IServiceProvider, IOrchestrationRepository> orchestrationRepositoryFactory, bool force = false)
+	public TBuilder TransactionManagerFactory(ITransactionManagerFactory transactionManagerFactory, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _orchestrationHostConfiguration.TransactionManagerFactory == null)
+			_orchestrationHostConfiguration.TransactionManagerFactory = transactionManagerFactory;
+
+		return _builder;
+	}
+
+	public TBuilder TransactionContextFactory(Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> transactionContextFactory, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _orchestrationHostConfiguration.TransactionContextFactory == null)
+			_orchestrationHostConfiguration.TransactionContextFactory = transactionContextFactory;
+
+		return _builder;
+	}
+
+	public TBuilder OrchestrationRegistry(Func<IServiceProvider, IOrchestrationRegistry> orchestrationRegistry, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _orchestrationHostConfiguration.OrchestrationRegistry == null)
+			_orchestrationHostConfiguration.OrchestrationRegistry = orchestrationRegistry;
+
+		return _builder;
+	}
+
+	public TBuilder ExecutionPointerFactory(Func<IServiceProvider, IExecutionPointerFactory> executionPointerFactory, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _orchestrationHostConfiguration.ExecutionPointerFactory == null)
+			_orchestrationHostConfiguration.ExecutionPointerFactory = executionPointerFactory;
+
+		return _builder;
+	}
+
+	public TBuilder OrchestrationRepositoryFactory(Func<IServiceProvider, IOrchestrationRegistry, IOrchestrationRepository> orchestrationRepositoryFactory, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -93,7 +141,7 @@ public abstract class OrchestrationHostConfigurationBuilderBase<TBuilder, TObjec
 		return _builder;
 	}
 
-	public TBuilder DistributedLockProviderFactory(Func<IServiceProvider, IDistributedLockProvider> distributedLockProviderFactory, bool force = false)
+	public TBuilder DistributedLockProviderFactory(Func<IServiceProvider, IDistributedLockProvider> distributedLockProviderFactory, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -104,7 +152,18 @@ public abstract class OrchestrationHostConfigurationBuilderBase<TBuilder, TObjec
 		return _builder;
 	}
 
-	public TBuilder EventPublisherFactory(Func<IServiceProvider, IEventPublisher> eventPublisherFactory, bool force = false)
+	public TBuilder OrchestrationLogger(Func<IServiceProvider, IOrchestrationLogger> orchestrationLogger, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _orchestrationHostConfiguration.OrchestrationLogger == null)
+			_orchestrationHostConfiguration.OrchestrationLogger = orchestrationLogger;
+
+		return _builder;
+	}
+
+	public TBuilder EventPublisherFactory(Func<IServiceProvider, IEventPublisher> eventPublisherFactory, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -115,7 +174,7 @@ public abstract class OrchestrationHostConfigurationBuilderBase<TBuilder, TObjec
 		return _builder;
 	}
 
-	public TBuilder ErrorHandlerConfigurationBuilder(ErrorHandlerConfigurationBuilder errorHandlerConfigurationBuilder, bool force = false)
+	public TBuilder ErrorHandlerConfigurationBuilder(ErrorHandlerConfigurationBuilder errorHandlerConfigurationBuilder, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -157,8 +216,14 @@ public class OrchestrationHostConfigurationBuilder : OrchestrationHostConfigurat
 
 	internal static OrchestrationHostConfigurationBuilder GetDefaultBuilder()
 		=> new OrchestrationHostConfigurationBuilder()
-			.OrchestrationRepositoryFactory(sp => new InMemoryOrchestrationRepository())
+			//.RegisterAsHostedService(false)
+			.TransactionManagerFactory(new TransactionManagerFactory())
+			.TransactionContextFactory((sp, manager) => Task.FromResult((ITransactionContext)new InMemoryTransactionContext(manager)))
+			.OrchestrationRegistry(sp => new OrchestrationRegistry())
+			.ExecutionPointerFactory(sp => new ExecutionPointerFactory())
+			.OrchestrationRepositoryFactory((sp, registry) => new InMemoryOrchestrationRepository())
 			.DistributedLockProviderFactory(sp => new InMemoryLockProvider())
+			.OrchestrationLogger(sp => new DefaultOrchestrationLogger(sp.GetRequiredService<ILogger<DefaultOrchestrationLogger>>()))
 			//.EventPublisherFactory(sp => sp.GetRequiredService<IEventPublisher>())
 			.ErrorHandlerConfigurationBuilder(Envelope.ServiceBus.Configuration.ErrorHandlerConfigurationBuilder.GetDefaultBuilder());
 }

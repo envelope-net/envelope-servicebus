@@ -1,9 +1,8 @@
 ﻿using Envelope.ServiceBus.Messages;
-using Envelope.ServiceBus.Messages.Internal;
 
-namespace Envelope.ServiceBus.Queues.Internal;
+namespace Envelope.ServiceBus.Queues;
 
-internal class QueuedMessage<TMessage> : MessageMetadata<TMessage>, IQueuedMessage<TMessage>, IMessageMetadata, ISavedMessage<TMessage>, IMessageInfo
+public class QueuedMessage<TMessage> : MessageMetadata<TMessage>, IQueuedMessage<TMessage>, IMessageMetadata, ISavedMessage<TMessage>, IMessageInfo
 	where TMessage : class, IMessage
 {
 	/// <inheritdoc/>

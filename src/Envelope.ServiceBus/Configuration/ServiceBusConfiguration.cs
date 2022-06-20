@@ -1,31 +1,35 @@
-﻿using Envelope.Exceptions;
-using Envelope.ServiceBus.Configuration.Internal;
-using Envelope.ServiceBus.Exchange.Configuration;
-using Envelope.ServiceBus.Exchange.Internal;
+﻿using Envelope.ServiceBus.Exchange.Configuration;
 using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Hosts.Logging;
 using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Logging;
 using Envelope.ServiceBus.Messages.Resolvers;
+using Envelope.ServiceBus.Orchestrations.Model;
+using Envelope.ServiceBus.Queues;
 using Envelope.ServiceBus.Queues.Configuration;
-using Envelope.ServiceBus.Queues.Internal;
 using Envelope.Text;
+using Envelope.Transactions;
 using System.Text;
 
 namespace Envelope.ServiceBus.Configuration;
 
 public class ServiceBusConfiguration : IServiceBusConfiguration
 {
+	public IHostInfo HostInfo { get; set; }
 	public string ServiceBusName { get; set; }
 	public Func<IServiceProvider, IMessageTypeResolver> MessageTypeResolver { get; set; }
 	public Func<IServiceProvider, IHostLogger> HostLogger { get; set; }
+	public Func<IServiceProvider, ITransactionManagerFactory> TransactionManagerFactory { get; set; }
+	public Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
 	public Action<ExchangeProviderConfigurationBuilder> ExchangeProviderConfiguration { get; set; }
 	public Action<QueueProviderConfigurationBuilder> QueueProviderConfiguration { get; set; }
 	public Type MessageHandlerContextType { get; set; }
 	public Func<IServiceProvider, MessageHandlerContext> MessageHandlerContextFactory { get; set; }
 	public Func<IServiceProvider, IHandlerLogger> HandlerLogger { get; set; }
-	public Func<IServiceProvider, IMessageHandlerResultFactory> MessageHandlerResultFactory { get; set; }
 	public List<ServiceBusEventHandler> ServiceBusEventHandlers { get; }
+	public Func<IServiceProvider, IFaultQueue>? OrchestrationEventsFaultQueue { get; set; }
+	public Action<ExchangeConfigurationBuilder<OrchestrationEvent>>? OrchestrationExchange { get; set; }
+	public Action<MessageQueueConfigurationBuilder<OrchestrationEvent>>? OrchestrationQueue { get; set; }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -38,7 +42,7 @@ public class ServiceBusConfiguration : IServiceBusConfiguration
 
 	public StringBuilder? Validate(string? propertyPrefix = null, StringBuilder? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
 	{
-		if (string.IsNullOrWhiteSpace(ServiceBusName))
+		if (HostInfo == null && string.IsNullOrWhiteSpace(ServiceBusName))
 		{
 			if (parentErrorBuffer == null)
 				parentErrorBuffer = new StringBuilder();
@@ -60,6 +64,22 @@ public class ServiceBusConfiguration : IServiceBusConfiguration
 				parentErrorBuffer = new StringBuilder();
 
 			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HostLogger))} == null");
+		}
+
+		if (TransactionManagerFactory == null)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new StringBuilder();
+
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionManagerFactory))} == null");
+		}
+
+		if (TransactionContextFactory == null)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new StringBuilder();
+
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionContextFactory))} == null");
 		}
 
 		//kvoli tomu, ze sa neskor automaticky prida exchange pre orchestracie
@@ -104,57 +124,6 @@ public class ServiceBusConfiguration : IServiceBusConfiguration
 			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HandlerLogger))} == null");
 		}
 
-		if (MessageHandlerResultFactory == null)
-		{
-			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
-
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MessageHandlerResultFactory))} == null");
-		}
-
 		return parentErrorBuffer;
-	}
-
-	public IServiceBusOptions BuildOptions(IServiceProvider serviceProvider)
-	{
-		if (serviceProvider == null)
-			throw new ArgumentNullException(nameof(serviceProvider));
-
-		var error = Validate(nameof(ServiceBusConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
-			throw new ConfigurationException(error);
-
-		var options = new ServiceBusOptions(serviceProvider)
-		{
-			HostInfo = new HostInfo(ServiceBusName),
-			MessageTypeResolver = MessageTypeResolver(serviceProvider),
-			HostLogger = HostLogger(serviceProvider),
-			MessageHandlerContextType = MessageHandlerContextType,
-			MessageHandlerContextFactory = MessageHandlerContextFactory,
-			HandlerLogger = HandlerLogger(serviceProvider),
-			MessageHandlerResultFactory = MessageHandlerResultFactory(serviceProvider)
-		};
-
-		foreach (var handler in ServiceBusEventHandlers)
-			options.ServiceBusLifeCycleEventManager.OnServiceBusEvent += handler;
-
-		var exchangeProviderBuilder = ExchangeProviderConfigurationBuilder.GetDefaultBuilder(options);
-		ExchangeProviderConfiguration?.Invoke(exchangeProviderBuilder);
-		var exchangeProviderConfiguration = exchangeProviderBuilder.Build();
-		var exchangeProvider = new ExchangeProvider(serviceProvider, exchangeProviderConfiguration, options);
-
-		var queueProviderBuilder = QueueProviderConfigurationBuilder.GetDefaultBuilder(options);
-		QueueProviderConfiguration?.Invoke(queueProviderBuilder);
-		var queueProviderConfiguration = queueProviderBuilder.Build();
-		var queueProvider = new QueueProvider(serviceProvider, queueProviderConfiguration, options);
-
-		options.ExchangeProvider = exchangeProvider;
-		options.QueueProvider = queueProvider;
-
-		error = options.Validate(nameof(ServiceBusOptions))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
-			throw new ConfigurationException(error);
-
-		return options;
 	}
 }

@@ -22,23 +22,40 @@ internal class ServiceBusLifeCycleEventManager : IServiceBusLifeCycleEventManage
 
 			traceInfo = TraceInfo.Create(traceInfo);
 
-			try
+			_ = Task.Run(async () =>
 			{
-				_ = Task.Run(async () => await OnServiceBusEvent.Invoke(serviceBusEvent, traceInfo));
+				try
+				{
+					await OnServiceBusEvent.Invoke(serviceBusEvent, traceInfo).ConfigureAwait(false);
+				}
+				catch (Exception ex)
+				{
+					await serviceBusOptions.HostLogger.LogErrorAsync(
+						TraceInfo.Create(traceInfo),
+						serviceBusOptions.HostInfo,
+						HostStatus.Unchanged,
+						x => x.ExceptionInfo(ex),
+						$"{nameof(serviceBusEvent)} type = {serviceBusEvent.GetType().FullName}",
+						null,
+						cancellationToken: default).ConfigureAwait(false);
+				}
+			});
 
-				//await OnServiceBusEvent.Invoke(serviceBusEvent, traceInfo);
-			}
-			catch (Exception ex)
-			{
-				return serviceBusOptions.HostLogger.LogErrorAsync(
-					traceInfo,
-					serviceBusOptions.HostInfo,
-					HostStatus.Unchanged,
-					x => x.ExceptionInfo(ex),
-					$"{nameof(serviceBusEvent)} type = {serviceBusEvent.GetType().FullName}",
-					null,
-					default);
-			}
+			//try
+			//{
+			//	await OnServiceBusEvent.Invoke(serviceBusEvent, traceInfo).ConfigureAwait(false);
+			//}
+			//catch (Exception ex)
+			//{
+			//	await serviceBusOptions.HostLogger.LogErrorAsync(
+			//		traceInfo,
+			//		serviceBusOptions.HostInfo,
+			//		HostStatus.Unchanged,
+			//		x => x.ExceptionInfo(ex),
+			//		$"{nameof(serviceBusEvent)} type = {serviceBusEvent.GetType().FullName}",
+			//		null,
+			//		cancellationToken: default).ConfigureAwait(false);
+			//}
 		}
 
 		return Task.CompletedTask;

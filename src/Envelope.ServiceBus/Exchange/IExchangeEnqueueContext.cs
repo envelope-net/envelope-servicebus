@@ -1,6 +1,7 @@
 ﻿using Envelope.Policy;
 using Envelope.ServiceBus.ErrorHandling;
 using Envelope.ServiceBus.Messages;
+using Envelope.ServiceBus.Queues;
 using Envelope.Trace;
 using System.Text;
 
@@ -44,6 +45,10 @@ public interface IExchangeEnqueueContext
 	/// when the reply arives. If false, the response message will be returned synchronously to caller in timeout duration.
 	/// </summary>
 	bool IsAsynchronousInvocation { get; }
+
+	bool CallExchangeOnMessage { get; set; }
+
+	internal IMessageQueue? OnMessageQueue { get; set; }
 
 	/// <summary>
 	/// The timespan after which the Send request will be cancelled if no response arrives.

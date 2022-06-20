@@ -1,50 +1,62 @@
-﻿using Envelope.ServiceBus.Orchestrations.Definition;
-
-namespace Envelope.ServiceBus.Orchestrations.Execution.Internal;
+﻿namespace Envelope.ServiceBus.Orchestrations.Execution.Internal;
 
 internal class ExecutionPointerFactory : IExecutionPointerFactory
 {
-	public ExecutionPointer? BuildGenesisPointer(IOrchestrationDefinition orchestrationDefinition)
+	public ExecutionPointer BuildGenesisPointer(IOrchestrationInstance orchestrationInstance)
 	{
-		var nextStep = orchestrationDefinition.Steps.FirstOrDefault();
-		if (nextStep == null)
-			return null;
+		if (orchestrationInstance == null)
+			throw new ArgumentNullException(nameof(orchestrationInstance));
 
-		return new ExecutionPointer(Guid.NewGuid(), nextStep)
+		var nextStep = orchestrationInstance.GetOrchestrationDefinition().Steps.FirstOrDefault();
+		if (nextStep == null)
+			throw new InvalidOperationException("No steps defined");
+
+		var id = Guid.NewGuid();
+		return new ExecutionPointer(id, orchestrationInstance.IdOrchestrationInstance, orchestrationInstance.IdOrchestrationDefinition, orchestrationInstance.Version, nextStep)
+		.Update(new ExecutionPointerUpdate(id)
 		{
 			Active = true,
 			Status = PointerStatus.Pending
-		};
+		});
 	}
 
-	public ExecutionPointer? BuildNextPointer(IOrchestrationDefinition orchestrationDefinition, IExecutionPointer previousPointer, Guid idNextStep)
+	public ExecutionPointer? BuildNextPointer(IOrchestrationInstance orchestrationInstance, IExecutionPointer previousPointer, Guid idNextStep)
 	{
-		var nextStep = orchestrationDefinition.Steps.FindById(idNextStep);
+		if (orchestrationInstance == null)
+			throw new ArgumentNullException(nameof(orchestrationInstance));
+
+		var nextStep = orchestrationInstance.GetOrchestrationDefinition().Steps.FindById(idNextStep);
 		if (nextStep == null)
 			return null;
 
-		return new ExecutionPointer(Guid.NewGuid(), nextStep)
+		var id = Guid.NewGuid();
+		return new ExecutionPointer(id, orchestrationInstance.IdOrchestrationInstance, orchestrationInstance.IdOrchestrationDefinition, orchestrationInstance.Version, nextStep)
+		.Update(new ExecutionPointerUpdate(id)
 		{
-			PredecessorExecutionPointer = previousPointer,
+			PredecessorExecutionPointerStartingStepId = previousPointer?.GetStep().StartingStep?.IdStep,
+			PredecessorExecutionPointerId = previousPointer?.IdExecutionPointer,
 			Active = true,
 			Status = PointerStatus.Pending
-		};
+		});
 	}
 
-	public ExecutionPointer? BuildNestedPointer(IOrchestrationDefinition orchestrationDefinition, IExecutionPointer previousPointer, Guid idNestedStep)
+	public ExecutionPointer? BuildNestedPointer(IOrchestrationInstance orchestrationInstance, IExecutionPointer previousPointer, Guid idNestedStep)
 	{
-		var nestedStep = orchestrationDefinition.Steps.FindById(idNestedStep);
+		if (orchestrationInstance == null)
+			throw new ArgumentNullException(nameof(orchestrationInstance));
+
+		var nestedStep = orchestrationInstance.GetOrchestrationDefinition().Steps.FindById(idNestedStep);
 		if (nestedStep == null)
 			return null;
 
-		var nestedExecutionPointer = new ExecutionPointer(Guid.NewGuid(), nestedStep)
+		var id = Guid.NewGuid();
+		var nestedExecutionPointer = new ExecutionPointer(id, orchestrationInstance.IdOrchestrationInstance, orchestrationInstance.IdOrchestrationDefinition, orchestrationInstance.Version, nestedStep)
+		.Update(new ExecutionPointerUpdate(id)
 		{
-			PredecessorExecutionPointer = null, //set ContainerExecutionPointer instead in method AddNestedExecutionPointer
+			PredecessorExecutionPointerStartingStepId = null,
 			Active = true,
 			Status = PointerStatus.Pending
-		};
-
-		previousPointer.AddNestedExecutionPointer(nestedExecutionPointer);
+		});
 
 		return nestedExecutionPointer;
 	}

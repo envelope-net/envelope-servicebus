@@ -1,7 +1,4 @@
-﻿using Envelope.Exceptions;
-using Envelope.ServiceBus.Configuration.Internal;
-using Envelope.ServiceBus.Hosts;
-using Envelope.ServiceBus.Hosts.Logging;
+﻿using Envelope.ServiceBus.Hosts.Logging;
 using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Logging;
 using Envelope.ServiceBus.Messages;
@@ -67,30 +64,5 @@ public class MessageBusConfiguration : IMessageBusConfiguration
 		}
 
 		return parentErrorBuffer;
-	}
-
-	public IMessageBusOptions BuildOptions(IServiceProvider serviceProvider)
-	{
-		if (serviceProvider == null)
-			throw new ArgumentNullException(nameof(serviceProvider));
-
-		var error = Validate(nameof(MessageBusConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
-			throw new ConfigurationException(error);
-
-		var options = new MessageBusOptions()
-		{
-			HostInfo = new HostInfo(MessageBusName),
-			HostLogger = HostLogger(serviceProvider),
-			HandlerLogger = HandlerLogger(serviceProvider),
-			MessageHandlerResultFactory = MessageHandlerResultFactory(serviceProvider),
-			MessageBodyProvider = MessageBodyProvider
-		};
-
-		error = options.Validate(nameof(MessageBusOptions))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
-			throw new ConfigurationException(error);
-
-		return options;
 	}
 }

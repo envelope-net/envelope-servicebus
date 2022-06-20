@@ -19,25 +19,25 @@ public interface IEventBusConfigurationBuilder<TBuilder, TObject>
 
 	TObject Build(bool finalize = false);
 
-	TBuilder EventBusName(string eventBusName, bool force = false);
+	TBuilder EventBusName(string eventBusName, bool force = true);
 
-	TBuilder EventTypeResolver(IMessageTypeResolver eventTypeResolver, bool force = false);
+	TBuilder EventTypeResolver(IMessageTypeResolver eventTypeResolver, bool force = true);
 
-	TBuilder HostLogger(Func<IServiceProvider, IHostLogger> hostLogger, bool force = false);
+	TBuilder HostLogger(Func<IServiceProvider, IHostLogger> hostLogger, bool force = true);
 
-	TBuilder HandlerLogger(Func<IServiceProvider, IHandlerLogger> handlerLogger, bool force = false);
+	TBuilder HandlerLogger(Func<IServiceProvider, IHandlerLogger> handlerLogger, bool force = true);
 
-	TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = false);
+	TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = true);
 
-	TBuilder EventBodyProvider(IMessageBodyProvider eventBodyProvider, bool force = false);
+	TBuilder EventBodyProvider(IMessageBodyProvider eventBodyProvider, bool force = true);
 
-	TBuilder AddEventHandlerType(IEventHandlerType eventHandlerType, bool force = false);
+	TBuilder AddEventHandlerType(IEventHandlerType eventHandlerType, bool force = true);
 
-	TBuilder AddEventHandlerTypes(IEnumerable<IEventHandlerType> eventHandlerTypes, bool force = false);
+	TBuilder AddEventHandlerTypes(IEnumerable<IEventHandlerType> eventHandlerTypes, bool force = true);
 
-	TBuilder AddEventHandlerAssembly(IEventHandlersAssembly eventHandlersAssembly, bool force = false);
+	TBuilder AddEventHandlerAssembly(IEventHandlersAssembly eventHandlersAssembly, bool force = true);
 
-	TBuilder EventHandlerAssemblies(IEnumerable<IEventHandlersAssembly> eventHandlerAssemblies, bool force = false);
+	TBuilder EventHandlerAssemblies(IEnumerable<IEventHandlersAssembly> eventHandlerAssemblies, bool force = true);
 }
 
 public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEventBusConfigurationBuilder<TBuilder, TObject>
@@ -74,7 +74,7 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 		return _eventBusConfiguration;
 	}
 
-	public TBuilder EventBusName(string eventBusName, bool force = false)
+	public TBuilder EventBusName(string eventBusName, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -85,7 +85,7 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 		return _builder;
 	}
 
-	public TBuilder EventTypeResolver(IMessageTypeResolver eventTypeResolver, bool force = false)
+	public TBuilder EventTypeResolver(IMessageTypeResolver eventTypeResolver, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -96,7 +96,7 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 		return _builder;
 	}
 
-	public TBuilder HostLogger(Func<IServiceProvider, IHostLogger> hostLogger, bool force = false)
+	public TBuilder HostLogger(Func<IServiceProvider, IHostLogger> hostLogger, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -107,7 +107,7 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 		return _builder;
 	}
 
-	public TBuilder HandlerLogger(Func<IServiceProvider, IHandlerLogger> handlerLogger, bool force = false)
+	public TBuilder HandlerLogger(Func<IServiceProvider, IHandlerLogger> handlerLogger, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -118,7 +118,7 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 		return _builder;
 	}
 
-	public TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = false)
+	public TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -129,7 +129,7 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 		return _builder;
 	}
 
-	public TBuilder EventBodyProvider(IMessageBodyProvider? eventBodyProvider, bool force = false)
+	public TBuilder EventBodyProvider(IMessageBodyProvider? eventBodyProvider, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -140,7 +140,7 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 		return _builder;
 	}
 
-	public TBuilder AddEventHandlerType(IEventHandlerType eventHandlerType, bool force = false)
+	public TBuilder AddEventHandlerType(IEventHandlerType eventHandlerType, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -156,7 +156,7 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 		return _builder;
 	}
 
-	public TBuilder AddEventHandlerTypes(IEnumerable<IEventHandlerType> eventHandlerTypes, bool force = false)
+	public TBuilder AddEventHandlerTypes(IEnumerable<IEventHandlerType> eventHandlerTypes, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -170,7 +170,7 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 		return _builder;
 	}
 
-	public TBuilder AddEventHandlerAssembly(IEventHandlersAssembly eventHandlersAssembly, bool force = false)
+	public TBuilder AddEventHandlerAssembly(IEventHandlersAssembly eventHandlersAssembly, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -186,7 +186,7 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 		return _builder;
 	}
 
-	public TBuilder EventHandlerAssemblies(IEnumerable<IEventHandlersAssembly> eventHandlerAssemblies, bool force = false)
+	public TBuilder EventHandlerAssemblies(IEnumerable<IEventHandlersAssembly> eventHandlerAssemblies, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -235,7 +235,7 @@ public class EventBusConfigurationBuilder : EventBusConfigurationBuilderBase<Eve
 			//.EventHandlerAssemblies()
 			//.EventBusName(null)
 			//.EventBodyProvider(null)
-			.HostLogger(sp => new HostLogger(sp.GetRequiredService<ILogger<HostLogger>>()))
-			.HandlerLogger(sp => new HandlerLogger(sp.GetRequiredService<ILogger<HandlerLogger>>()))
+			.HostLogger(sp => new DefaultHostLogger(sp.GetRequiredService<ILogger<DefaultHostLogger>>()))
+			.HandlerLogger(sp => new DefaultHandlerLogger(sp.GetRequiredService<ILogger<DefaultHandlerLogger>>()))
 			.MessageHandlerResultFactory(sp => new MessageHandlerResultFactory());
 }

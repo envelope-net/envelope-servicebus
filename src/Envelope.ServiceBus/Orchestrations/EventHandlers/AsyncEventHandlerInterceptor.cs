@@ -13,7 +13,7 @@
 
 //	//public override async Task<IResult> InterceptHandleAsync(TEvent message, OrchestrationEventHandlerContext handlerContext, Func<TEvent, OrchestrationEventHandlerContext, CancellationToken, Task<IResult>> next, CancellationToken cancellationToken)
 //	//{
-//	//	var result = await base.InterceptHandleAsync(message, handlerContext, next, cancellationToken);
+//	//	var result = await base.InterceptHandleAsync(message, handlerContext, next, cancellationToken).ConfigureAwait(false);
 //	//	return result;
 //	//}
 //}

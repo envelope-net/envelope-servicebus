@@ -24,6 +24,4 @@ public interface IMessageBusConfiguration : IValidable
 	List<IMessageHandlerType> MessageHandlerTypes { get; set; }
 
 	List<IMessageHandlersAssembly> MessageHandlerAssemblies { get; set; }
-
-	IMessageBusOptions BuildOptions(IServiceProvider serviceProvider);
 }

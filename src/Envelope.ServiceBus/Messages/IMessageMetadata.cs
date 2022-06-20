@@ -51,6 +51,8 @@ public interface IMessageMetadata : IMessageInfo
 
 	bool ContainsContent { get; }
 
+	bool HasSelfContent { get; set; }
+
 	int Priority { get; }
 
 	IEnumerable<KeyValuePair<string, object>>? Headers { get; }
@@ -64,4 +66,6 @@ public interface IMessageMetadata : IMessageInfo
 	IErrorHandlingController? ErrorHandling { get; }
 
 	DateTime? DelayedToUtc { get; }
+
+	internal void Update(bool processed, MessageStatus status, int retryCount, DateTime? delayedToUtc);
 }

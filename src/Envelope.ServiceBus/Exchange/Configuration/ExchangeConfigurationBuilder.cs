@@ -20,7 +20,7 @@ public interface IExchangeConfigurationBuilder<TBuilder, TObject, TMessage>
 
 	TObject Build(bool finalize = false);
 
-	TBuilder ExchangeName(string exchangeName, bool force = false);
+	TBuilder ExchangeName(string exchangeName, bool force = true);
 
 	TBuilder QueueType(QueueType queueType);
 
@@ -28,21 +28,21 @@ public interface IExchangeConfigurationBuilder<TBuilder, TObject, TMessage>
 
 	TBuilder FetchInterval(TimeSpan fetchInterval);
 
-	TBuilder MaxSize(int? maxSize, bool force = false);
+	TBuilder MaxSize(int? maxSize, bool force = true);
 
-	TBuilder ExchangeMessageFactory(Func<IServiceProvider, IExchangeMessageFactory<TMessage>> exchangeMessageFactory, bool force = false);
+	TBuilder ExchangeMessageFactory(Func<IServiceProvider, IExchangeMessageFactory<TMessage>> exchangeMessageFactory, bool force = true);
 
-	TBuilder MessageBrokerHandler(Func<IServiceProvider, IMessageBrokerHandler<TMessage>> messageBrokerHandler, bool force = false);
+	TBuilder MessageBrokerHandler(Func<IServiceProvider, IMessageBrokerHandler<TMessage>> messageBrokerHandler, bool force = true);
 
-	TBuilder FIFOQueue(Func<IServiceProvider, IQueue> fifoQueue, bool force = false);
+	TBuilder FIFOQueue(Func<IServiceProvider, int?, IQueue<IExchangeMessage<TMessage>>> fifoQueue, bool force = true);
 
-	TBuilder DelayableQueue(Func<IServiceProvider, IQueue> delayableQueue, bool force = false);
+	TBuilder DelayableQueue(Func<IServiceProvider, int?, IQueue<IExchangeMessage<TMessage>>> delayableQueue, bool force = true);
 
-	TBuilder MessageBodyProvider(Func<IServiceProvider, IMessageBodyProvider> messageBodyProvider, bool force = false);
+	TBuilder MessageBodyProvider(Func<IServiceProvider, IMessageBodyProvider> messageBodyProvider, bool force = true);
 
-	TBuilder Router(Func<IServiceProvider, IExhcangeRouter> router, bool force = false);
+	TBuilder Router(Func<IServiceProvider, IExhcangeRouter> router, bool force = true);
 
-	TBuilder ErrorHandling(Func<IServiceProvider, IErrorHandlingController>? errorHandling, bool force = false);
+	TBuilder ErrorHandling(Func<IServiceProvider, IErrorHandlingController>? errorHandling, bool force = true);
 }
 
 public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessage> : IExchangeConfigurationBuilder<TBuilder, TObject, TMessage>
@@ -80,7 +80,7 @@ public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessa
 		return _exchangeConfiguration;
 	}
 
-	public TBuilder ExchangeName(string exchangeName, bool force = false)
+	public TBuilder ExchangeName(string exchangeName, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -118,7 +118,7 @@ public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessa
 		return _builder;
 	}
 
-	public TBuilder MaxSize(int? maxSize, bool force = false)
+	public TBuilder MaxSize(int? maxSize, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -129,7 +129,7 @@ public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessa
 		return _builder;
 	}
 
-	public TBuilder ExchangeMessageFactory(Func<IServiceProvider, IExchangeMessageFactory<TMessage>> exchangeMessageFactory, bool force = false)
+	public TBuilder ExchangeMessageFactory(Func<IServiceProvider, IExchangeMessageFactory<TMessage>> exchangeMessageFactory, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -140,7 +140,7 @@ public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessa
 		return _builder;
 	}
 
-	public TBuilder MessageBrokerHandler(Func<IServiceProvider, IMessageBrokerHandler<TMessage>> messageBrokerHandler, bool force = false)
+	public TBuilder MessageBrokerHandler(Func<IServiceProvider, IMessageBrokerHandler<TMessage>> messageBrokerHandler, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -151,7 +151,7 @@ public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessa
 		return _builder;
 	}
 
-	public TBuilder FIFOQueue(Func<IServiceProvider, IQueue> fifoQueue, bool force = false)
+	public TBuilder FIFOQueue(Func<IServiceProvider, int?, IQueue<IExchangeMessage<TMessage>>> fifoQueue, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -162,7 +162,7 @@ public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessa
 		return _builder;
 	}
 
-	public TBuilder DelayableQueue(Func<IServiceProvider, IQueue> delayableQueue, bool force = false)
+	public TBuilder DelayableQueue(Func<IServiceProvider, int?, IQueue<IExchangeMessage<TMessage>>> delayableQueue, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -173,7 +173,7 @@ public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessa
 		return _builder;
 	}
 
-	public TBuilder MessageBodyProvider(Func<IServiceProvider, IMessageBodyProvider> messageBodyProvider, bool force = false)
+	public TBuilder MessageBodyProvider(Func<IServiceProvider, IMessageBodyProvider> messageBodyProvider, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -184,7 +184,7 @@ public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessa
 		return _builder;
 	}
 
-	public TBuilder Router(Func<IServiceProvider, IExhcangeRouter> router, bool force = false)
+	public TBuilder Router(Func<IServiceProvider, IExhcangeRouter> router, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -195,7 +195,7 @@ public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessa
 		return _builder;
 	}
 
-	public TBuilder ErrorHandling(Func<IServiceProvider, IErrorHandlingController>? errorHandling, bool force = false)
+	public TBuilder ErrorHandling(Func<IServiceProvider, IErrorHandlingController>? errorHandling, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -236,7 +236,7 @@ public class ExchangeConfigurationBuilder<TMessage> : ExchangeConfigurationBuild
 		return new ExchangeConfigurationBuilder<TMessage>(exchangeConfiguration);
 	}
 
-	internal static ExchangeConfigurationBuilder<TMessage> GetDefaultBuilder(
+	public static ExchangeConfigurationBuilder<TMessage> GetDefaultBuilder(
 		IServiceBusOptions serviceBusOptions,
 		Action<ExchangeRouterBuilder>? configureBindings = null)
 	{
@@ -253,8 +253,8 @@ public class ExchangeConfigurationBuilder<TMessage> : ExchangeConfigurationBuild
 				//.ErrorHandling(sp => null)
 				.ExchangeMessageFactory(sp => new ExchangeMessageFactory<TMessage>())
 				.MessageBrokerHandler(sp => new MessageBrokerHandler<TMessage>())
-				.FIFOQueue(sp => new InMemoryFIFOQueue())
-				.DelayableQueue(sp => new InMemoryDelayableQueue())
+				.FIFOQueue((sp, maxSize) => new InMemoryFIFOQueue<IExchangeMessage<TMessage>>(maxSize))
+				.DelayableQueue((sp, maxSize) => new InMemoryDelayableQueue<IExchangeMessage<TMessage>>(maxSize))
 				.FetchInterval(TimeSpan.FromMilliseconds(1))
 				.MessageBodyProvider(sp => new InMemoryMessageBodyProvider(TimeSpan.FromMinutes(1)))
 				.Router(sp => exchangeRouter);

@@ -9,7 +9,7 @@ internal class ParallelStepBody : ISyncStepBody, IStepBody
 	public IExecutionResult Run(IStepExecutionContext context)
 	{
 		var branchIds = context.Step.Branches.Select(x => x.Value.IdStep).ToList();
-		var finalizedBranchesCount = context.Orchestration.FinalizedBranches.Count(x => branchIds.Contains(x.IdStep));
+		var finalizedBranchesCount = context.FinalizedBrancheIds.Count(x => branchIds.Contains(x));
 		var allBranchesCompleted = branchIds.Count == finalizedBranchesCount;
 
 		if (finalizedBranchesCount == 0)

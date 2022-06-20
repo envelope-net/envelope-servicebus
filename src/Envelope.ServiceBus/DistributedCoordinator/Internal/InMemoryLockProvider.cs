@@ -3,9 +3,6 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Envelope.ServiceBus.DistributedCoordinator.Internal;
 
-/// <summary>
-/// In-memory implementation of <see cref="IDistributedLockProvider"/>
-/// </summary>
 internal class InMemoryLockProvider : IDistributedLockProvider
 {
 	private readonly AsyncLock _locker = new();

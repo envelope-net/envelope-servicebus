@@ -1,5 +1,6 @@
 ﻿using Envelope.ServiceBus.ErrorHandling;
 using Envelope.ServiceBus.Messages;
+using Envelope.ServiceBus.Queues;
 using Envelope.Trace;
 using System.Text;
 
@@ -38,4 +39,8 @@ internal class ExchangeEnqueueContext : IExchangeEnqueueContext
 	public int Priority { get; set; }
 
 	public bool DisableFaultQueue { get; set; }
+
+	public bool CallExchangeOnMessage { get; set; }
+
+	public IMessageQueue? OnMessageQueue { get; set; }
 }

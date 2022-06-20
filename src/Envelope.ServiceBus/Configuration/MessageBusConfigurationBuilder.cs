@@ -19,25 +19,25 @@ public interface IMessageBusConfigurationBuilder<TBuilder, TObject>
 
 	TObject Build(bool finalize = false);
 
-	TBuilder MessageBusName(string messageBusName, bool force = false);
+	TBuilder MessageBusName(string messageBusName, bool force = true);
 
-	TBuilder HostLogger(Func<IServiceProvider, IHostLogger> hostLogger, bool force = false);
+	TBuilder HostLogger(Func<IServiceProvider, IHostLogger> hostLogger, bool force = true);
 
-	TBuilder MessageTypeResolver(IMessageTypeResolver messageTypeResolver, bool force = false);
+	TBuilder MessageTypeResolver(IMessageTypeResolver messageTypeResolver, bool force = true);
 
-	TBuilder HandlerLogger(Func<IServiceProvider, IHandlerLogger> handlerLogger, bool force = false);
+	TBuilder HandlerLogger(Func<IServiceProvider, IHandlerLogger> handlerLogger, bool force = true);
 
-	TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = false);
+	TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = true);
 
-	TBuilder MessageBodyProvider(IMessageBodyProvider messageBodyProvider, bool force = false);
+	TBuilder MessageBodyProvider(IMessageBodyProvider messageBodyProvider, bool force = true);
 
-	TBuilder AddMessageHandlerType(IMessageHandlerType messageHandlerType, bool force = false);
+	TBuilder AddMessageHandlerType(IMessageHandlerType messageHandlerType, bool force = true);
 
-	TBuilder AddMessageHandlerTypes(IEnumerable<IMessageHandlerType> messageHandlerTypes, bool force = false);
+	TBuilder AddMessageHandlerTypes(IEnumerable<IMessageHandlerType> messageHandlerTypes, bool force = true);
 
-	TBuilder AddMessageHandlerAssembly(IMessageHandlersAssembly messageHandlersAssembly, bool force = false);
+	TBuilder AddMessageHandlerAssembly(IMessageHandlersAssembly messageHandlersAssembly, bool force = true);
 
-	TBuilder MessageHandlerAssemblies(IEnumerable<IMessageHandlersAssembly> messageHandlerAssemblies, bool force = false);
+	TBuilder MessageHandlerAssemblies(IEnumerable<IMessageHandlersAssembly> messageHandlerAssemblies, bool force = true);
 }
 
 public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IMessageBusConfigurationBuilder<TBuilder, TObject>
@@ -74,7 +74,7 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 		return _messageBusConfiguration;
 	}
 
-	public TBuilder MessageBusName(string messageBusName, bool force = false)
+	public TBuilder MessageBusName(string messageBusName, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -85,7 +85,7 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 		return _builder;
 	}
 
-	public TBuilder MessageTypeResolver(IMessageTypeResolver messageTypeResolver, bool force = false)
+	public TBuilder MessageTypeResolver(IMessageTypeResolver messageTypeResolver, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -96,7 +96,7 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 		return _builder;
 	}
 
-	public TBuilder HostLogger(Func<IServiceProvider, IHostLogger> hostLogger, bool force = false)
+	public TBuilder HostLogger(Func<IServiceProvider, IHostLogger> hostLogger, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -107,7 +107,7 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 		return _builder;
 	}
 
-	public TBuilder HandlerLogger(Func<IServiceProvider, IHandlerLogger> handlerLogger, bool force = false)
+	public TBuilder HandlerLogger(Func<IServiceProvider, IHandlerLogger> handlerLogger, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -118,7 +118,7 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 		return _builder;
 	}
 
-	public TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = false)
+	public TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -129,7 +129,7 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 		return _builder;
 	}
 
-	public TBuilder MessageBodyProvider(IMessageBodyProvider? messageBodyProvider, bool force = false)
+	public TBuilder MessageBodyProvider(IMessageBodyProvider? messageBodyProvider, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -140,7 +140,7 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 		return _builder;
 	}
 
-	public TBuilder AddMessageHandlerType(IMessageHandlerType messageHandlerType, bool force = false)
+	public TBuilder AddMessageHandlerType(IMessageHandlerType messageHandlerType, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -156,7 +156,7 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 		return _builder;
 	}
 
-	public TBuilder AddMessageHandlerTypes(IEnumerable<IMessageHandlerType> messageHandlerTypes, bool force = false)
+	public TBuilder AddMessageHandlerTypes(IEnumerable<IMessageHandlerType> messageHandlerTypes, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -170,7 +170,7 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 		return _builder;
 	}
 
-	public TBuilder AddMessageHandlerAssembly(IMessageHandlersAssembly messageHandlersAssembly, bool force = false)
+	public TBuilder AddMessageHandlerAssembly(IMessageHandlersAssembly messageHandlersAssembly, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -186,7 +186,7 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 		return _builder;
 	}
 
-	public TBuilder MessageHandlerAssemblies(IEnumerable<IMessageHandlersAssembly> messageHandlerAssemblies, bool force = false)
+	public TBuilder MessageHandlerAssemblies(IEnumerable<IMessageHandlersAssembly> messageHandlerAssemblies, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -236,7 +236,7 @@ public class MessageBusConfigurationBuilder : MessageBusConfigurationBuilderBase
 			//.MessageBusName(null)
 			//.MessageHandlerContextFactory(null)
 			//.MessageBodyProvider(null)
-			.HostLogger(sp => new HostLogger(sp.GetRequiredService<ILogger<HostLogger>>()))
-			.HandlerLogger(sp => new HandlerLogger(sp.GetRequiredService<ILogger<HandlerLogger>>()))
+			.HostLogger(sp => new DefaultHostLogger(sp.GetRequiredService<ILogger<DefaultHostLogger>>()))
+			.HandlerLogger(sp => new DefaultHandlerLogger(sp.GetRequiredService<ILogger<DefaultHandlerLogger>>()))
 			.MessageHandlerResultFactory(sp => new MessageHandlerResultFactory());
 }

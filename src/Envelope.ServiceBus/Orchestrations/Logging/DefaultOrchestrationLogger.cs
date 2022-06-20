@@ -4,13 +4,13 @@ using Envelope.Trace;
 using Envelope.Transactions;
 using Microsoft.Extensions.Logging;
 
-namespace Envelope.ServiceBus.Orchestrations.Logging.Internal;
+namespace Envelope.ServiceBus.Orchestrations.Logging;
 
-internal class OrchestrationLogger : IOrchestrationLogger
+public class DefaultOrchestrationLogger : IOrchestrationLogger
 {
 	private readonly ILogger _logger;
 
-	public OrchestrationLogger(ILogger<OrchestrationLogger> logger)
+	public DefaultOrchestrationLogger(ILogger<DefaultOrchestrationLogger> logger)
 	{
 		_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
@@ -68,7 +68,7 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionContext? transactionContext= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);
@@ -83,7 +83,7 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionContext? transactionContext= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);
@@ -98,7 +98,7 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionContext? transactionContext= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);
@@ -113,7 +113,7 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionContext? transactionContext= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);
@@ -128,7 +128,7 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionContext? transactionContext= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);
@@ -143,7 +143,7 @@ internal class OrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionContext? transactionContext= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);

@@ -1,34 +1,36 @@
 ﻿using Envelope.ServiceBus.Messages;
 using Envelope.Services;
 using Envelope.Trace;
+using Envelope.Transactions;
 
 namespace Envelope.ServiceBus.Queues.Internal;
 
-internal class InMemoryDelayableQueue : IQueue, IDisposable
+internal class InMemoryDelayableQueue<T> : IQueue<T>, IDisposable
+	where T : IMessageMetadata
 {
 	private readonly object _lock = new();
 
 	private bool disposed;
 	private int _size;
-	private IMessageMetadata[] _messages;
-
-	/// <inheritdoc/>
-	public int Count => _size;
+	private T[] _messages;
 
 	/// <inheritdoc/>
 	public int? MaxSize { get; set; }
 
 	public InMemoryDelayableQueue(int? maxSize = null)
 	{
-		_messages = Array.Empty<IMessageMetadata>();
+		_messages = Array.Empty<T>();
 		MaxSize = maxSize;
 	}
 
+	public Task<IResult<int>> GetCountAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+		=> Task.FromResult(new ResultBuilder<int>().WithData(_size).Build());
+
 	/// <inheritdoc/>
-	public Task<IResult> EnqueueAsync(List<IMessageMetadata> messagesMetadata, ITraceInfo traceInfo)
+	public Task<IResult> EnqueueAsync(List<T> messagesMetadata, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
-		var result = new ResultBuilder<Guid>();
+		var result = new ResultBuilder();
 
 		if (messagesMetadata == null)
 			return Task.FromResult((IResult)result.WithArgumentNullException(traceInfo, nameof(messagesMetadata)));
@@ -58,10 +60,10 @@ internal class InMemoryDelayableQueue : IQueue, IDisposable
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult> TryRemoveAsync(IMessageMetadata messageMetadata, ITraceInfo traceInfo)
+	public Task<IResult> TryRemoveAsync(T messageMetadata, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
-		var result = new ResultBuilder<Guid>();
+		var result = new ResultBuilder();
 
 		if (messageMetadata == null)
 			return Task.FromResult((IResult)result.WithArgumentNullException(traceInfo, nameof(messageMetadata)));
@@ -100,11 +102,36 @@ internal class InMemoryDelayableQueue : IQueue, IDisposable
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult<IMessageMetadata?>> TryPeekAsync(ITraceInfo traceInfo)
+	public Task<IResult<QueueStatus>> UpdateAsync(T messageMetadata, IMessageMetadataUpdate update, ITraceInfo traceInfo, ITransactionContext localTransactionContext, CancellationToken cancellationToken = default)
 	{
-		var result = new ResultBuilder<IMessageMetadata?>();
+		var result = new ResultBuilder<QueueStatus>();
 
-		IMessageMetadata? messageMetadata = null;
+		if (messageMetadata == null)
+			return Task.FromResult(result.WithArgumentNullException(traceInfo, nameof(messageMetadata)));
+
+		if (update == null)
+			return Task.FromResult(result.WithArgumentNullException(traceInfo, nameof(update)));
+
+		if (messageMetadata.MessageId != update.MessageId)
+			return Task.FromResult(result.WithInvalidOperationException(traceInfo, $"{nameof(messageMetadata.MessageId)} != {nameof(update)}.{nameof(update.MessageId)} | {messageMetadata.MessageId} != {update.MessageId}"));
+
+		messageMetadata.Update(update.Processed, update.MessageStatus, update.RetryCount, update.DelayedToUtc);
+
+		return
+			Task.FromResult(
+				result
+					.WithData((update.MessageStatus == MessageStatus.Suspended || update.MessageStatus == MessageStatus.Aborted)
+						? QueueStatus.Suspended
+						: QueueStatus.Running)
+					.Build());
+	}
+
+	/// <inheritdoc/>
+	public Task<IResult<T?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	{
+		var result = new ResultBuilder<T?>();
+
+		T? messageMetadata = default;
 
 		if (_size == 0)
 			return Task.FromResult(result.WithData(messageMetadata).Build());
@@ -145,7 +172,7 @@ internal class InMemoryDelayableQueue : IQueue, IDisposable
 	{
 		lock (_lock)
 		{
-			_messages = Array.Empty<IMessageMetadata>();
+			_messages = Array.Empty<T>();
 			_size = 0;
 		}
 	}

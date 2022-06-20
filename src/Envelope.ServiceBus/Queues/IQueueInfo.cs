@@ -1,4 +1,7 @@
-﻿namespace Envelope.ServiceBus.Queues;
+﻿using Envelope.Trace;
+using Envelope.Transactions;
+
+namespace Envelope.ServiceBus.Queues;
 
 public interface IQueueInfo
 {
@@ -18,17 +21,21 @@ public interface IQueueInfo
 	bool IsPersistent { get; }
 
 	/// <summary>
-	///  Gets the number of elements contained in the queue.
-	/// </summary>
-	long Count { get; }
-
-	/// <summary>
 	/// Sequntial or Parallel queue
 	/// </summary>
 	QueueType QueueType { get; }
+
+	QueueStatus QueueStatus { get; }
 
 	/// <summary>
 	/// Queue's max size
 	/// </summary>
 	int? MaxSize { get; }
+
+
+	/// <summary>
+	///  Gets the number of elements contained in the queue.
+	/// </summary>
+	Task<int> GetCountAsync(ITraceInfo traceInfo, ITransactionManagerFactory transactionManagerFactory, CancellationToken cancellationToken = default);
+
 }

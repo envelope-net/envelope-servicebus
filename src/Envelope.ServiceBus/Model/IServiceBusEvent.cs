@@ -4,4 +4,5 @@ namespace Envelope.ServiceBus.Model;
 
 public interface IServiceBusEvent : IEvent
 {
+	IMessageMetadata? Message { get; }
 }

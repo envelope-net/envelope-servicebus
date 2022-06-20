@@ -1,4 +1,5 @@
 ﻿using Envelope.ServiceBus.Messages;
+using Envelope.ServiceBus.Queues;
 using Envelope.Services;
 
 namespace Envelope.ServiceBus.MessageHandlers;
@@ -8,6 +9,8 @@ public class MessageHandlerResult
 	public DateTime CreatedUtc { get; }
 
 	public bool Processed { get; internal set; }
+
+	public IMessageQueue? OnMessageQueue { get; internal set; }
 
 	public MessageStatus MessageStatus { get; internal set; }
 

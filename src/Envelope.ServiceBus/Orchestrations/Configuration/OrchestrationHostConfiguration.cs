@@ -1,7 +1,9 @@
 ﻿using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.DistributedCoordinator;
-using Envelope.ServiceBus.Orchestrations.Persistence;
+using Envelope.ServiceBus.Orchestrations.Execution;
+using Envelope.ServiceBus.Orchestrations.Logging;
 using Envelope.Text;
+using Envelope.Transactions;
 using Envelope.Validation;
 using System.Text;
 
@@ -11,10 +13,14 @@ public class OrchestrationHostConfiguration : IOrchestrationHostConfiguration, I
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-	public string HostName { get; set; }
 	public bool RegisterAsHostedService { get; set; }
-	public Func<IServiceProvider, IOrchestrationRepository> OrchestrationRepositoryFactory { get; set; }
+	public ITransactionManagerFactory TransactionManagerFactory { get; set; }
+	public Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
+	public Func<IServiceProvider, IOrchestrationRegistry> OrchestrationRegistry { get; set; }
+	public Func<IServiceProvider, IExecutionPointerFactory> ExecutionPointerFactory { get; set; }
+	public Func<IServiceProvider, IOrchestrationRegistry, IOrchestrationRepository> OrchestrationRepositoryFactory { get; set; }
 	public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; set; }
+	public Func<IServiceProvider, IOrchestrationLogger> OrchestrationLogger { get; set; }
 	public Func<IServiceProvider, IEventPublisher>? EventPublisherFactory { get; set; }
 	public ErrorHandlerConfigurationBuilder ErrorHandlerConfigurationBuilder { get; set; }
 
@@ -22,12 +28,36 @@ public class OrchestrationHostConfiguration : IOrchestrationHostConfiguration, I
 
 	public StringBuilder? Validate(string? propertyPrefix = null, StringBuilder? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
 	{
-		if (string.IsNullOrWhiteSpace(HostName))
+		if (TransactionManagerFactory == null)
 		{
 			if (parentErrorBuffer == null)
 				parentErrorBuffer = new StringBuilder();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HostName))} == null");
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionManagerFactory))} == null");
+		}
+
+		if (TransactionContextFactory == null)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new StringBuilder();
+
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionContextFactory))} == null");
+		}
+
+		if (OrchestrationRegistry == null)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new StringBuilder();
+
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(OrchestrationRegistry))} == null");
+		}
+
+		if (ExecutionPointerFactory == null)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new StringBuilder();
+
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ExecutionPointerFactory))} == null");
 		}
 
 		if (OrchestrationRepositoryFactory == null)
@@ -44,6 +74,14 @@ public class OrchestrationHostConfiguration : IOrchestrationHostConfiguration, I
 				parentErrorBuffer = new StringBuilder();
 
 			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DistributedLockProviderFactory))} == null");
+		}
+
+		if (OrchestrationLogger == null)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new StringBuilder();
+
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(OrchestrationLogger))} == null");
 		}
 
 		if (ErrorHandlerConfigurationBuilder == null)
