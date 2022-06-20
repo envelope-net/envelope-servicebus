@@ -4,11 +4,11 @@ public interface IMessageMetadataUpdate
 {
 	Guid MessageId { get; }
 
-	bool Processed { get; set; }
+	bool Processed { get; }
 
-	MessageStatus MessageStatus { get; set; }
+	MessageStatus MessageStatus { get; }
 
-	int RetryCount { get; set; }
+	int RetryCount { get; }
 
-	DateTime? DelayedToUtc { get; set; }
+	DateTime? DelayedToUtc { get; }
 }

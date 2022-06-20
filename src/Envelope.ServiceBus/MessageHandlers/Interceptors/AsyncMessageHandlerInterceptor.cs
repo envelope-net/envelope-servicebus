@@ -6,6 +6,7 @@ using Envelope.Logging;
 using Envelope.Logging.Extensions;
 using Envelope.Trace;
 using Envelope.ServiceBus.Messages;
+using Envelope.Extensions;
 
 namespace Envelope.ServiceBus.MessageHandlers.Interceptors;
 
@@ -46,11 +47,11 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 		try
 		{
 			//if (handlerOptions.LogMessageEntry)
-			//	await LogHandlerEntryAsync(cancellationToken);
+			//	await LogHandlerEntryAsync(cancellationToken).ConfigureAwait(false);
 
 			try
 			{
-				var executeResult = await next(message!, handlerContext, cancellationToken);
+				var executeResult = await next(message!, handlerContext, cancellationToken).ConfigureAwait(false);
 				if (executeResult == null)
 					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse>).FullName}");
 
@@ -70,7 +71,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 					}
 
 					if (handlerContext.TransactionContext != null)
-						await handlerContext.TransactionContext.TryRollbackAsync(result.ToException(), cancellationToken);
+						handlerContext.TransactionContext.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 
 				callEndTicks = StaticWatch.CurrentTicks;
@@ -82,7 +83,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 				methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
 				if (handlerContext.TransactionContext != null)
-					await handlerContext.TransactionContext.TryRollbackAsync(executeEx, cancellationToken);
+					handlerContext.TransactionContext.ScheduleRollback(executeEx.ToStringTrace());
 
 				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
@@ -109,7 +110,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 			//finally
 			//{
 			//	if (handlerOptions.LogCommandEntry && commandEntryLogger != null && commandEntry != null && startTicks.HasValue)
-			//		await LogHandlerExitAsync(cancellationToken);
+			//		await LogHandlerExitAsync(cancellationToken).ConfigureAwait(false);
 			//}
 		}
 		catch (Exception interEx)

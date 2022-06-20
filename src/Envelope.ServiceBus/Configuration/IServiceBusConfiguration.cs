@@ -1,20 +1,30 @@
 ﻿using Envelope.ServiceBus.Exchange.Configuration;
+using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Hosts.Logging;
 using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Logging;
 using Envelope.ServiceBus.Messages.Resolvers;
+using Envelope.ServiceBus.Orchestrations.Model;
+using Envelope.ServiceBus.Queues;
 using Envelope.ServiceBus.Queues.Configuration;
+using Envelope.Transactions;
 using Envelope.Validation;
 
 namespace Envelope.ServiceBus.Configuration;
 
 public interface IServiceBusConfiguration : IValidable
 {
+	IHostInfo HostInfo { get; set; }
+
 	string ServiceBusName { get; set; }
 
 	Func<IServiceProvider, IMessageTypeResolver> MessageTypeResolver { get; set; }
 
 	Func<IServiceProvider, IHostLogger> HostLogger { get; set; }
+
+	Func<IServiceProvider, ITransactionManagerFactory> TransactionManagerFactory { get; set; }
+
+	Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
 
 	Action<ExchangeProviderConfigurationBuilder> ExchangeProviderConfiguration { get; set; }
 
@@ -26,9 +36,11 @@ public interface IServiceBusConfiguration : IValidable
 
 	Func<IServiceProvider, IHandlerLogger> HandlerLogger { get; set; }
 
-	Func<IServiceProvider, IMessageHandlerResultFactory> MessageHandlerResultFactory { get; set; }
-
 	List<ServiceBusEventHandler> ServiceBusEventHandlers { get; }
 
-	IServiceBusOptions BuildOptions(IServiceProvider serviceProvider);
+	Func<IServiceProvider, IFaultQueue>? OrchestrationEventsFaultQueue { get; set; }
+	
+	Action<ExchangeConfigurationBuilder<OrchestrationEvent>>? OrchestrationExchange { get; set; }
+
+	Action<MessageQueueConfigurationBuilder<OrchestrationEvent>>? OrchestrationQueue { get; set; }
 }

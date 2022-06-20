@@ -3,8 +3,7 @@ using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.ErrorHandling;
 using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Internal;
-using Envelope.Validation;
-using System.Text;
+using Envelope.ServiceBus.Queues.Internal;
 
 namespace Envelope.ServiceBus.Queues.Configuration;
 
@@ -17,7 +16,7 @@ public interface IMessageQueueConfigurationBuilder<TBuilder, TObject, TMessage>
 
 	TObject Build(bool finalize = false);
 
-	TBuilder QueueName(string queueName, bool force = false);
+	TBuilder QueueName(string queueName, bool force = true);
 
 	TBuilder QueueType(QueueType queueType);
 
@@ -27,15 +26,19 @@ public interface IMessageQueueConfigurationBuilder<TBuilder, TObject, TMessage>
 
 	TBuilder FetchInterval(TimeSpan fetchInterval);
 
-	TBuilder MaxSize(int? maxSize, bool force = false);
+	TBuilder MaxSize(int? maxSize, bool force = true);
 
-	TBuilder DefaultProcessingTimeout(TimeSpan? defaultProcessingTimeout, bool force = false);
+	TBuilder DefaultProcessingTimeout(TimeSpan? defaultProcessingTimeout, bool force = true);
 
-	TBuilder MessageBodyProvider(IMessageBodyProvider messageBodyProvider, bool force = false);
+	TBuilder FIFOQueue(Func<IServiceProvider, int?, IQueue<IQueuedMessage<TMessage>>> fifoQueue, bool force = true);
 
-	TBuilder MessageHandler(HandleMessage<TMessage>? messageHandler, bool force = false);
+	TBuilder DelayableQueue(Func<IServiceProvider, int?, IQueue<IQueuedMessage<TMessage>>> delayableQueue, bool force = true);
+
+	TBuilder MessageBodyProvider(Func<IServiceProvider, IMessageBodyProvider> messageBodyProvider, bool force = true);
+
+	TBuilder MessageHandler(Func<IServiceProvider, IServiceBusOptions, HandleMessage<TMessage>>? messageHandler, bool force = true);
 	
-	TBuilder ErrorHandling(IErrorHandlingController? errorHandling, bool force = false);
+	TBuilder ErrorHandling(Func<IServiceProvider, IErrorHandlingController>? errorHandling, bool force = true);
 }
 
 public abstract class MessageQueueConfigurationBuilderBase<TBuilder, TObject, TMessage> : IMessageQueueConfigurationBuilder<TBuilder, TObject, TMessage>
@@ -73,7 +76,7 @@ public abstract class MessageQueueConfigurationBuilderBase<TBuilder, TObject, TM
 		return _messageQueueConfiguration;
 	}
 
-	public TBuilder QueueName(string queueName, bool force = false)
+	public TBuilder QueueName(string queueName, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -120,7 +123,7 @@ public abstract class MessageQueueConfigurationBuilderBase<TBuilder, TObject, TM
 		return _builder;
 	}
 
-	public TBuilder MaxSize(int? maxSize, bool force = false)
+	public TBuilder MaxSize(int? maxSize, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -131,7 +134,7 @@ public abstract class MessageQueueConfigurationBuilderBase<TBuilder, TObject, TM
 		return _builder;
 	}
 
-	public TBuilder DefaultProcessingTimeout(TimeSpan? defaultProcessingTimeout, bool force = false)
+	public TBuilder DefaultProcessingTimeout(TimeSpan? defaultProcessingTimeout, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -142,7 +145,29 @@ public abstract class MessageQueueConfigurationBuilderBase<TBuilder, TObject, TM
 		return _builder;
 	}
 
-	public TBuilder MessageBodyProvider(IMessageBodyProvider messageBodyProvider, bool force = false)
+	public TBuilder FIFOQueue(Func<IServiceProvider, int?, IQueue<IQueuedMessage<TMessage>>> fifoQueue, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _messageQueueConfiguration.FIFOQueue == null)
+			_messageQueueConfiguration.FIFOQueue = fifoQueue;
+
+		return _builder;
+	}
+
+	public TBuilder DelayableQueue(Func<IServiceProvider, int?, IQueue<IQueuedMessage<TMessage>>> delayableQueue, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _messageQueueConfiguration.DelayableQueue == null)
+			_messageQueueConfiguration.DelayableQueue = delayableQueue;
+
+		return _builder;
+	}
+
+	public TBuilder MessageBodyProvider(Func<IServiceProvider, IMessageBodyProvider> messageBodyProvider, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -153,7 +178,7 @@ public abstract class MessageQueueConfigurationBuilderBase<TBuilder, TObject, TM
 		return _builder;
 	}
 
-	public TBuilder MessageHandler(HandleMessage<TMessage>? messageHandler, bool force = false)
+	public TBuilder MessageHandler(Func<IServiceProvider, IServiceBusOptions, HandleMessage<TMessage>>? messageHandler, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -164,7 +189,7 @@ public abstract class MessageQueueConfigurationBuilderBase<TBuilder, TObject, TM
 		return _builder;
 	}
 
-	public TBuilder ErrorHandling(IErrorHandlingController? errorHandling, bool force = false)
+	public TBuilder ErrorHandling(Func<IServiceProvider, IErrorHandlingController>? errorHandling, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -205,7 +230,7 @@ public class MessageQueueConfigurationBuilder<TMessage> : MessageQueueConfigurat
 		return new MessageQueueConfigurationBuilder<TMessage>(messageQueueConfiguration);
 	}
 
-	internal static MessageQueueConfigurationBuilder<TMessage> GetDefaultBuilder(IServiceBusOptions serviceBusOptions, HandleMessage<TMessage>? messageHandler)
+	public static MessageQueueConfigurationBuilder<TMessage> GetDefaultBuilder(IServiceBusOptions serviceBusOptions, HandleMessage<TMessage>? messageHandler)
 	{
 		var result =
 			new MessageQueueConfigurationBuilder<TMessage>(serviceBusOptions)
@@ -217,8 +242,10 @@ public class MessageQueueConfigurationBuilder<TMessage> : MessageQueueConfigurat
 				//.DefaultProcessingTimeout(null)
 				//.ErrorHandling(null)
 				.FetchInterval(TimeSpan.FromMilliseconds(1))
-				.MessageBodyProvider(new InMemoryMessageBodyProvider(TimeSpan.FromMinutes(1)))
-				.MessageHandler(messageHandler);
+				.FIFOQueue((sp, maxSize) => new InMemoryFIFOQueue<IQueuedMessage<TMessage>>(maxSize))
+				.DelayableQueue((sp, maxSize) => new InMemoryDelayableQueue<IQueuedMessage<TMessage>>(maxSize))
+				.MessageBodyProvider(sp => new InMemoryMessageBodyProvider(TimeSpan.FromMinutes(1)))
+				.MessageHandler(messageHandler != null ? ((sp, options) => messageHandler) : null);
 
 		return result;
 	}

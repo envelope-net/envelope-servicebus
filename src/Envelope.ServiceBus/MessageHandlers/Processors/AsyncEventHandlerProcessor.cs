@@ -52,7 +52,7 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 			throw;
 		}
 
-		var resultBuilder = new ResultBuilder<Guid>();
+		var resultBuilder = new ResultBuilder();
 		IResult? result = null;
 		foreach (var handler in handlers)
 		{
@@ -61,7 +61,7 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 				var interceptorType = handler.InterceptorType;
 				if (interceptorType == null)
 				{
-					result = await handler.HandleAsync(@event, handlerContext, cancellationToken);
+					result = await handler.HandleAsync(@event, handlerContext, cancellationToken).ConfigureAwait(false);
 				}
 				else
 				{
@@ -69,14 +69,14 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 					if (interceptor == null)
 						throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IAsyncEventHandlerInterceptor<TEvent, TContext>).FullName}");
 
-					result = await interceptor.InterceptHandleAsync(@event, handlerContext, handler.HandleAsync, cancellationToken);
+					result = await interceptor.InterceptHandleAsync(@event, handlerContext, handler.HandleAsync, cancellationToken).ConfigureAwait(false);
 				}
 
 				resultBuilder.Merge(result);
 			}
 			catch (Exception exHandler)
 			{
-				await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null, cancellationToken);
+				await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
 				throw;
 			}
 		}

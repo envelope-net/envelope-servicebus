@@ -12,8 +12,8 @@ public class ExchangeContext<TMessage>
 	private readonly IExchangeConfiguration<TMessage> _exchangeConfiguration;
 	private readonly Lazy<IExchangeMessageFactory<TMessage>> _exchangeMessageFactory;
 	private readonly Lazy<IMessageBrokerHandler<TMessage>> _messageBrokerHandler;
-	private readonly Lazy<IQueue> _fifoQueue;
-	private readonly Lazy<IQueue> _delayableQueue;
+	private readonly Lazy<IQueue<IExchangeMessage<TMessage>>> _fifoQueue;
+	private readonly Lazy<IQueue<IExchangeMessage<TMessage>>> _delayableQueue;
 	private readonly Lazy<IMessageBodyProvider> _messageBodyProvider;
 	private readonly Lazy<IExhcangeRouter> _router;
 	private readonly Lazy<IErrorHandlingController>? _errorHandling;
@@ -40,9 +40,9 @@ public class ExchangeContext<TMessage>
 
 	public IMessageBrokerHandler<TMessage> MessageBrokerHandler => _messageBrokerHandler.Value;
 
-	public IQueue FIFOQueue => _fifoQueue.Value;
+	public IQueue<IExchangeMessage<TMessage>> FIFOQueue => _fifoQueue.Value;
 
-	public IQueue DelayableQueue => _delayableQueue.Value;
+	public IQueue<IExchangeMessage<TMessage>> DelayableQueue => _delayableQueue.Value;
 
 	/// <inheritdoc/>
 	public IMessageBodyProvider MessageBodyProvider => _messageBodyProvider.Value;
@@ -54,14 +54,15 @@ public class ExchangeContext<TMessage>
 
 	public ExchangeContext(IExchangeConfiguration<TMessage> exchangeConfiguration)
 	{
-		ServiceBusOptions = exchangeConfiguration.ServiceBusOptions;
-		ExchangeName = exchangeConfiguration.ExchangeName;
-		QueueType = exchangeConfiguration.QueueType;
-		StartDelay = exchangeConfiguration.StartDelay;
-		FetchInterval = exchangeConfiguration.FetchInterval;
-		MaxSize = exchangeConfiguration.MaxSize;
-
 		_exchangeConfiguration = exchangeConfiguration ?? throw new ArgumentNullException(nameof(exchangeConfiguration));
+
+		ServiceBusOptions = _exchangeConfiguration.ServiceBusOptions;
+		ExchangeName = _exchangeConfiguration.ExchangeName;
+		QueueType = _exchangeConfiguration.QueueType;
+		StartDelay = _exchangeConfiguration.StartDelay;
+		FetchInterval = _exchangeConfiguration.FetchInterval;
+		MaxSize = _exchangeConfiguration.MaxSize;
+
 		_exchangeMessageFactory = new(() =>
 		{
 			var exchangeMessageFactory = _exchangeConfiguration.ExchangeMessageFactory(ServiceBusOptions.ServiceProvider);
@@ -80,7 +81,7 @@ public class ExchangeContext<TMessage>
 		});
 		_fifoQueue = new(() =>
 		{
-			var fifoQueue = _exchangeConfiguration.FIFOQueue(ServiceBusOptions.ServiceProvider);
+			var fifoQueue = _exchangeConfiguration.FIFOQueue(ServiceBusOptions.ServiceProvider, _exchangeConfiguration.MaxSize);
 			if (fifoQueue == null)
 				throw new InvalidOperationException(nameof(fifoQueue));
 
@@ -88,7 +89,7 @@ public class ExchangeContext<TMessage>
 		});
 		_delayableQueue = new(() =>
 		{
-			var delayableQueue = _exchangeConfiguration.DelayableQueue(ServiceBusOptions.ServiceProvider);
+			var delayableQueue = _exchangeConfiguration.DelayableQueue(ServiceBusOptions.ServiceProvider, _exchangeConfiguration.MaxSize);
 			if (delayableQueue == null)
 				throw new InvalidOperationException(nameof(delayableQueue));
 

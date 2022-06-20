@@ -43,13 +43,17 @@ public interface IMessageQueueConfiguration<TMessage> : IValidable
 	/// </summary>
 	TimeSpan? DefaultProcessingTimeout { get; set; }
 
+	Func<IServiceProvider, int?, IQueue<IQueuedMessage<TMessage>>> FIFOQueue { get; set; }
+
+	Func<IServiceProvider, int?, IQueue<IQueuedMessage<TMessage>>> DelayableQueue { get; set; }
+
 	/// <summary>
 	/// <see cref="IMessageBodyProvider"/> is responsible for message body saving
 	/// and loading, serialization, encryption and compression
 	/// </summary>
-	IMessageBodyProvider MessageBodyProvider { get; set; }
+	Func<IServiceProvider, IMessageBodyProvider> MessageBodyProvider { get; set; }
 
-	HandleMessage<TMessage>? MessageHandler { get; set; }
+	Func<IServiceProvider, IServiceBusOptions, HandleMessage<TMessage>>? MessageHandler { get; set; }
 
-	IErrorHandlingController? ErrorHandling { get; set; }
+	Func<IServiceProvider, IErrorHandlingController>? ErrorHandling { get; set; }
 }

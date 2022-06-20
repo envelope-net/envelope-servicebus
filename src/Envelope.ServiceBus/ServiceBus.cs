@@ -1,9 +1,14 @@
 ﻿using Envelope.ServiceBus.Configuration;
+using Envelope.ServiceBus.Exchange;
 using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Options;
+using Envelope.ServiceBus.Queues;
 using Envelope.Services;
+using Envelope.Services.Transactions;
 using Envelope.Trace;
+using Envelope.Transactions;
+using Microsoft.Extensions.DependencyInjection;
 using System.Runtime.CompilerServices;
 
 namespace Envelope.ServiceBus;
@@ -11,6 +16,12 @@ namespace Envelope.ServiceBus;
 internal class ServiceBus : IServiceBus
 {
 	private readonly IServiceBusOptions _options;
+
+	public ServiceBus(IServiceProvider serviceProvider, IServiceBusConfiguration configuration)
+	{
+		var options = ServiceBusOptionsFactory.Create(serviceProvider, configuration);
+		_options = options;
+	}
 
 	public ServiceBus(IServiceBusOptions options)
 	{
@@ -34,7 +45,17 @@ internal class ServiceBus : IServiceBus
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
 		where TMessage : class, IMessage
-		=> PublishAsync(message, optionsBuilder, TraceInfo.Create(null, _options.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber), cancellationToken);
+		=> PublishAsync(
+			message,
+			optionsBuilder,
+			TraceInfo.Create(
+				_options.ServiceProvider.GetRequiredService<IApplicationContext>().TraceInfo,
+				null, //_options.HostInfo.HostName,
+				null,
+				memberName,
+				sourceFilePath,
+				sourceLineNumber),
+			cancellationToken);
 
 	public Task<IResult<List<Guid>>> PublishAsync<TMessage>(
 		TMessage message,
@@ -69,11 +90,16 @@ internal class ServiceBus : IServiceBus
 		if (options == null)
 			return result.WithArgumentNullException(traceInfo, nameof(options));
 		if (traceInfo == null)
-			return result.WithArgumentNullException(TraceInfo.Create(_options.HostInfo.HostName), nameof(traceInfo));
+			return result.WithArgumentNullException(
+				TraceInfo.Create(
+					_options.ServiceProvider.GetRequiredService<IApplicationContext>().TraceInfo
+					//_options.HostInfo.HostName
+					),
+				nameof(traceInfo));
 
 		try
 		{
-			var dispatchResult = await DispatchAsync(traceInfo, message, options, cancellationToken);
+			var dispatchResult = await DispatchAsync(traceInfo, message, options, cancellationToken).ConfigureAwait(false);
 			if (result.MergeAllWithDataHasError(dispatchResult))
 				return result.Build();
 
@@ -89,7 +115,7 @@ internal class ServiceBus : IServiceBus
 					x => x.ExceptionInfo(exHost),
 					$"{nameof(PublishAsync)}<{typeof(TMessage).FullName}> error",
 					null,
-					cancellationToken);
+					cancellationToken).ConfigureAwait(false);
 
 			result.WithError(errorMessage);
 			return result.Build();
@@ -102,91 +128,169 @@ internal class ServiceBus : IServiceBus
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder<List<Guid>>();
 
-		var exchange = _options.ExchangeProvider.GetExchange<TMessage>(options.ExchangeName);
-		if (exchange == null)
-		{
-			var errorMessage = _options.HostLogger.LogError(
-				traceInfo,
-				_options.HostInfo,
-				HostStatus.Unchanged,
-				x => x.InternalMessage($"queue == null | {nameof(options.ExchangeName)} == {options.ExchangeName} | MessageType = {message?.GetType().FullName}"),
-				$"{nameof(DispatchAsync)}<{nameof(TMessage)}> queue == null",
-				null);
-			result.WithError(errorMessage);
+		var isLocalTransactionManager = false;
 
-			if (!options.DisableFaultQueue)
+		var transactionContext = options.TransactionContext;
+		if (transactionContext == null)
+		{
+			var transactionManager =  _options.TransactionManagerFactory.Create();
+			transactionContext = await _options.TransactionContextFactory(_options.ServiceProvider, transactionManager).ConfigureAwait(false);
+			isLocalTransactionManager = true;
+		}
+
+		IExchange<TMessage>? exchange = null;
+		IExchangeEnqueueContext? exchangeContext = null;
+
+		var executeResult =
+			await ServiceTransactionInterceptor.ExecuteActionAsync(
+				false,
+				traceInfo,
+				transactionContext,
+				async (traceInfo, transactionContext, cancellationToken) =>
+				{
+					exchange = _options.ExchangeProvider.GetExchange<TMessage>(options.ExchangeName);
+					if (exchange == null)
+					{
+						var errorMessage = await _options.HostLogger.LogErrorAsync(
+							traceInfo,
+							_options.HostInfo,
+							HostStatus.Unchanged,
+							x => x.InternalMessage($"exchange == null | {nameof(options.ExchangeName)} == {options.ExchangeName} | MessageType = {typeof(TMessage).FullName}"),
+							$"{nameof(DispatchAsync)}<{nameof(TMessage)}> exchange == null",
+							null,
+							cancellationToken: default).ConfigureAwait(false);
+
+						result.WithError(errorMessage);
+
+						await WriteToFaultQueueAsync<TMessage>(traceInfo, message, options, cancellationToken).ConfigureAwait(false);
+
+						return result.Build();
+					}
+
+					var contextResult = _options.ExchangeProvider.CreateExchangeEnqueueContext(traceInfo, options, exchange.ExchangeType);
+					if (result.MergeHasError(contextResult))
+						return result.Build();
+
+					exchangeContext = contextResult.Data!;
+
+					var exchangeEnqueueResult = await exchange.EnqueueAsync(message, exchangeContext, transactionContext, cancellationToken).ConfigureAwait(false);
+					result.MergeHasError(exchangeEnqueueResult);
+
+					if (exchangeEnqueueResult.HasError)
+					{
+						transactionContext.ScheduleRollback();
+					}
+					else
+					{
+						if (isLocalTransactionManager)
+							transactionContext.ScheduleCommit();
+					}
+
+					if (result.HasError())
+						return result.Build();
+
+					return result.WithData(exchangeEnqueueResult.Data).Build();
+				},
+				$"{nameof(DispatchAsync)}<{typeof(TMessage).FullName}> | {nameof(options.ExchangeName)} == {options.ExchangeName} - {nameof(IExchange<TMessage>.EnqueueAsync)}",
+				async (traceInfo, exception, detail) =>
+				{
+					var errorMessage =
+						await _options.HostLogger.LogErrorAsync(
+							traceInfo,
+							_options.HostInfo,
+							HostStatus.Unchanged,
+							x => x.ExceptionInfo(exception).Detail(detail),
+							detail,
+							null,
+							cancellationToken: default).ConfigureAwait(false);
+
+					await WriteToFaultQueueAsync<TMessage>(traceInfo, message, options, cancellationToken).ConfigureAwait(false);
+
+					return errorMessage;
+				},
+				null,
+				isLocalTransactionManager,
+				cancellationToken).ConfigureAwait(false);
+
+		if (result.MergeHasError(executeResult))
+			return result.Build();
+
+		if (exchange != null && exchangeContext?.CallExchangeOnMessage == true)
+		{
+			_ = Task.Run(async () =>
 			{
 				try
 				{
-					var context = _options.ExchangeProvider.CreateFaultQueueContext(traceInfo, options);
-					await _options.ExchangeProvider.FaultQueue.EnqueueAsync(message, context, cancellationToken);
+					var ti = TraceInfo.Create(traceInfo);
+					await exchange.OnMessageAsync(ti, cancellationToken).ConfigureAwait(false);
+					if (exchangeContext.OnMessageQueue != null)
+						await exchangeContext.OnMessageQueue.OnMessageAsync(ti, cancellationToken: default).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
-					var faultEnqueueErrorMessage = _options.HostLogger.LogError(
-						traceInfo,
+					await _options.HostLogger.LogErrorAsync(
+						TraceInfo.Create(traceInfo),
 						_options.HostInfo,
 						HostStatus.Unchanged,
-						x => x
-							.ExceptionInfo(ex)
-							.Detail($"queue == null | {nameof(options.ExchangeName)} == {options.ExchangeName} | MessageType = {message?.GetType().FullName} >> {nameof(_options.ExchangeProvider.FaultQueue)}.{nameof(_options.ExchangeProvider.FaultQueue.EnqueueAsync)}"),
-						$"{nameof(DispatchAsync)}<{nameof(TMessage)}> queue == null >> {nameof(_options.ExchangeProvider.FaultQueue)}",
-						null);
-					result.WithError(faultEnqueueErrorMessage);
+						x => x.ExceptionInfo(ex),
+						$"{nameof(DispatchAsync)} >> {nameof(exchange.OnMessageAsync)}",
+						null,
+						cancellationToken: default).ConfigureAwait(false);
 				}
-			}
 
-			return result.Build();
+			},
+			cancellationToken: default);
 		}
 
-		try
-		{
-			var contextResult = _options.ExchangeProvider.CreateExchangeEnqueueContext(traceInfo, options, exchange.ExchangeType);
-			if (result.MergeHasError(contextResult))
-				return result.Build();
+		return result.Build();
+	}
 
-			var enqueueResult = await exchange.EnqueueAsync(message, contextResult.Data!, cancellationToken);
-			if (result.MergeHasError(enqueueResult))
-				return result.Build();
-
-			return result.WithData(enqueueResult.Data).Build();
-		}
-		catch (Exception ex)
+	private async Task WriteToFaultQueueAsync<TMessage>(ITraceInfo traceInfo, IMessage? message, IMessageOptions options, CancellationToken cancellationToken)
+	{
+		if (!options.DisableFaultQueue)
 		{
-			var errorMessage = _options.HostLogger.LogError(
+			traceInfo = TraceInfo.Create(traceInfo);
+			var result = new ResultBuilder();
+			var transactionManager = _options.TransactionManagerFactory.Create();
+			var transactionContext = await _options.TransactionContextFactory(_options.ServiceProvider, transactionManager).ConfigureAwait(false);
+
+			await ServiceTransactionInterceptor.ExecuteActionAsync(
+				false,
 				traceInfo,
-				_options.HostInfo,
-				HostStatus.Unchanged,
-				x => x
-					.ExceptionInfo(ex)
-					.Detail($"{nameof(options.ExchangeName)} == {options.ExchangeName} | MessageType = '{message?.GetType().FullName}'"),
-				$"{nameof(DispatchAsync)}<{nameof(TMessage)}>",
-				null);
-			result.WithError(errorMessage);
-
-			if (!options.DisableFaultQueue)
-			{
-				try
+				transactionContext,
+				async (traceInfo, transactionContext, cancellationToken) =>
 				{
 					var context = _options.ExchangeProvider.CreateFaultQueueContext(traceInfo, options);
-					await _options.ExchangeProvider.FaultQueue.EnqueueAsync(message, context, cancellationToken);
-				}
-				catch (Exception faultEx)
+					var enqueueResult = await _options.ExchangeProvider.FaultQueue.EnqueueAsync(message, context, transactionContext, cancellationToken).ConfigureAwait(false);
+					result.MergeAllHasError(enqueueResult);
+
+					if (enqueueResult.HasError)
+					{
+						transactionContext.ScheduleRollback();
+					}
+					else
+					{
+						transactionContext.ScheduleCommit();
+					}
+
+					return result.Build();
+				},
+				$"{nameof(WriteToFaultQueueAsync)}<{typeof(TMessage).FullName}> | {nameof(options.ExchangeName)} == {options.ExchangeName}",
+				async (traceInfo, exception, detail) =>
 				{
-					var faultEnqueueErrorMessage = _options.HostLogger.LogError(
+					var errorMessage = await _options.HostLogger.LogErrorAsync(
 						traceInfo,
 						_options.HostInfo,
 						HostStatus.Unchanged,
-						x => x
-							.ExceptionInfo(faultEx)
-							.Detail($"{nameof(options.ExchangeName)} == {options.ExchangeName} | MessageType = '{message?.GetType().FullName}' >> {nameof(_options.ExchangeProvider.FaultQueue)}.{nameof(_options.ExchangeProvider.FaultQueue.EnqueueAsync)}"),
-						$"{nameof(DispatchAsync)}<{nameof(TMessage)}> >> {nameof(_options.ExchangeProvider.FaultQueue)}",
-						null);
-					result.WithError(faultEnqueueErrorMessage);
-				}
-			}
+						x => x.ExceptionInfo(exception).Detail(detail),
+						detail,
+						cancellationToken: default).ConfigureAwait(false);
 
-			return result.Build();
+					return errorMessage;
+				},
+				null,
+				true,
+				cancellationToken).ConfigureAwait(false);
 		}
 	}
 
@@ -199,7 +303,13 @@ internal class ServiceBus : IServiceBus
 		string sourceFilePath,
 		int sourceLineNumber)
 	{
-		var traceInfo = TraceInfo.Create(null, _options.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber);
+		var traceInfo = TraceInfo.Create(
+			_options.ServiceProvider.GetRequiredService<IApplicationContext>().TraceInfo,
+			null, //_options.HostInfo.HostName,
+			null,
+			memberName,
+			sourceFilePath,
+			sourceLineNumber);
 
 		var result = new ResultBuilder<List<Guid>>();
 
@@ -209,7 +319,7 @@ internal class ServiceBus : IServiceBus
 		var builder = MessageOptionsBuilder.GetDefaultBuilder(@event.GetType());
 		var options = builder.Build(true);
 
-		return await PublishAsync(@event, options, traceInfo, cancellationToken);
+		return await PublishAsync(@event, options, traceInfo, cancellationToken).ConfigureAwait(false);
 	}
 
 	async Task<IResult<List<Guid>>> IEventPublisher.PublishEventAsync(
@@ -220,7 +330,13 @@ internal class ServiceBus : IServiceBus
 		string sourceFilePath,
 		int sourceLineNumber)
 	{
-		var traceInfo = TraceInfo.Create(null, _options.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber);
+		var traceInfo = TraceInfo.Create(
+			_options.ServiceProvider.GetRequiredService<IApplicationContext>().TraceInfo,
+			null, //_options.HostInfo.HostName,
+			null,
+			memberName,
+			sourceFilePath,
+			sourceLineNumber);
 
 		var result = new ResultBuilder<List<Guid>>();
 
@@ -231,7 +347,7 @@ internal class ServiceBus : IServiceBus
 		optionsBuilder?.Invoke(builder);
 		var options = builder.Build(true);
 
-		return await PublishAsync(@event, options, traceInfo, cancellationToken);
+		return await PublishAsync(@event, options, traceInfo, cancellationToken).ConfigureAwait(false);
 	}
 
 	async Task<IResult<List<Guid>>> IEventPublisher.PublishEventAsync(
@@ -247,7 +363,7 @@ internal class ServiceBus : IServiceBus
 		var builder = MessageOptionsBuilder.GetDefaultBuilder(@event.GetType());
 		var options = builder.Build(true);
 
-		return await PublishAsync(@event, options, traceInfo, cancellationToken);
+		return await PublishAsync(@event, options, traceInfo, cancellationToken).ConfigureAwait(false);
 	}
 
 	async Task<IResult<List<Guid>>> IEventPublisher.PublishEventAsync(
@@ -265,7 +381,7 @@ internal class ServiceBus : IServiceBus
 		optionsBuilder?.Invoke(builder);
 		var options = builder.Build(true);
 
-		return await PublishAsync(@event, options, traceInfo, cancellationToken);
+		return await PublishAsync(@event, options, traceInfo, cancellationToken).ConfigureAwait(false);
 	}
 
 	#endregion IEventPublisher

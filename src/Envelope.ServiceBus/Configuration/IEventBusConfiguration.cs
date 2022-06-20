@@ -24,6 +24,4 @@ public interface IEventBusConfiguration : IValidable
 	List<IEventHandlerType> EventHandlerTypes { get; set; }
 
 	List<IEventHandlersAssembly> EventHandlerAssemblies { get; set; }
-
-	IEventBusOptions BuildOptions(IServiceProvider serviceProvider);
 }

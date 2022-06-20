@@ -1,10 +1,12 @@
 ﻿using Envelope.Converters;
 using Envelope.ServiceBus.Messages;
 using Envelope.Services;
+using Envelope.Trace;
+using Envelope.Transactions;
 
 namespace Envelope.ServiceBus.Queues.Internal;
 
-internal class DroppingFaultQueue : IFaultQueue
+internal class DroppingFaultQueue : IFaultQueue, IQueueInfo
 {
 	public Guid QueueId { get; }
 
@@ -14,18 +16,21 @@ internal class DroppingFaultQueue : IFaultQueue
 
 	public bool IsPersistent => false;
 
-	public long Count => 0;
-
 	public int? MaxSize => null;
 
 	public QueueType QueueType => QueueType.Parallel;
 
-	public Task<IResult> EnqueueAsync(IMessage? message, IFaultQueueContext context, CancellationToken cancellationToken)
-		=> Task.FromResult((IResult)new ResultBuilder<Guid>().Build());
+	public QueueStatus QueueStatus => QueueStatus.Running;
 
 	public DroppingFaultQueue()
 	{
 		QueueName = typeof(DroppingFaultQueue).FullName!;
 		QueueId = GuidConverter.ToGuid(QueueName);
 	}
+
+	public Task<IResult> EnqueueAsync(IMessage? message, IFaultQueueContext context, ITransactionContext transactionContext, CancellationToken cancellationToken)
+		=> Task.FromResult((IResult)new ResultBuilder().Build());
+
+	public Task<int> GetCountAsync(ITraceInfo traceInfo, ITransactionManagerFactory transactionManagerFactory, CancellationToken cancellationToken = default)
+		=> Task.FromResult(0);
 }

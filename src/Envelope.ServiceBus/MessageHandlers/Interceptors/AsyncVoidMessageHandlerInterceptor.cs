@@ -6,6 +6,7 @@ using Envelope.Logging;
 using Envelope.Logging.Extensions;
 using Envelope.Trace;
 using Envelope.ServiceBus.Messages;
+using Envelope.Extensions;
 
 namespace Envelope.ServiceBus.MessageHandlers.Interceptors;
 
@@ -39,18 +40,18 @@ public abstract class AsyncVoidMessageHandlerInterceptor<TRequestMessage, TConte
 					.CommandQueryName(messageType?.FullName),
 			true);
 
-		var resultBuilder = new ResultBuilder<Guid>();
+		var resultBuilder = new ResultBuilder();
 		var result = resultBuilder.Build();
 		Guid? idCommand = null;
 
 		try
 		{
 			//if (handlerOptions.LogMessageEntry)
-			//	await LogHandlerEntryAsync(cancellationToken);
+			//	await LogHandlerEntryAsync(cancellationToken).ConfigureAwait(false);
 
 			try
 			{
-				var executeResult = await next(message!, handlerContext, cancellationToken);
+				var executeResult = await next(message!, handlerContext, cancellationToken).ConfigureAwait(false);
 				if (executeResult == null)
 					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult).FullName}");
 
@@ -70,7 +71,7 @@ public abstract class AsyncVoidMessageHandlerInterceptor<TRequestMessage, TConte
 					}
 
 					if (handlerContext.TransactionContext != null)
-						await handlerContext.TransactionContext.TryRollbackAsync(result.ToException(), cancellationToken);
+						handlerContext.TransactionContext.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 
 				callEndTicks = StaticWatch.CurrentTicks;
@@ -82,11 +83,11 @@ public abstract class AsyncVoidMessageHandlerInterceptor<TRequestMessage, TConte
 				methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
 				if (handlerContext.TransactionContext != null)
-					await handlerContext.TransactionContext.TryRollbackAsync(executeEx, cancellationToken);
+					handlerContext.TransactionContext.ScheduleRollback(executeEx.ToStringTrace());
 
 				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 
-				result = new ResultBuilder<Guid>()
+				result = new ResultBuilder()
 					.WithError(traceInfo,
 						x =>
 							x.ExceptionInfo(executeEx)
@@ -109,7 +110,7 @@ public abstract class AsyncVoidMessageHandlerInterceptor<TRequestMessage, TConte
 			//finally
 			//{
 			//	if (handlerOptions.LogCommandEntry && commandEntryLogger != null && commandEntry != null && startTicks.HasValue)
-			//		await LogHandlerExitAsync(cancellationToken);
+			//		await LogHandlerExitAsync(cancellationToken).ConfigureAwait(false);
 			//}
 		}
 		catch (Exception interEx)
@@ -117,7 +118,7 @@ public abstract class AsyncVoidMessageHandlerInterceptor<TRequestMessage, TConte
 			callEndTicks = StaticWatch.CurrentTicks;
 			methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
-			result = new ResultBuilder<Guid>()
+			result = new ResultBuilder()
 				.WithError(traceInfo,
 					x =>
 						x.ExceptionInfo(interEx)

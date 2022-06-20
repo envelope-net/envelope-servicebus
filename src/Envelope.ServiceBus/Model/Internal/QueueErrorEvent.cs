@@ -8,8 +8,8 @@ internal class QueueErrorEvent : QueueEvent, IQueueErrorEvent, IQueueEvent, ISer
 {
 	public IResult ErrorResult { get; }
 
-	public QueueErrorEvent(IMessageQueue messageQueue, QueueEventType queueEventType, IResult errorResult)
-		: base(messageQueue, queueEventType)
+	public QueueErrorEvent(IMessageQueue messageQueue, QueueEventType queueEventType, IMessageMetadata? message, IResult errorResult)
+		: base(messageQueue, queueEventType, message)
 	{
 		ErrorResult = errorResult ?? throw new ArgumentNullException(nameof(errorResult));
 	}

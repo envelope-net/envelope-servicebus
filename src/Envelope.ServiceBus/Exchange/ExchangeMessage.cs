@@ -1,9 +1,8 @@
 ﻿using Envelope.ServiceBus.Messages;
-using Envelope.ServiceBus.Messages.Internal;
 
 namespace Envelope.ServiceBus.Exchange;
 
-internal class ExchangeMessage<TMessage> : MessageMetadata<TMessage>, IExchangeMessage<TMessage>, IMessageMetadata, ISavedMessage<TMessage>, IMessageInfo
+public class ExchangeMessage<TMessage> : MessageMetadata<TMessage>, IExchangeMessage<TMessage>, IMessageMetadata, ISavedMessage<TMessage>, IMessageInfo
 	where TMessage : class, IMessage
 {
 	/// <inheritdoc/>

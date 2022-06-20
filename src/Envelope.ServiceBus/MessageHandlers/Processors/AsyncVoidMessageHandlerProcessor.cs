@@ -49,7 +49,7 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 			var interceptorType = handler.InterceptorType;
 			if (interceptorType == null)
 			{
-				result = await handler.HandleAsync(message, handlerContext, cancellationToken);
+				result = await handler.HandleAsync(message, handlerContext, cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
@@ -57,14 +57,14 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 				if (interceptor == null)
 					throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IAsyncMessageHandlerInterceptor<TRequestMessage, TContext>).FullName}");
 
-				result = await interceptor.InterceptHandleAsync(message, handlerContext, handler.HandleAsync, cancellationToken);
+				result = await interceptor.InterceptHandleAsync(message, handlerContext, handler.HandleAsync, cancellationToken).ConfigureAwait(false);
 			}
 
 			return result;
 		}
 		catch (Exception exHandler)
 		{
-			await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage> error", null, cancellationToken);
+			await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
 			throw;
 		}
 	}

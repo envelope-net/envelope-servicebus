@@ -45,4 +45,6 @@ internal class QueueEnqueueContext : IQueueEnqueueContext
 	public int Priority { get; set; }
 
 	public bool DisableFaultQueue { get; set; }
+	
+	public IMessageQueue? OnMessageQueue { get; set; }
 }

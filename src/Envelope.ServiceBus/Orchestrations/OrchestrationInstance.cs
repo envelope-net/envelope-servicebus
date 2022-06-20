@@ -1,21 +1,21 @@
-﻿using Envelope.Extensions;
-using Envelope.ServiceBus.Hosts;
+﻿using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Orchestrations.Definition;
-using Envelope.ServiceBus.Orchestrations.Definition.Steps;
 using Envelope.ServiceBus.Orchestrations.Execution;
 using Envelope.Timers;
 using Envelope.Trace;
 
-namespace Envelope.ServiceBus.Orchestrations.Internal;
+namespace Envelope.ServiceBus.Orchestrations;
 
-internal class OrchestrationInstance : IOrchestrationInstance
+public class OrchestrationInstance : IOrchestrationInstance
 {
 	private readonly SequentialAsyncTimer _timer;
-	private bool nextTimerStart;
-	private bool disposed;
 
 	private readonly IOrchestrationExecutor _executor;
 	private readonly IHostInfo _hostInfo;
+	private readonly IOrchestrationDefinition _orchestrationDefinition;
+
+	private bool nextTimerStart;
+	private bool disposed;
 
 	public Guid IdOrchestrationInstance { get; }
 
@@ -23,26 +23,19 @@ internal class OrchestrationInstance : IOrchestrationInstance
 
 	public string DistributedLockResourceType => "Orchestration";
 
-	public IOrchestrationDefinition OrchestrationDefinition { get; }
+	public Guid IdOrchestrationDefinition { get; }
 
-	public bool IsSingleton => OrchestrationDefinition.IsSingleton;
+	public bool IsSingleton { get; }
 
-	public bool AwaitForHandleLifeCycleEvents => OrchestrationDefinition.AwaitForHandleLifeCycleEvents;
-
-	public ExecutionPointerCollection ExecutionPointers { get; set; }
-
-	IReadOnlyExecutionPointerCollection IOrchestrationInstance.ExecutionPointers => ExecutionPointers;
-
-	public List<IOrchestrationStep> FinalizedBranches { get; }
-	IReadOnlyList<IOrchestrationStep> IOrchestrationInstance.FinalizedBranches => FinalizedBranches;
+	public bool AwaitForHandleLifeCycleEvents { get; }
 
 	public OrchestrationStatus Status { get; set; }
 
-	public int Version => OrchestrationDefinition.Version;
+	public int Version { get; }
 
 	public object Data { get; }
 
-	public DateTime CreateTimeUtc { get; }
+	public DateTime CreateTimeUtc { get; internal set; }
 
 	public DateTime? CompleteTimeUtc { get; set; }
 
@@ -62,6 +55,7 @@ internal class OrchestrationInstance : IOrchestrationInstance
 	}
 
 	public OrchestrationInstance(
+		Guid idOrchestrationInstance,
 		IOrchestrationDefinition orchestrationDefinition,
 		string orchestrationKey,
 		object data,
@@ -69,36 +63,27 @@ internal class OrchestrationInstance : IOrchestrationInstance
 		IHostInfo hostInfo,
 		TimeSpan? workerIdleTimeout)
 	{
-		IdOrchestrationInstance = Guid.NewGuid();
+		IdOrchestrationInstance = idOrchestrationInstance;
 		CreateTimeUtc = DateTime.UtcNow;
 		Status = OrchestrationStatus.Running;
-		OrchestrationDefinition = orchestrationDefinition ?? throw new ArgumentNullException(nameof(orchestrationDefinition));
+
+		_orchestrationDefinition = orchestrationDefinition ?? throw new ArgumentNullException(nameof(orchestrationDefinition));
+
+		IdOrchestrationDefinition = _orchestrationDefinition.IdOrchestrationDefinition;
+		IsSingleton = _orchestrationDefinition.IsSingleton;
+		AwaitForHandleLifeCycleEvents = _orchestrationDefinition.AwaitForHandleLifeCycleEvents;
+		Version = _orchestrationDefinition.Version;
+
 		OrchestrationKey = !string.IsNullOrWhiteSpace(orchestrationKey)
 			? orchestrationKey
 			: throw new ArgumentNullException(nameof(orchestrationKey));
-		ExecutionPointers = new ExecutionPointerCollection();
 		Data = data ?? throw new ArgumentNullException(nameof(data));
 		_executor = executor ?? throw new ArgumentNullException(nameof(executor));
 		_hostInfo = hostInfo ?? throw new ArgumentNullException(nameof(hostInfo));
 		nextTimerStart = false;
-		_workerIdleTimeout = workerIdleTimeout ?? OrchestrationDefinition.WorkerIdleTimeout;
-		FinalizedBranches = new();
+		_workerIdleTimeout = workerIdleTimeout ?? _orchestrationDefinition.WorkerIdleTimeout;
 		_timer = new SequentialAsyncTimer(null, _workerIdleTimeout, _workerIdleTimeout, OnTimerAsync, OnTimerExceptionAsync);
 	}
-
-	public void AddExecutionPointer(ExecutionPointer executionPointer)
-	{
-		if (executionPointer == null)
-			throw new ArgumentNullException(nameof(executionPointer));
-
-		ExecutionPointers.Add(executionPointer);
-	}
-
-	public void AddFinalizedBranch(IOrchestrationStep step)
-		=> FinalizedBranches.AddUniqueItem(step);
-
-	public ExecutionPointer? GetStepExecutionPointer(Guid idStep)
-		=> ExecutionPointers.Where(x => x.Step.IdStep == idStep).FirstOrDefault();
 
 	public void UpdateOrchestrationStatus(OrchestrationStatus status, DateTime? completeTimeUtc)
 	{
@@ -107,7 +92,7 @@ internal class OrchestrationInstance : IOrchestrationInstance
 	}
 
 	public string CreateDistributedLockKey()
-		=> $"{OrchestrationDefinition.IdOrchestrationDefinition}::{OrchestrationDefinition.Version}::{OrchestrationKey}";
+		=> $"{_orchestrationDefinition.IdOrchestrationDefinition}::{_orchestrationDefinition.Version}::{OrchestrationKey}";
 
 	public Task<bool> StartOrchestrationWorkerAsync()
 	{
@@ -119,15 +104,30 @@ internal class OrchestrationInstance : IOrchestrationInstance
 	{
 		nextTimerStart = false;
 		var traceInfo = TraceInfo.Create(_hostInfo.HostName);
-		await _executor.ExecuteAsync(this, traceInfo);
+		await _executor.ExecuteAsync(this, traceInfo).ConfigureAwait(false);
 		return nextTimerStart;
 	}
 
-	private Task<bool> OnTimerExceptionAsync(object? state, Exception exception)
+	private async Task<bool> OnTimerExceptionAsync(object? state, Exception exception)
 	{
-		//TODO log exception
-		return Task.FromResult(nextTimerStart);
+		await _executor.OrchestrationLogger.LogErrorAsync(
+			TraceInfo.Create(_executor.OrchestrationHostOptions.HostName),
+			IdOrchestrationInstance,
+			null,
+			null,
+			x => x.ExceptionInfo(exception).Detail(nameof(OnTimerExceptionAsync)),
+			nameof(OnTimerExceptionAsync),
+			null,
+			cancellationToken: default).ConfigureAwait(false);
+
+		return nextTimerStart;
 	}
+
+	public IOrchestrationExecutor GetExecutor()
+		=> _executor;
+
+	public IOrchestrationDefinition GetOrchestrationDefinition()
+		=> _orchestrationDefinition;
 
 	public async ValueTask DisposeAsync()
 	{

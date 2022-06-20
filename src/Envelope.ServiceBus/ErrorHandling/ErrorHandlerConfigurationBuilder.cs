@@ -10,11 +10,11 @@ public interface IErrorHandlerConfigurationBuilder<TBuilder, TObject>
 
 	TObject Build(bool finalize = false);
 
-	TBuilder IterationRetryTable(Dictionary<int, TimeSpan> iterationRetryTable, bool force = false);
+	TBuilder IterationRetryTable(Dictionary<int, TimeSpan> iterationRetryTable, bool force = true);
 
 	TBuilder DefaultRetryInterval(TimeSpan defaultRetryInterval);
 
-	TBuilder MaxRetryCount(int? maxRetryCount, bool force = false);
+	TBuilder MaxRetryCount(int? maxRetryCount, bool force = true);
 }
 
 public abstract class ErrorHandlerConfigurationBuilderBase<TBuilder, TObject> : IErrorHandlerConfigurationBuilder<TBuilder, TObject>
@@ -51,7 +51,7 @@ public abstract class ErrorHandlerConfigurationBuilderBase<TBuilder, TObject> : 
 		return _errorHandlerConfiguration;
 	}
 
-	public TBuilder IterationRetryTable(Dictionary<int, TimeSpan> iterationRetryTable, bool force = false)
+	public TBuilder IterationRetryTable(Dictionary<int, TimeSpan> iterationRetryTable, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -72,7 +72,7 @@ public abstract class ErrorHandlerConfigurationBuilderBase<TBuilder, TObject> : 
 		return _builder;
 	}
 
-	public TBuilder MaxRetryCount(int? maxRetryCount, bool force = false)
+	public TBuilder MaxRetryCount(int? maxRetryCount, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");

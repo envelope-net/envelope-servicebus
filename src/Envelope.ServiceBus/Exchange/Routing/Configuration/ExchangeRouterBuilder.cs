@@ -13,19 +13,19 @@ public interface IExchangeRouterBuilder<TBuilder, TObject>
 
 	TObject Build(bool finalize = false);
 
-	TBuilder ExchangeName(string exchangeName, bool force = false);
+	TBuilder ExchangeName(string exchangeName, bool force = true);
 
 	TBuilder ExchangeType(ExchangeType exchangeType);
 
-	TBuilder AddDefaultBinding<TMessage>(bool force = false)
+	TBuilder AddDefaultBinding<TMessage>(bool force = true)
 		where TMessage : class, IMessage;
 
-	TBuilder AddBinding<TMessage>(string targetQueueName, string routeName, bool force = false)
+	TBuilder AddBinding<TMessage>(string targetQueueName, string routeName, bool force = true)
 		where TMessage : class, IMessage;
 
 	TBuilder HeadersMatch(HeadersMatch headersMatch);
 
-	TBuilder AddHeader(string key, object value, bool force = false);
+	TBuilder AddHeader(string key, object value, bool force = true);
 }
 
 public abstract class ExchangeRouterBuilderBase<TBuilder, TObject> : IExchangeRouterBuilder<TBuilder, TObject>
@@ -62,7 +62,7 @@ public abstract class ExchangeRouterBuilderBase<TBuilder, TObject> : IExchangeRo
 		return _exchangeRouter;
 	}
 
-	public TBuilder ExchangeName(string exchangeName, bool force = false)
+	public TBuilder ExchangeName(string exchangeName, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -82,11 +82,11 @@ public abstract class ExchangeRouterBuilderBase<TBuilder, TObject> : IExchangeRo
 		return _builder;
 	}
 
-	public TBuilder AddDefaultBinding<TMessage>(bool force = false)
+	public TBuilder AddDefaultBinding<TMessage>(bool force = true)
 		where TMessage : class, IMessage
 		=> AddBinding<TMessage>(typeof(TMessage).FullName!, typeof(TMessage).FullName!, force);
 
-	public TBuilder AddBinding<TMessage>(string targetQueueName, string routeName, bool force = false)
+	public TBuilder AddBinding<TMessage>(string targetQueueName, string routeName, bool force = true)
 		where TMessage : class, IMessage
 	{
 		if (_finalized)
@@ -109,7 +109,7 @@ public abstract class ExchangeRouterBuilderBase<TBuilder, TObject> : IExchangeRo
 		return _builder;
 	}
 
-	public TBuilder AddHeader(string key, object value, bool force = false)
+	public TBuilder AddHeader(string key, object value, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");

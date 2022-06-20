@@ -1,8 +1,6 @@
 ﻿using Envelope.Exceptions;
-using Envelope.Policy;
 using Envelope.ServiceBus.ErrorHandling;
 using Envelope.Transactions;
-using Envelope.Validation;
 using System.Text;
 
 namespace Envelope.ServiceBus.Messages.Options;
@@ -15,37 +13,37 @@ public interface IMessageOptionsBuilder<TBuilder, TObject>
 
 	TObject Build(bool finalize = false);
 
-	TBuilder TransactionContext(ITransactionContext transactionContext, bool force = false);
+	TBuilder TransactionContext(ITransactionContext transactionContext, bool force = true);
 
-	TBuilder ExchangeQueueName(string exchangeQueueName, bool force = false);
+	TBuilder ExchangeQueueName(string exchangeQueueName, bool force = true);
 
 	TBuilder DisabledMessagePersistence(bool disabledMessagePersistence);
 
-	TBuilder IdSession(Guid? idSession, bool force = false);
+	TBuilder IdSession(Guid? idSession, bool force = true);
 
-	TBuilder ContentType(string contentType, bool force = false);
+	TBuilder ContentType(string contentType, bool force = true);
 
-	TBuilder ContentEncoding(Encoding? contentEncoding, bool force = false);
+	TBuilder ContentEncoding(Encoding? contentEncoding, bool force = true);
 
-	TBuilder RoutingKey(string routingKey, bool force = false);
+	TBuilder RoutingKey(string routingKey, bool force = true);
 
 	TBuilder IsAsynchronousInvocation(bool isAsynchronousInvocation);
 
-	TBuilder ErrorHandling(IErrorHandlingController? errorHandling, bool force = false);
+	TBuilder ErrorHandling(IErrorHandlingController? errorHandling, bool force = true);
 
-	TBuilder Headers(IMessageHeaders? headers, bool force = false);
+	TBuilder Headers(IMessageHeaders? headers, bool force = true);
 
-	TBuilder Timeout(TimeSpan? timeout, bool force = false);
+	TBuilder Timeout(TimeSpan? timeout, bool force = true);
 
 	TBuilder IsCompressContent(bool isCompressContent);
 
 	TBuilder IsEncryptContent(bool isEncryptContent);
 
-	TBuilder Priority(int priority, bool force = false);
+	TBuilder Priority(int priority, bool force = true);
 
 	TBuilder DisableFaultQueue(bool disableFaultQueue);
 
-	TBuilder ThrowNoHandlerException(bool throwNoHandlerException, bool force = false);
+	TBuilder ThrowNoHandlerException(bool throwNoHandlerException, bool force = true);
 }
 
 public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOptionsBuilder<TBuilder, TObject>
@@ -82,7 +80,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _messageOptions;
 	}
 
-	public TBuilder TransactionContext(ITransactionContext transactionContext, bool force = false)
+	public TBuilder TransactionContext(ITransactionContext transactionContext, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -93,7 +91,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _builder;
 	}
 
-	public TBuilder ExchangeQueueName(string exchangeQueueName, bool force = false)
+	public TBuilder ExchangeQueueName(string exchangeQueueName, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -113,7 +111,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _builder;
 	}
 
-	public TBuilder IdSession(Guid? idSession, bool force = false)
+	public TBuilder IdSession(Guid? idSession, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -124,7 +122,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _builder;
 	}
 
-	public TBuilder ContentType(string contentType, bool force = false)
+	public TBuilder ContentType(string contentType, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -135,7 +133,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _builder;
 	}
 
-	public TBuilder ContentEncoding(Encoding? contentEncoding, bool force = false)
+	public TBuilder ContentEncoding(Encoding? contentEncoding, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -146,7 +144,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _builder;
 	}
 
-	public TBuilder RoutingKey(string routingKey, bool force = false)
+	public TBuilder RoutingKey(string routingKey, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -166,7 +164,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _builder;
 	}
 
-	public TBuilder ErrorHandling(IErrorHandlingController? errorHandling, bool force = false)
+	public TBuilder ErrorHandling(IErrorHandlingController? errorHandling, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -177,7 +175,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _builder;
 	}
 
-	public TBuilder Headers(IMessageHeaders? headers, bool force = false)
+	public TBuilder Headers(IMessageHeaders? headers, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -188,7 +186,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _builder;
 	}
 
-	public TBuilder Timeout(TimeSpan? timeout, bool force = false)
+	public TBuilder Timeout(TimeSpan? timeout, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -217,7 +215,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _builder;
 	}
 
-	public TBuilder Priority(int priority, bool force = false)
+	public TBuilder Priority(int priority, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -235,7 +233,7 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _builder;
 	}
 
-	public TBuilder ThrowNoHandlerException(bool throwNoHandlerException, bool force = false)
+	public TBuilder ThrowNoHandlerException(bool throwNoHandlerException, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");

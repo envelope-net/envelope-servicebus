@@ -3,7 +3,7 @@ using Envelope.Infrastructure;
 
 namespace Envelope.ServiceBus.Hosts;
 
-internal class HostInfo : IHostInfo
+public class HostInfo : IHostInfo
 {
 	public string HostName { get; }
 

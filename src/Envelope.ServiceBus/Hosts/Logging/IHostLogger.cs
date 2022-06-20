@@ -13,7 +13,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null);
+		ITransactionManager? transactionManager = null);
 
 	ILogMessage? LogDebug(
 		ITraceInfo traceInfo,
@@ -21,7 +21,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null);
+		ITransactionManager? transactionManager = null);
 
 	ILogMessage? LogInformation(
 		ITraceInfo traceInfo,
@@ -29,7 +29,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null);
+		ITransactionManager? transactionManager = null);
 
 	ILogMessage? LogWarning(
 		ITraceInfo traceInfo,
@@ -37,7 +37,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null);
+		ITransactionManager? transactionManager = null);
 
 	IErrorMessage LogError(
 		ITraceInfo traceInfo,
@@ -45,7 +45,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null);
+		ITransactionManager? transactionManager = null);
 
 	IErrorMessage LogCritical(
 		ITraceInfo traceInfo,
@@ -53,15 +53,15 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null);
+		ITransactionManager? transactionManager = null);
 
 	void LogResultErrorMessages(
 		IResult result,
-		ITransactionContext? transactionContext = null);
+		ITransactionManager? transactionManager = null);
 
 	void LogResultAllMessages(
 		IResult result,
-		ITransactionContext? transactionContext = null);
+		ITransactionManager? transactionManager = null);
 
 	Task<ILogMessage?> LogTraceAsync(
 		ITraceInfo traceInfo,
@@ -69,7 +69,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionManager? transactionManager = null,
 		CancellationToken cancellationToken = default);
 
 	Task<ILogMessage?> LogDebugAsync(
@@ -78,7 +78,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionManager? transactionManager = null,
 		CancellationToken cancellationToken = default);
 
 	Task<ILogMessage?> LogInformationAsync(
@@ -87,7 +87,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionManager? transactionManager = null,
 		CancellationToken cancellationToken = default);
 
 	Task<ILogMessage?> LogWarningAsync(
@@ -96,7 +96,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionManager? transactionManager = null,
 		CancellationToken cancellationToken = default);
 
 	Task<IErrorMessage> LogErrorAsync(
@@ -105,7 +105,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionManager? transactionManager = null,
 		CancellationToken cancellationToken = default);
 
 	Task<IErrorMessage> LogCriticalAsync(
@@ -114,16 +114,16 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionManager? transactionManager = null,
 		CancellationToken cancellationToken = default);
 
 	Task LogResultErrorMessagesAsync(
 		IResult result,
-		ITransactionContext? transactionContext = null,
+		ITransactionManager? transactionManager = null,
 		CancellationToken cancellationToken = default);
 
 	Task LogResultAllMessagesAsync(
 		IResult result,
-		ITransactionContext? transactionContext = null,
+		ITransactionManager? transactionManager = null,
 		CancellationToken cancellationToken = default);
 }

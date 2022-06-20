@@ -1,33 +1,36 @@
 ﻿using Envelope.ServiceBus.Messages;
 using Envelope.Services;
 using Envelope.Trace;
+using Envelope.Transactions;
 using System.Collections.Concurrent;
 
 namespace Envelope.ServiceBus.Queues.Internal;
 
-internal class InMemoryFIFOQueue : IQueue, IDisposable
+internal class InMemoryFIFOQueue<T> : IQueue<T>, IDisposable
+	where T : IMessageMetadata
 {
-	private readonly ConcurrentQueue<IMessageMetadata> _messages;
+	private readonly ConcurrentQueue<T> _messages;
 
 	private bool disposed;
-
-	public int Count => _messages.Count;
 
 	/// <inheritdoc/>
 	public int? MaxSize { get; set; }
 
 	public InMemoryFIFOQueue(int? maxSize = null)
 	{
-		_messages = new ConcurrentQueue<IMessageMetadata>();
+		_messages = new ConcurrentQueue<T>();
 		MaxSize = maxSize;
 	}
 
+	public Task<IResult<int>> GetCountAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+		=> Task.FromResult(new ResultBuilder<int>().WithData(_messages.Count).Build());
+
 	private readonly object _enqueueLock = new();
 	/// <inheritdoc/>
-	public Task<IResult> EnqueueAsync(List<IMessageMetadata> messagesMetadata, ITraceInfo traceInfo)
+	public Task<IResult> EnqueueAsync(List<T> messagesMetadata, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
-		var result = new ResultBuilder<Guid>();
+		var result = new ResultBuilder();
 
 		if (messagesMetadata == null)
 			return Task.FromResult((IResult)result.WithArgumentNullException(traceInfo, nameof(messagesMetadata)));
@@ -55,10 +58,10 @@ internal class InMemoryFIFOQueue : IQueue, IDisposable
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult> TryRemoveAsync(IMessageMetadata messageMetadata, ITraceInfo traceInfo)
+	public Task<IResult> TryRemoveAsync(T messageMetadata, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
-		var result = new ResultBuilder<Guid>();
+		var result = new ResultBuilder();
 
 		if (messageMetadata == null)
 			return Task.FromResult((IResult)result.WithArgumentNullException(traceInfo, nameof(messageMetadata)));
@@ -79,9 +82,34 @@ internal class InMemoryFIFOQueue : IQueue, IDisposable
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult<IMessageMetadata?>> TryPeekAsync(ITraceInfo traceInfo)
+	public Task<IResult<QueueStatus>> UpdateAsync(T messageMetadata, IMessageMetadataUpdate update, ITraceInfo traceInfo, ITransactionContext localTransactionContext, CancellationToken cancellationToken = default)
 	{
-		var result = new ResultBuilder<IMessageMetadata?>();
+		var result = new ResultBuilder<QueueStatus>();
+
+		if (messageMetadata == null)
+			return Task.FromResult(result.WithArgumentNullException(traceInfo, nameof(messageMetadata)));
+
+		if (update == null)
+			return Task.FromResult(result.WithArgumentNullException(traceInfo, nameof(update)));
+
+		if (messageMetadata.MessageId != update.MessageId)
+			return Task.FromResult(result.WithInvalidOperationException(traceInfo, $"{nameof(messageMetadata.MessageId)} != {nameof(update)}.{nameof(update.MessageId)} | {messageMetadata.MessageId} != {update.MessageId}"));
+
+		messageMetadata.Update(update.Processed, update.MessageStatus, update.RetryCount, update.DelayedToUtc);
+
+		return
+			Task.FromResult(
+				result
+					.WithData((update.MessageStatus == MessageStatus.Suspended || update.MessageStatus == MessageStatus.Aborted)
+						? QueueStatus.Suspended
+						: QueueStatus.Running)
+					.Build());
+	}
+
+	/// <inheritdoc/>
+	public Task<IResult<T?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	{
+		var result = new ResultBuilder<T?>();
 		_messages.TryPeek(out var messageMetadata);
 		return Task.FromResult(result.WithData(messageMetadata).Build());
 	}

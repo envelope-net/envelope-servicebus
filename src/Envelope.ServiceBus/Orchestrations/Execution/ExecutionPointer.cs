@@ -5,61 +5,108 @@ namespace Envelope.ServiceBus.Orchestrations.Execution;
 
 public class ExecutionPointer : IExecutionPointer
 {
+	private readonly IOrchestrationStep _step;
+
 	public Guid IdExecutionPointer { get; }
 
-	public IOrchestrationStep Step { get; }
+	public Guid IdOrchestrationInstance { get; }
 
-	public bool Active { get; internal set; }
+	public Guid IdOrchestrationDefinition { get; }
 
-	public PointerStatus Status { get; internal set; }
+	public int OrchestrationInstanceVersion { get; }
 
-	public DateTime? SleepUntilUtc { get; internal set; }
+	public Guid IdStep { get; }
 
-	public int RetryCount { get; internal set; }
+	public bool Active { get; private set; }
 
-	public DateTime? StartTimeUtc { get; internal set; }
+	public PointerStatus Status { get; private set; }
 
-	public DateTime? EndTimeUtc { get; internal set; }
+	public DateTime? SleepUntilUtc { get; private set; }
 
-	public string? EventName { get; internal set; }
+	public int RetryCount { get; private set; }
 
-	public string? EventKey { get; internal set; }
+	public DateTime? StartTimeUtc { get; private set; }
 
-	public DateTime? EventWaitingTimeToLiveUtc { get; internal set; }
+	public DateTime? EndTimeUtc { get; private set; }
 
-	public OrchestrationEvent? OrchestrationEvent { get; internal set; }
+	public string? EventName { get; private set; }
 
-	public List<IExecutionPointer> NestedExecutionPointers { get; }
+	public string? EventKey { get; private set; }
 
-	public bool IsContainer => 0 < NestedExecutionPointers.Count;
+	public DateTime? EventWaitingTimeToLiveUtc { get; private set; }
 
-	IReadOnlyList<IExecutionPointer> IExecutionPointer.NestedExecutionPointers => NestedExecutionPointers;
+	public OrchestrationEvent? OrchestrationEvent { get; private set; }
 
-	public IExecutionPointer? PredecessorExecutionPointer { get; internal set; }
+	public Guid? PredecessorExecutionPointerId { get; private set; }
 
-	public IExecutionPointer? ContainerExecutionPointer { get; internal set; }
-	IExecutionPointer? IExecutionPointer.ContainerExecutionPointer { get => ContainerExecutionPointer; set => ContainerExecutionPointer = value; }
+	public Guid? PredecessorExecutionPointerStartingStepId { get; private set; }
 
-	internal ExecutionPointer(Guid idExecutionPointer, IOrchestrationStep step)
+	internal ExecutionPointer(
+		Guid idExecutionPointer,
+		Guid idOrchestrationInstance,
+		Guid idOrchestrationDefinition,
+		int version,
+		IOrchestrationStep step)
 	{
 		IdExecutionPointer = idExecutionPointer;
-		Step = step ?? throw new ArgumentNullException(nameof(step));
-		NestedExecutionPointers = new List<IExecutionPointer>();
+		IdOrchestrationInstance = idOrchestrationInstance;
+		IdOrchestrationDefinition = idOrchestrationDefinition;
+		OrchestrationInstanceVersion = version;
+		_step = step ?? throw new ArgumentNullException(nameof(step));
+		IdStep = _step.IdStep;
 		Status = PointerStatus.Pending;
 	}
 
-	internal void AddNestedExecutionPointer(IExecutionPointer nestedExecutionPointer)
+	internal ExecutionPointer Update(IExecutionPointerUpdate update)
 	{
-		if (nestedExecutionPointer == null)
-			throw new ArgumentNullException(nameof(nestedExecutionPointer));
+		if (update == null)
+			throw new ArgumentNullException(nameof(update));
 
-		NestedExecutionPointers.Add(nestedExecutionPointer);
-		nestedExecutionPointer.ContainerExecutionPointer = this;
+		if (update.SetActive)
+			Active = update.Active;
+
+		if (update.SetStatus)
+			Status = update.Status;
+
+		if (update.SetSleepUntilUtc)
+			SleepUntilUtc = update.SleepUntilUtc;
+
+		if (update.SetRetryCount)
+			RetryCount = update.RetryCount;
+
+		if (update.SetStartTimeUtc)
+			StartTimeUtc = update.StartTimeUtc;
+
+		if (update.SetEndTimeUtc)
+			EndTimeUtc = update.EndTimeUtc;
+
+		if (update.SetEventName)
+			EventName = update.EventName;
+
+		if (update.SetEventKey)
+			EventKey = update.EventKey;
+
+		if (update.SetEventWaitingTimeToLiveUtc)
+			EventWaitingTimeToLiveUtc = update.EventWaitingTimeToLiveUtc;
+
+		if (update.SetOrchestrationEvent)
+			OrchestrationEvent = update.OrchestrationEvent;
+
+		if (update.SetPredecessorExecutionPointerId)
+			PredecessorExecutionPointerId = update.PredecessorExecutionPointerId;
+
+		if (update.SetPredecessorExecutionPointerStartingStepId)
+			PredecessorExecutionPointerStartingStepId = update.PredecessorExecutionPointerStartingStepId;
+
+		return this;
 	}
 
-	void IExecutionPointer.AddNestedExecutionPointer(IExecutionPointer nestedExecutionPointer)
-		=> AddNestedExecutionPointer(nestedExecutionPointer);
+	ExecutionPointer IExecutionPointer.Update(IExecutionPointerUpdate update)
+		=> Update(update);
+
+	public IOrchestrationStep GetStep()
+		=> _step;
 
 	public override string ToString()
-		=> Step.ToString()!;
+		=> _step.ToString()!;
 }

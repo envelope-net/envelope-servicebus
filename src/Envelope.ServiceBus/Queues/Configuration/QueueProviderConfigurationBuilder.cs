@@ -1,7 +1,7 @@
 ﻿using Envelope.Exceptions;
 using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.Messages;
-using Envelope.ServiceBus.Orchestrations.EventHandlers.Internal;
+using Envelope.ServiceBus.Orchestrations.EventHandlers;
 using Envelope.ServiceBus.Orchestrations.Model;
 using Envelope.ServiceBus.Queues.Internal;
 
@@ -13,14 +13,19 @@ public interface IQueueProviderConfigurationBuilder<TBuilder, TObject>
 {
 	TBuilder Object(TObject queueProviderConfiguration);
 
+	TObject Internal();
+
 	TObject Build(bool finalize = false);
 
-	TBuilder FaultQueue(Func<IServiceProvider, IFaultQueue> faultQueue, bool force = false);
+	TBuilder FaultQueue(Func<IServiceProvider, IFaultQueue> faultQueue, bool force = true);
 
-	TBuilder RegisterDefaultQueue<TMessage>(HandleMessage<TMessage>? messageHandler, bool force = false)
+	TBuilder RegisterInMemoryQueue<TMessage>(HandleMessage<TMessage>? messageHandler, bool force = true)
 		where TMessage : class, IMessage;
 
-	TBuilder RegisterQueue<TMessage>(string queueName, Func<IServiceProvider, IMessageQueue<TMessage>> messageQueue, bool force = false)
+	TBuilder RegisterQueue<TMessage>(Action<MessageQueueConfigurationBuilder<TMessage>> configure, bool force = true)
+		where TMessage : class, IMessage;
+
+	TBuilder RegisterQueue<TMessage>(string queueName, Func<IServiceProvider, IMessageQueue<TMessage>> messageQueue, bool force = true)
 		where TMessage : class, IMessage;
 }
 
@@ -44,6 +49,9 @@ public abstract class QueueProviderConfigurationBuilderBase<TBuilder, TObject> :
 		return _builder;
 	}
 
+	public TObject Internal()
+		=> _queueProviderConfiguration;
+
 	public TObject Build(bool finalize = false)
 	{
 		if (_finalized)
@@ -58,7 +66,7 @@ public abstract class QueueProviderConfigurationBuilderBase<TBuilder, TObject> :
 		return _queueProviderConfiguration;
 	}
 
-	public TBuilder FaultQueue(Func<IServiceProvider, IFaultQueue> faultQueue, bool force = false)
+	public TBuilder FaultQueue(Func<IServiceProvider, IFaultQueue> faultQueue, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -69,17 +77,38 @@ public abstract class QueueProviderConfigurationBuilderBase<TBuilder, TObject> :
 		return _builder;
 	}
 
-	public TBuilder RegisterDefaultQueue<TMessage>(HandleMessage<TMessage>? messageHandler, bool force = false)
+	public TBuilder RegisterInMemoryQueue<TMessage>(HandleMessage<TMessage>? messageHandler, bool force = true)
 		where TMessage : class, IMessage
 		=> RegisterQueue(
 			typeof(TMessage).FullName!,
 			sp =>
-				new InMemoryMessageQueue<TMessage>(MessageQueueConfigurationBuilder<TMessage>
+			{
+				var messageQueueConfiguration = MessageQueueConfigurationBuilder<TMessage>
 					.GetDefaultBuilder(_queueProviderConfiguration.ServiceBusOptions, messageHandler)
-					.Build()),
+					.Build();
+				var context = new MessageQueueContext<TMessage>(messageQueueConfiguration, sp);
+				return new MessageQueue<TMessage>(context);
+			},
 			force);
 
-	public TBuilder RegisterQueue<TMessage>(string queueName, Func<IServiceProvider, IMessageQueue<TMessage>> messageQueue, bool force = false)
+	public TBuilder RegisterQueue<TMessage>(Action<MessageQueueConfigurationBuilder<TMessage>> configure, bool force = true)
+		where TMessage : class, IMessage
+		=> configure != null
+			? RegisterQueue(
+				typeof(TMessage).FullName!,
+				sp =>
+				{
+					var builder = MessageQueueConfigurationBuilder<TMessage>
+						.GetDefaultBuilder(_queueProviderConfiguration.ServiceBusOptions, null);
+					configure.Invoke(builder);
+					var messageQueueConfiguration = builder.Build();
+					var context = new MessageQueueContext<TMessage>(messageQueueConfiguration, sp);
+					return new MessageQueue<TMessage>(context);
+				},
+				force)
+			: throw new ArgumentNullException(nameof(configure));
+
+	public TBuilder RegisterQueue<TMessage>(string queueName, Func<IServiceProvider, IMessageQueue<TMessage>> messageQueue, bool force = true)
 		where TMessage : class, IMessage
 	{
 		if (_finalized)
@@ -122,8 +151,15 @@ public class QueueProviderConfigurationBuilder : QueueProviderConfigurationBuild
 		return new QueueProviderConfigurationBuilder(queueProviderConfiguration);
 	}
 
-	internal static QueueProviderConfigurationBuilder GetDefaultBuilder(IServiceBusOptions serviceBusOptions)
-		=> new QueueProviderConfigurationBuilder(serviceBusOptions)
-			.RegisterDefaultQueue<OrchestrationEvent>(OrchestrationEventHandler.HandleMessageAsync, true)
-			.FaultQueue(sp => new DroppingFaultQueue());
+	internal static QueueProviderConfigurationBuilder GetDefaultBuilder(
+		IServiceBusOptions serviceBusOptions,
+		Action<MessageQueueConfigurationBuilder<OrchestrationEvent>>? configureOrchestrationQueue = null,
+		Func<IServiceProvider, IFaultQueue>? orchestrationEventsFaultQueue = null)
+		=> configureOrchestrationQueue != null
+			? new QueueProviderConfigurationBuilder(serviceBusOptions)
+				.RegisterQueue(configureOrchestrationQueue)
+				.FaultQueue(orchestrationEventsFaultQueue ?? (sp => new DroppingFaultQueue()))
+			: new QueueProviderConfigurationBuilder(serviceBusOptions)
+				.RegisterInMemoryQueue<OrchestrationEvent>(OrchestrationEventHandler.HandleMessageAsync, true)
+				.FaultQueue(sp => new DroppingFaultQueue());
 }

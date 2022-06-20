@@ -4,16 +4,17 @@ using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.Messages;
 using Envelope.Services;
 using Envelope.Trace;
+using Envelope.Transactions;
 
 namespace Envelope.ServiceBus.Exchange.Internal;
 
 internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 	where TMessage : class, IMessage
 {
-	public async Task<MessageHandlerResult> HandleAsync(IExchangeMessage<TMessage> message, ExchangeContext<TMessage> exchangeContext, CancellationToken cancellationToken)
+	public async Task<MessageHandlerResult> HandleAsync(IExchangeMessage<TMessage> message, ExchangeContext<TMessage> exchangeContext, ITransactionContext transactionContext, CancellationToken cancellationToken)
 	{
 		var traceInfo = TraceInfo.Create(exchangeContext.ServiceBusOptions.HostInfo.HostName);
-		var result = new ResultBuilder<Guid>();
+		var result = new ResultBuilder();
 
 		var messageHandlerResultFactory = exchangeContext.ServiceBusOptions.MessageHandlerResultFactory;
 
@@ -29,20 +30,20 @@ internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 		{
 			var context = exchangeContext.ServiceBusOptions.QueueProvider.CreateQueueEnqueueContext(traceInfo, message);
 			disableFaultQueue = context.DisableFaultQueue;
-			var enqueueResult = await queue.EnqueueAsync(message.Message, context, cancellationToken);
+			var enqueueResult = await queue.EnqueueAsync(message.Message, context, transactionContext, cancellationToken).ConfigureAwait(false);
 			if (result.MergeHasError(enqueueResult))
 			{
 				return messageHandlerResultFactory.Error(result.Build());
 			}
 			else
 			{
-				return messageHandlerResultFactory.DeliveredInternal();
+				return messageHandlerResultFactory.DeliveredInternal(context.OnMessageQueue);
 			}
 		}
 		catch (Exception ex)
 		{
 			var errorMessage = 
-				exchangeContext.ServiceBusOptions.HostLogger.LogError(
+				await exchangeContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 					traceInfo,
 					exchangeContext.ServiceBusOptions.HostInfo,
 					HostStatus.Unchanged,
@@ -50,18 +51,19 @@ internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 						.ExceptionInfo(ex)
 						.Detail($"{nameof(message.ExchangeName)} == {message.ExchangeName} | {nameof(message.TargetQueueName)} == {message.TargetQueueName} | MessageType = '{message.Message?.GetType().FullName}'"),
 					$"{nameof(HandleAsync)}<{nameof(TMessage)}>",
-					null);
+					null,
+					cancellationToken: default).ConfigureAwait(false);
 
 			if (!disableFaultQueue)
 			{
 				try
 				{
 					var faultContext = exchangeContext.ServiceBusOptions.QueueProvider.CreateFaultQueueContext(traceInfo, message);
-					await exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync(message.Message, faultContext, cancellationToken);
+					await exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync(message.Message, faultContext, transactionContext, cancellationToken).ConfigureAwait(false);
 				}
 				catch (Exception faultEx)
 				{
-					exchangeContext.ServiceBusOptions.HostLogger.LogError(
+					await exchangeContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 						traceInfo,
 						exchangeContext.ServiceBusOptions.HostInfo,
 						HostStatus.Unchanged,
@@ -69,7 +71,8 @@ internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 							.ExceptionInfo(faultEx)
 							.Detail($"{nameof(message.ExchangeName)} == {message.ExchangeName} | {nameof(message.TargetQueueName)} == {message.TargetQueueName} | MessageType = {message.Message?.GetType().FullName} >> {nameof(exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue)}.{nameof(exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync)}"),
 						$"{nameof(HandleAsync)}<{nameof(TMessage)}> >> {nameof(exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue)}",
-						null);
+						null,
+						cancellationToken: default).ConfigureAwait(false);
 				}
 			}
 

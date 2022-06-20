@@ -7,7 +7,9 @@ public interface IExecutionPointer
 {
 	Guid IdExecutionPointer { get; }
 
-	IOrchestrationStep Step { get; }
+	Guid IdOrchestrationInstance { get; }
+
+	Guid IdStep { get; }
 
 	bool Active { get; }
 
@@ -26,16 +28,13 @@ public interface IExecutionPointer
 	DateTime? EventWaitingTimeToLiveUtc { get; }
 
 	OrchestrationEvent? OrchestrationEvent { get; }
+	Guid? PredecessorExecutionPointerId { get; }
 
-	IReadOnlyList<IExecutionPointer> NestedExecutionPointers { get; }
-
-	bool IsContainer { get; }
-
-	IExecutionPointer? PredecessorExecutionPointer { get; }
-
-	IExecutionPointer? ContainerExecutionPointer { get; internal set; }
+	Guid? PredecessorExecutionPointerStartingStepId { get; }
 
 	PointerStatus Status { get; }
 
-	internal void AddNestedExecutionPointer(IExecutionPointer nestedExecutionPointer);
+	IOrchestrationStep GetStep();
+
+	internal ExecutionPointer Update(IExecutionPointerUpdate update);
 }

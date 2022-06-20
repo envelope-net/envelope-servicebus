@@ -56,7 +56,7 @@ internal class AsyncMessageHandlerProcessor<TRequestMessage, TResponse, TContext
 			var interceptorType = handler.InterceptorType;
 			if (interceptorType == null)
 			{
-				result = await handler.HandleAsync(message, handlerContext, cancellationToken);
+				result = await handler.HandleAsync(message, handlerContext, cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
@@ -64,14 +64,14 @@ internal class AsyncMessageHandlerProcessor<TRequestMessage, TResponse, TContext
 				if (interceptor == null)
 					throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IAsyncMessageHandlerInterceptor<TRequestMessage, TResponse, TContext>).FullName}");
 
-				result = await interceptor.InterceptHandleAsync(message, handlerContext, handler.HandleAsync, cancellationToken);
+				result = await interceptor.InterceptHandleAsync(message, handlerContext, handler.HandleAsync, cancellationToken).ConfigureAwait(false);
 			}
 
 			var resultBuilder = new ResultBuilder<ISendResponse<TResponse>>();
 			if (result.Data != null)
 			{
 				var response = result.Data;
-				var saveResult = await saveResponseMessageAction(response, handlerContext, traceInfo, cancellationToken);
+				var saveResult = await saveResponseMessageAction(response, handlerContext, traceInfo, cancellationToken).ConfigureAwait(false);
 				resultBuilder.MergeHasError(saveResult);
 				return resultBuilder.WithData(new SendResponse<TResponse>(handlerContext.MessageId, saveResult.Data, result.Data)).Build();
 			}
@@ -82,7 +82,7 @@ internal class AsyncMessageHandlerProcessor<TRequestMessage, TResponse, TContext
 		}
 		catch (Exception exHandler)
 		{
-			await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage<TResponse>> error", null, cancellationToken);
+			await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage<TResponse>> error", null, cancellationToken).ConfigureAwait(false);
 			throw;
 		}
 	}

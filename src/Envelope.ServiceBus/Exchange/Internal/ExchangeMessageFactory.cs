@@ -66,6 +66,7 @@ internal class ExchangeMessageFactory<TMessage> : IExchangeMessageFactory<TMessa
 			RoutingKey = context.RoutingKey,
 			TargetQueueName = context.RoutingKey,
 			ContainsContent = message != null,
+			HasSelfContent = true,
 			Priority = context.Priority,
 			ErrorHandling = context.ErrorHandling,
 			Headers = context.Headers?.GetAll(),
@@ -103,14 +104,13 @@ internal class ExchangeMessageFactory<TMessage> : IExchangeMessageFactory<TMessa
 
 		foreach (var binding in config.Router.Bindings)
 		{
-			var nowUtc = DateTime.UtcNow;
 			var exchangeMessage = new ExchangeMessage<TMessage>
 			{
 				Processed = false,
 				ExchangeName = config.ExchangeName,
 				MessageId = Guid.NewGuid(),
 				ParentMessageId = config.Router.Bindings.Count == 1 ? null : parentMessageId,
-				PublishingTimeUtc = nowUtc,
+				PublishingTimeUtc = DateTime.UtcNow,
 				PublisherId = context.PublisherId,
 				IsAsynchronousInvocation = context.IsAsynchronousInvocation,
 				TraceInfo = traceInfo,
@@ -123,6 +123,7 @@ internal class ExchangeMessageFactory<TMessage> : IExchangeMessageFactory<TMessa
 				RoutingKey = context.RoutingKey,
 				TargetQueueName = binding.Key,
 				ContainsContent = message != null,
+				HasSelfContent = true,
 				Priority = context.Priority,
 				ErrorHandling = context.ErrorHandling,
 				Headers = context.Headers?.GetAll(),
@@ -153,14 +154,13 @@ internal class ExchangeMessageFactory<TMessage> : IExchangeMessageFactory<TMessa
 
 		foreach (var binding in exchangeContext.Router.Bindings)
 		{
-			var nowUtc = DateTime.UtcNow;
 			var exchangeMessage = new ExchangeMessage<TMessage>
 			{
 				Processed = false,
 				ExchangeName = exchangeContext.ExchangeName,
 				MessageId = Guid.NewGuid(),
 				ParentMessageId = exchangeContext.Router.Bindings.Count == 1 ? null : parentMessageId,
-				PublishingTimeUtc = nowUtc,
+				PublishingTimeUtc = DateTime.UtcNow,
 				PublisherId = context.PublisherId,
 				IsAsynchronousInvocation = context.IsAsynchronousInvocation,
 				TraceInfo = traceInfo,
@@ -173,6 +173,7 @@ internal class ExchangeMessageFactory<TMessage> : IExchangeMessageFactory<TMessa
 				RoutingKey = context.RoutingKey,
 				TargetQueueName = binding.Key,
 				ContainsContent = message != null,
+				HasSelfContent = true,
 				Priority = context.Priority,
 				ErrorHandling = context.ErrorHandling,
 				Headers = context.Headers?.GetAll(),

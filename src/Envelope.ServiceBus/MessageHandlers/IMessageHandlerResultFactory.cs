@@ -1,4 +1,5 @@
-﻿using Envelope.Services;
+﻿using Envelope.ServiceBus.Queues;
+using Envelope.Services;
 using Envelope.Trace;
 using System.Runtime.CompilerServices;
 
@@ -29,7 +30,7 @@ public interface IMessageHandlerResultFactory
 
 	MessageHandlerResult Deferred(TimeSpan retryInterval);
 
-	MessageHandlerResult DeliveredInternal();
+	MessageHandlerResult DeliveredInternal(IMessageQueue? onMessageQueue);
 
 	MessageHandlerResult AbortedInternal(IResult errorResult);
 

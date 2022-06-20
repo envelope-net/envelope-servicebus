@@ -49,7 +49,7 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 			throw;
 		}
 
-		var resultBuilder = new ResultBuilder<Guid>();
+		var resultBuilder = new ResultBuilder();
 		IResult? result = null;
 		foreach (var handler in handlers)
 		{

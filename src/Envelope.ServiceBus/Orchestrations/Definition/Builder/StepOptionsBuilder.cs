@@ -14,15 +14,15 @@ public interface IStepOptionsBuilder<TBuilder, TData>
 
 	IOrchestrationStep Build(bool finalize = false);
 
-	TBuilder Name(string name, bool force = false);
+	TBuilder Name(string name, bool force = true);
 
-	TBuilder SetInput(Action<TData, IStepExecutionContext> action, bool force = false);
+	TBuilder SetInput(Action<TData, IStepExecutionContext> action, bool force = true);
 
-	TBuilder SetOutput(Action<TData, IStepExecutionContext> action, bool force = false);
+	TBuilder SetOutput(Action<TData, IStepExecutionContext> action, bool force = true);
 
-	TBuilder ErrorHandlingController(IErrorHandlingController errorHandlingController, bool force = false);
+	TBuilder ErrorHandlingController(IErrorHandlingController errorHandlingController, bool force = true);
 
-	TBuilder DistributedLockExpiration(TimeSpan? distributedLockExpiration, bool force = false);
+	TBuilder DistributedLockExpiration(TimeSpan? distributedLockExpiration, bool force = true);
 }
 
 public abstract class StepOptionsBuilderBase<TBuilder, TData> : IStepOptionsBuilder<TBuilder, TData>
@@ -66,7 +66,7 @@ public abstract class StepOptionsBuilderBase<TBuilder, TData> : IStepOptionsBuil
 		return _builder;
 	}
 
-	public TBuilder SetInput(Action<TData, IStepExecutionContext> action, bool force = false)
+	public TBuilder SetInput(Action<TData, IStepExecutionContext> action, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -77,7 +77,7 @@ public abstract class StepOptionsBuilderBase<TBuilder, TData> : IStepOptionsBuil
 		return _builder;
 	}
 
-	public TBuilder SetOutput(Action<TData, IStepExecutionContext> action, bool force = false)
+	public TBuilder SetOutput(Action<TData, IStepExecutionContext> action, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -88,7 +88,7 @@ public abstract class StepOptionsBuilderBase<TBuilder, TData> : IStepOptionsBuil
 		return _builder;
 	}
 
-	public TBuilder ErrorHandlingController(IErrorHandlingController errorHandlingController, bool force = false)
+	public TBuilder ErrorHandlingController(IErrorHandlingController errorHandlingController, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -99,7 +99,7 @@ public abstract class StepOptionsBuilderBase<TBuilder, TData> : IStepOptionsBuil
 		return _builder;
 	}
 
-	public TBuilder DistributedLockExpiration(TimeSpan? distributedLockExpiration, bool force = false)
+	public TBuilder DistributedLockExpiration(TimeSpan? distributedLockExpiration, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -128,9 +128,9 @@ public interface IStepOptionsBuilder<TBuilder, TStepBody, TData> : IStepOptionsB
 	where TBuilder : IStepOptionsBuilder<TBuilder, TStepBody, TData>
 	where TStepBody : IStepBody
 {
-	TBuilder SetInput(Action<TStepBody, TData, IStepExecutionContext> action, bool force = false);
+	TBuilder SetInput(Action<TStepBody, TData, IStepExecutionContext> action, bool force = true);
 
-	TBuilder SetOutput(Action<TStepBody, TData, IStepExecutionContext> action, bool force = false);
+	TBuilder SetOutput(Action<TStepBody, TData, IStepExecutionContext> action, bool force = true);
 }
 
 public abstract class StepOptionsBuilderBase<TBuilder, TStepBody, TData> : StepOptionsBuilderBase<TBuilder, TData> , IStepOptionsBuilder<TBuilder, TStepBody, TData>, IStepOptionsBuilder<TBuilder, TData>
@@ -142,7 +142,7 @@ public abstract class StepOptionsBuilderBase<TBuilder, TStepBody, TData> : StepO
 	{
 	}
 
-	public TBuilder SetInput(Action<TStepBody, TData, IStepExecutionContext> action, bool force = false)
+	public TBuilder SetInput(Action<TStepBody, TData, IStepExecutionContext> action, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
@@ -153,7 +153,7 @@ public abstract class StepOptionsBuilderBase<TBuilder, TStepBody, TData> : StepO
 		return _builder;
 	}
 
-	public TBuilder SetOutput(Action<TStepBody, TData, IStepExecutionContext> action, bool force = false)
+	public TBuilder SetOutput(Action<TStepBody, TData, IStepExecutionContext> action, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");

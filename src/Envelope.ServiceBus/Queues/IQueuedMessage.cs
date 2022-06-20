@@ -2,7 +2,7 @@
 
 namespace Envelope.ServiceBus.Queues;
 
-public interface IQueuedMessage<TMessage> : IMessageMetadata, ISavedMessage<TMessage>, IMessageInfo
+public interface IQueuedMessage<out TMessage> : IMessageMetadata, ISavedMessage<TMessage>, IMessageInfo
 	where TMessage : class, IMessage
 {
 	string SourceExchangeName { get; }

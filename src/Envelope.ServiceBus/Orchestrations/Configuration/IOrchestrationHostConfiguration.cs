@@ -1,16 +1,22 @@
 ﻿using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.DistributedCoordinator;
-using Envelope.ServiceBus.Orchestrations.Persistence;
+using Envelope.ServiceBus.Orchestrations.Execution;
+using Envelope.ServiceBus.Orchestrations.Logging;
+using Envelope.Transactions;
 using Envelope.Validation;
 
 namespace Envelope.ServiceBus.Orchestrations.Configuration;
 
 public interface IOrchestrationHostConfiguration : IValidable
 {
-	string HostName { get; set; }
 	bool RegisterAsHostedService { get; set; }
-	Func<IServiceProvider, IOrchestrationRepository> OrchestrationRepositoryFactory { get; set; }
+	public ITransactionManagerFactory TransactionManagerFactory { get; set; }
+	public Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
+	Func<IServiceProvider, IOrchestrationRegistry> OrchestrationRegistry { get; set; }
+	Func<IServiceProvider, IExecutionPointerFactory> ExecutionPointerFactory { get; set; }
+	Func<IServiceProvider, IOrchestrationRegistry, IOrchestrationRepository> OrchestrationRepositoryFactory { get; set; }
 	Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; set; }
+	Func<IServiceProvider, IOrchestrationLogger> OrchestrationLogger { get; set; }
 	Func<IServiceProvider, IEventPublisher>? EventPublisherFactory { get; set; }
 	ErrorHandlerConfigurationBuilder ErrorHandlerConfigurationBuilder { get; set; }
 }

@@ -6,6 +6,7 @@ using Envelope.Logging;
 using Envelope.Logging.Extensions;
 using Envelope.Trace;
 using Envelope.ServiceBus.Messages;
+using Envelope.Extensions;
 
 namespace Envelope.ServiceBus.MessageHandlers.Interceptors;
 
@@ -69,7 +70,7 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 					}
 
 					if (handlerContext.TransactionContext != null)
-						handlerContext.TransactionContext.TryRollback(result.ToException());
+						handlerContext.TransactionContext.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 
 				callEndTicks = StaticWatch.CurrentTicks;
@@ -81,7 +82,7 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 				methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
 				if (handlerContext.TransactionContext != null)
-					handlerContext.TransactionContext.TryRollback(executeEx);
+					handlerContext.TransactionContext.ScheduleRollback(executeEx.ToStringTrace());
 
 				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 

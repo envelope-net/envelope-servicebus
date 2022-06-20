@@ -4,9 +4,9 @@ namespace Envelope.ServiceBus.Orchestrations.Execution;
 
 public interface IExecutionPointerFactory
 {
-	ExecutionPointer? BuildGenesisPointer(IOrchestrationDefinition def);
+	ExecutionPointer BuildGenesisPointer(IOrchestrationInstance orchestrationInstance);
 
-	ExecutionPointer? BuildNextPointer(IOrchestrationDefinition def, IExecutionPointer previousPointer, Guid idNextStep);
+	ExecutionPointer? BuildNextPointer(IOrchestrationInstance orchestrationInstance, IExecutionPointer previousPointer, Guid idNextStep);
 
-	ExecutionPointer? BuildNestedPointer(IOrchestrationDefinition orchestrationDefinition, IExecutionPointer previousPointer, Guid idNestedStep);
+	ExecutionPointer? BuildNestedPointer(IOrchestrationInstance orchestrationInstance, IExecutionPointer previousPointer, Guid idNestedStep);
 }

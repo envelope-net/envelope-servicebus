@@ -73,8 +73,8 @@ public static partial class ServiceCollectionExtensions
 				var builder = EventBusConfigurationBuilder.GetDefaultBuilder();
 				configure(builder);
 
-				var options = builder.Build().BuildOptions(sp);
-				var messageBus = new EventBus(sp, options, registry);
+				var cfg = builder.Build();
+				var messageBus = new EventBus(sp, cfg, registry);
 				return messageBus;
 			},
 			eventBusLifetime));

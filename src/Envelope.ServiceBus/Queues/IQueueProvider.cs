@@ -1,4 +1,5 @@
-﻿using Envelope.ServiceBus.Messages;
+﻿using Envelope.ServiceBus.Exchange;
+using Envelope.ServiceBus.Messages;
 using Envelope.Trace;
 
 namespace Envelope.ServiceBus.Queues;
@@ -17,9 +18,12 @@ public interface IQueueProvider
 	IMessageQueue<TMessage>? GetQueue<TMessage>(string queueName)
 		where TMessage : class, IMessage;
 
-	public IQueueEnqueueContext CreateQueueEnqueueContext<TMessage>(ITraceInfo traceInfo, Exchange.IExchangeMessage<TMessage> exchangeMessage)
+	public IQueueEnqueueContext CreateQueueEnqueueContext<TMessage>(ITraceInfo traceInfo, IExchangeMessage<TMessage> exchangeMessage)
 		where TMessage : class, IMessage;
 
-	public IFaultQueueContext CreateFaultQueueContext<TMessage>(ITraceInfo traceInfo, Exchange.IExchangeMessage<TMessage> exchangeMessage)
+	public IFaultQueueContext CreateFaultQueueContext<TMessage>(ITraceInfo traceInfo, IExchangeMessage<TMessage> exchangeMessage)
+		where TMessage : class, IMessage;
+
+	public IFaultQueueContext CreateFaultQueueContext<TMessage>(ITraceInfo traceInfo, IQueuedMessage<TMessage> exchangeMessage)
 		where TMessage : class, IMessage;
 }

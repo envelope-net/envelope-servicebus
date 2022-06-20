@@ -1,5 +1,6 @@
 ﻿using Envelope.Services;
 using Envelope.Trace;
+using Envelope.Transactions;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Envelope.ServiceBus.Messages.Internal;
@@ -15,21 +16,24 @@ internal class InMemoryMessageBodyProvider : IMessageBodyProvider
 		_cache = new MemoryCache(new MemoryCacheOptions());
 	}
 
-	public Task<IResult> SaveToStorageAsync<TMessage>(List<IMessageMetadata> messagesMetadata, TMessage? message, ITraceInfo traceInfo, CancellationToken cancellationToken)
+	public Task<IResult> SaveToStorageAsync<TMessage>(List<IMessageMetadata> messagesMetadata, TMessage? message, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
 		where TMessage : class, IMessage
 	{
-		var result = new ResultBuilder<Guid>();
+		var result = new ResultBuilder();
 
 		if (messagesMetadata != null && message != null)
 		{
 			foreach (var metadata in messagesMetadata)
+			{
+				metadata.HasSelfContent = false;
 				_cache.Set(metadata.MessageId, message, new MemoryCacheEntryOptions { SlidingExpiration = _slidingExpiration });
+			}
 		}
 
 		return Task.FromResult((IResult)result.Build());
 	}
 
-	public Task<IResult<Guid>> SaveReplyToStorageAsync<TResponse>(Guid messageId, TResponse? response, ITraceInfo traceInfo, CancellationToken cancellationToken)
+	public Task<IResult<Guid>> SaveReplyToStorageAsync<TResponse>(Guid messageId, TResponse? response, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
 	{
 		var result = new ResultBuilder<Guid>();
 
@@ -41,7 +45,7 @@ internal class InMemoryMessageBodyProvider : IMessageBodyProvider
 		return Task.FromResult(result.WithData(Guid.NewGuid()).Build());
 	}
 
-	public Task<IResult<TMessage?>> LoadFromStorageAsync<TMessage>(IMessageMetadata messageMetadata, ITraceInfo traceInfo, CancellationToken cancellationToken)
+	public Task<IResult<TMessage?>> LoadFromStorageAsync<TMessage>(IMessageMetadata messageMetadata, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
 		where TMessage : class, IMessage
 	{
 		var result = new ResultBuilder<TMessage?>();
@@ -59,4 +63,10 @@ internal class InMemoryMessageBodyProvider : IMessageBodyProvider
 
 		return Task.FromResult(result.WithData(default).Build());
 	}
+
+	public bool AllowMessagePersistence(bool disabledMessagePersistence, IMessageMetadata message)
+		=> !disabledMessagePersistence;
+
+	public bool AllowAnyMessagePersistence(bool disabledMessagePersistence, IEnumerable<IMessageMetadata> message)
+		=> !disabledMessagePersistence;
 }

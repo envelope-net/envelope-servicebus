@@ -8,8 +8,8 @@ public class ExchangeErrorEvent : ExchangeEvent, IExchangeErrorEvent, IExchangeE
 {
 	public IResult ErrorResult { get; }
 
-	public ExchangeErrorEvent(IExchange exchange, ExchangeEventType exchangeEventType, IResult errorResult)
-		: base(exchange, exchangeEventType)
+	public ExchangeErrorEvent(IExchange exchange, ExchangeEventType exchangeEventType, IMessageMetadata? message, IResult errorResult)
+		: base(exchange, exchangeEventType, message)
 	{
 		ErrorResult = errorResult ?? throw new ArgumentNullException(nameof(errorResult));
 	}

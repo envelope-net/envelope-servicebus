@@ -9,6 +9,8 @@ public interface IStepExecutionContext
 
 	IExecutionPointer ExecutionPointer { get; }
 
+	List<Guid> FinalizedBrancheIds { get; }
+
 	IOrchestrationStep Step { get; }
 
 	IOrchestrationInstance Orchestration { get; }

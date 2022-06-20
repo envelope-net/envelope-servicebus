@@ -1,4 +1,5 @@
 ﻿using Envelope.ServiceBus.Configuration.Internal;
+using Envelope.ServiceBus.Exchange;
 using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Queues.Configuration;
 using Envelope.Trace;
@@ -50,7 +51,7 @@ internal class QueueProvider : IQueueProvider
 			throw new InvalidOperationException($"Queue with name {queueName} cannot store message type {typeof(TMessage).FullName}");
 	}
 
-	public IQueueEnqueueContext CreateQueueEnqueueContext<TMessage>(ITraceInfo traceInfo, Exchange.IExchangeMessage<TMessage> exchangeMessage)
+	public IQueueEnqueueContext CreateQueueEnqueueContext<TMessage>(ITraceInfo traceInfo, IExchangeMessage<TMessage> exchangeMessage)
 		where TMessage : class, IMessage
 	{
 		if (traceInfo == null)
@@ -84,7 +85,22 @@ internal class QueueProvider : IQueueProvider
 		return ctx;
 	}
 
-	public IFaultQueueContext CreateFaultQueueContext<TMessage>(ITraceInfo traceInfo, Exchange.IExchangeMessage<TMessage> exchangeMessage)
+	public IFaultQueueContext CreateFaultQueueContext<TMessage>(ITraceInfo traceInfo, IExchangeMessage<TMessage> exchangeMessage)
+		where TMessage : class, IMessage
+	{
+		if (traceInfo == null)
+			throw new ArgumentNullException(nameof(traceInfo));
+		if (exchangeMessage == null)
+			throw new ArgumentNullException(nameof(exchangeMessage));
+
+		var ctx = new FaultQueueContext
+		{
+		};
+
+		return ctx;
+	}
+
+	public IFaultQueueContext CreateFaultQueueContext<TMessage>(ITraceInfo traceInfo, IQueuedMessage<TMessage> exchangeMessage)
 		where TMessage : class, IMessage
 	{
 		if (traceInfo == null)

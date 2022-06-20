@@ -1,18 +1,17 @@
 ﻿using Envelope.ServiceBus.Messages;
-using Envelope.ServiceBus.Queues.Configuration;
 
 namespace Envelope.ServiceBus.Queues.Internal;
 
 internal class QueuedMessageFactory<TMessage>
 	where TMessage : class, IMessage
 {
-	public static IQueuedMessage<TMessage> CreateQueuedMessage(TMessage? message, IQueueEnqueueContext context, IMessageQueueConfiguration<TMessage> config)
+	public static IQueuedMessage<TMessage> CreateQueuedMessage(TMessage? message, IQueueEnqueueContext context, MessageQueueContext<TMessage> messageQueueContext)
 	{
 		var nowUtc = DateTime.UtcNow;
 		var exchangeMessage = new QueuedMessage<TMessage>
 		{
 			SourceExchangeName = "",
-			QueueName = config.QueueName,
+			QueueName = messageQueueContext.QueueName,
 			MessageId = context.MessageId,
 			ParentMessageId = context.ParentMessageId,
 			PublishingTimeUtc = nowUtc,
@@ -28,6 +27,7 @@ internal class QueuedMessageFactory<TMessage>
 			IsEncryptedContent = context.IsEncryptedContent,
 			RoutingKey = context.RoutingKey,
 			ContainsContent = message != null,
+			HasSelfContent = true,
 			Priority = context.Priority,
 			ErrorHandling = context.ErrorHandling,
 			Headers = context.Headers?.GetAll(),

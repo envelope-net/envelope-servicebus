@@ -34,12 +34,16 @@ public class MessageQueueConfiguration<TMessage> : IMessageQueueConfiguration<TM
 	/// <inheritdoc/>
 	public TimeSpan? DefaultProcessingTimeout { get; set; }
 
+	public Func<IServiceProvider, int?, IQueue<IQueuedMessage<TMessage>>> FIFOQueue { get; set; }
+
+	public Func<IServiceProvider, int?, IQueue<IQueuedMessage<TMessage>>> DelayableQueue { get; set; }
+
 	/// <inheritdoc/>
-	public IMessageBodyProvider MessageBodyProvider { get; set; }
+	public Func<IServiceProvider, IMessageBodyProvider> MessageBodyProvider { get; set; }
 
-	public HandleMessage<TMessage>? MessageHandler { get; set; }
+	public Func<IServiceProvider, IServiceBusOptions, HandleMessage<TMessage>>? MessageHandler { get; set; }
 
-	public IErrorHandlingController? ErrorHandling { get; set; }
+	public Func<IServiceProvider, IErrorHandlingController>? ErrorHandling { get; set; }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	public MessageQueueConfiguration(IServiceBusOptions serviceBusOptions)
@@ -88,6 +92,22 @@ public class MessageQueueConfiguration<TMessage> : IMessageQueueConfiguration<TM
 				parentErrorBuffer = new StringBuilder();
 
 			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DefaultProcessingTimeout))} is invalid");
+		}
+
+		if (FIFOQueue == null)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new StringBuilder();
+
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(FIFOQueue))} == null");
+		}
+
+		if (DelayableQueue == null)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new StringBuilder();
+
+			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DelayableQueue))} == null");
 		}
 
 		if (MessageBodyProvider == null)
