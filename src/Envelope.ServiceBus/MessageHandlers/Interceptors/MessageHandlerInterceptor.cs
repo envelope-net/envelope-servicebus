@@ -72,6 +72,10 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 					if (handlerContext.TransactionContext != null)
 						handlerContext.TransactionContext.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
+				else
+				{
+					resultBuilder.WithData(executeResult.Data);
+				}
 
 				callEndTicks = StaticWatch.CurrentTicks;
 				methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);

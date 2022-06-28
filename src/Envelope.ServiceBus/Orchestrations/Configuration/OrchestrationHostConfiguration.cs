@@ -5,7 +5,6 @@ using Envelope.ServiceBus.Orchestrations.Logging;
 using Envelope.Text;
 using Envelope.Transactions;
 using Envelope.Validation;
-using System.Text;
 
 namespace Envelope.ServiceBus.Orchestrations.Configuration;
 
@@ -26,70 +25,70 @@ public class OrchestrationHostConfiguration : IOrchestrationHostConfiguration, I
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-	public StringBuilder? Validate(string? propertyPrefix = null, StringBuilder? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
+	public List<IValidationMessage>? Validate(string? propertyPrefix = null, List<IValidationMessage>? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
 	{
 		if (TransactionManagerFactory == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionManagerFactory))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionManagerFactory))} == null"));
 		}
 
 		if (TransactionContextFactory == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionContextFactory))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionContextFactory))} == null"));
 		}
 
 		if (OrchestrationRegistry == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(OrchestrationRegistry))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(OrchestrationRegistry))} == null"));
 		}
 
 		if (ExecutionPointerFactory == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ExecutionPointerFactory))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ExecutionPointerFactory))} == null"));
 		}
 
 		if (OrchestrationRepositoryFactory == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(OrchestrationRepositoryFactory))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(OrchestrationRepositoryFactory))} == null"));
 		}
 
 		if (DistributedLockProviderFactory == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DistributedLockProviderFactory))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DistributedLockProviderFactory))} == null"));
 		}
 
 		if (OrchestrationLogger == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(OrchestrationLogger))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(OrchestrationLogger))} == null"));
 		}
 
 		if (ErrorHandlerConfigurationBuilder == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ErrorHandlerConfigurationBuilder))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ErrorHandlerConfigurationBuilder))} == null"));
 		}
 
 		return parentErrorBuffer;

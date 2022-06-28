@@ -59,8 +59,8 @@ public abstract class QueueProviderConfigurationBuilderBase<TBuilder, TObject> :
 
 		_finalized = finalize;
 
-		var error = _queueProviderConfiguration.Validate(nameof(IQueueProviderConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _queueProviderConfiguration.Validate(nameof(IQueueProviderConfiguration));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _queueProviderConfiguration;

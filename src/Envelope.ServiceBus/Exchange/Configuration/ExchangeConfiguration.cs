@@ -5,7 +5,6 @@ using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Queues;
 using Envelope.Text;
 using Envelope.Validation;
-using System.Text;
 
 namespace Envelope.ServiceBus.Exchange.Configuration;
 
@@ -55,94 +54,94 @@ public class ExchangeConfiguration<TMessage> : IExchangeConfiguration<TMessage>,
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-	public StringBuilder? Validate(string? propertyPrefix = null, StringBuilder? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
+	public List<IValidationMessage>? Validate(string? propertyPrefix = null, List<IValidationMessage>? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
 	{
 		if (ServiceBusOptions == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ServiceBusOptions))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ServiceBusOptions))} == null"));
 		}
 
 		if (string.IsNullOrWhiteSpace(ExchangeName))
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ExchangeName))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ExchangeName))} == null"));
 		}
 
 		if (StartDelay < TimeSpan.Zero)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(StartDelay))} is invalid");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(StartDelay))} is invalid"));
 		}
 
 		if (FetchInterval <= TimeSpan.Zero)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(FetchInterval))} is invalid");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(FetchInterval))} is invalid"));
 		}
 
 		if (MaxSize < 1)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MaxSize))} is invalid");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MaxSize))} is invalid"));
 		}
 
 		if (ExchangeMessageFactory == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ExchangeMessageFactory))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ExchangeMessageFactory))} == null"));
 		}
 
 		if (MessageBrokerHandler == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MessageBrokerHandler))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MessageBrokerHandler))} == null"));
 		}
 
 		if (FIFOQueue == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(FIFOQueue))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(FIFOQueue))} == null"));
 		}
 
 		if (DelayableQueue == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DelayableQueue))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DelayableQueue))} == null"));
 		}
 
 		if (MessageBodyProvider == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MessageBodyProvider))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MessageBodyProvider))} == null"));
 		}
 
 		if (Router == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(Router))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(Router))} == null"));
 		}
 
 		return parentErrorBuffer;

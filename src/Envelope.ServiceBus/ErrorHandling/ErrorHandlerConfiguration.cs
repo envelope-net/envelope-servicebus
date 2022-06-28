@@ -3,7 +3,6 @@ using Envelope.ServiceBus.ErrorHandling;
 using Envelope.ServiceBus.ErrorHandling.Internal;
 using Envelope.Text;
 using Envelope.Validation;
-using System.Text;
 
 namespace Envelope.ServiceBus.Configuration;
 
@@ -20,22 +19,22 @@ public class ErrorHandlerConfiguration : IErrorHandlerConfiguration, IValidable
 
 	public int? MaxRetryCount { get; set; }
 
-	public StringBuilder? Validate(string? propertyPrefix = null, StringBuilder? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
+	public List<IValidationMessage>? Validate(string? propertyPrefix = null, List<IValidationMessage>? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
 	{
 		if (DefaultRetryInterval <= TimeSpan.Zero)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DefaultRetryInterval))} <= Zero");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DefaultRetryInterval))} <= Zero"));
 		}
 
 		if (MaxRetryCount < 0)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MaxRetryCount))} < 0");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MaxRetryCount))} < 0"));
 		}
 
 		return parentErrorBuffer;

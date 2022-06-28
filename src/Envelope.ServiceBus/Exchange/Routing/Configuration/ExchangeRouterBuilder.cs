@@ -55,8 +55,8 @@ public abstract class ExchangeRouterBuilderBase<TBuilder, TObject> : IExchangeRo
 
 		_finalized = finalize;
 
-		var error = _exchangeRouter.Validate(nameof(IExhcangeRouter))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _exchangeRouter.Validate(nameof(IExhcangeRouter));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _exchangeRouter;

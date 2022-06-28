@@ -61,8 +61,8 @@ public abstract class ExchangeProviderConfigurationBuilderBase<TBuilder, TObject
 
 		_finalized = finalize;
 
-		var error = _exchangeProviderConfiguration.Validate(nameof(IExchangeProviderConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _exchangeProviderConfiguration.Validate(nameof(IExchangeProviderConfiguration));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _exchangeProviderConfiguration;

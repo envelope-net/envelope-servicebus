@@ -144,8 +144,8 @@ public class StepBuilder<TStepBody, TData> : IStepBuilder<TStepBody, TData>
 	{
 		_finalized = finalize;
 
-		var error = CurrentStep.Validate(nameof(OrchestrationStep))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = CurrentStep.Validate(nameof(OrchestrationStep));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return CurrentStep;

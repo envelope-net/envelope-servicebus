@@ -77,8 +77,8 @@ public class OrchestrationBuilder<TData> : IOrchestrationBuilder<TData>
 				AwaitForHandleLifeCycleEvents = orchestration.AwaitForHandleLifeCycleEvents
 			};
 
-		var error = orchestrationDefinition.Validate(nameof(IOrchestrationDefinition))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = orchestrationDefinition.Validate(nameof(IOrchestrationDefinition));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return orchestrationDefinition;

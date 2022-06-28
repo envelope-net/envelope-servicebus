@@ -1,4 +1,5 @@
-﻿using Envelope.ServiceBus.Configuration;
+﻿using Envelope.Exceptions;
+using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.ErrorHandling;
 using Envelope.ServiceBus.Exchange.Routing;
 using Envelope.ServiceBus.Messages;
@@ -109,7 +110,9 @@ public class ExchangeContext<TMessage>
 			if (router == null)
 				throw new InvalidOperationException(nameof(router));
 
-			router.Validate(nameof(Router), null, null);
+			var error = router.Validate(nameof(Router), null, null);
+			if (0 < error?.Count)
+				throw new ConfigurationException(error);
 
 			return router;
 		});
