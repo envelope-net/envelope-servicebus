@@ -65,6 +65,7 @@ internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : M
 			}
 
 			var resultBuilder = new ResultBuilder<ISendResponse<TResponse>>();
+			resultBuilder.Merge(result);
 			if (result.Data != null)
 			{
 				var response = result.Data;

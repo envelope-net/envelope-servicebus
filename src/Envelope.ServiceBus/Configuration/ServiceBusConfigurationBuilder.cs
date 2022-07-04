@@ -82,8 +82,8 @@ public abstract class ServiceBusConfigurationBuilderBase<TBuilder, TObject> : IS
 
 		_finalized = finalize;
 
-		var error = _serviceBusConfiguration.Validate(nameof(IServiceBusConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _serviceBusConfiguration.Validate(nameof(IServiceBusConfiguration));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _serviceBusConfiguration;

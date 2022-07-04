@@ -51,8 +51,8 @@ internal class OrchestrationRegistry : IOrchestrationRegistry
 		orchestration.Build(builder);
 		var orchestrationDefinition = builder.Build(orchestration, true);
 
-		var error = orchestrationDefinition.Validate(nameof(IOrchestrationDefinition))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = orchestrationDefinition.Validate(nameof(IOrchestrationDefinition));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		RegisterOrchestration(orchestrationDefinition);

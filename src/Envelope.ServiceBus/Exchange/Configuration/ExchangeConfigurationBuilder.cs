@@ -73,8 +73,8 @@ public abstract class ExchangeConfigurationBuilderBase<TBuilder, TObject, TMessa
 
 		_finalized = finalize;
 
-		var error = _exchangeConfiguration.Validate(nameof(IExchangeConfiguration<TMessage>))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _exchangeConfiguration.Validate(nameof(IExchangeConfiguration<TMessage>));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _exchangeConfiguration;

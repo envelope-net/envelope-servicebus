@@ -67,8 +67,8 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 
 		_finalized = finalize;
 
-		var error = _eventBusConfiguration.Validate(nameof(IEventBusConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _eventBusConfiguration.Validate(nameof(IEventBusConfiguration));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _eventBusConfiguration;

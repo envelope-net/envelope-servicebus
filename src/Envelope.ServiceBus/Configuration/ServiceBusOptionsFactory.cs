@@ -31,8 +31,8 @@ public static class ServiceBusOptionsFactory
 		if (configuration == null)
 			throw new ArgumentNullException(nameof(configuration));
 
-		var error = configuration.Validate(nameof(ServiceBusConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = configuration.Validate(nameof(ServiceBusConfiguration));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		var options = new ServiceBusOptions(serviceProvider)
@@ -74,8 +74,8 @@ public static class ServiceBusOptionsFactory
 		options.ExchangeProvider = exchangeProvider;
 		options.QueueProvider = queueProvider;
 
-		error = options.Validate(nameof(ServiceBusOptions))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		error = options.Validate(nameof(ServiceBusOptions));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return options;

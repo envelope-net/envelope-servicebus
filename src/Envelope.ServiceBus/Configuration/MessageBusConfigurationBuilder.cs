@@ -67,8 +67,8 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 
 		_finalized = finalize;
 
-		var error = _messageBusConfiguration.Validate(nameof(IMessageBusConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _messageBusConfiguration.Validate(nameof(IMessageBusConfiguration));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _messageBusConfiguration;

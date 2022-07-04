@@ -4,11 +4,11 @@ using Envelope.ServiceBus.MessageHandlers.Logging;
 using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Resolvers;
 using Envelope.Text;
-using System.Text;
+using Envelope.Validation;
 
 namespace Envelope.ServiceBus.Configuration;
 
-public class EventBusConfiguration : IEventBusConfiguration
+public class EventBusConfiguration : IEventBusConfiguration, IValidable
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	public string EventBusName { get; set; }
@@ -21,46 +21,46 @@ public class EventBusConfiguration : IEventBusConfiguration
 	public List<IEventHandlersAssembly> EventHandlerAssemblies { get; set; }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-	public StringBuilder? Validate(string? propertyPrefix = null, StringBuilder? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
+	public List<IValidationMessage>? Validate(string? propertyPrefix = null, List<IValidationMessage>? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
 	{
 		if (string.IsNullOrWhiteSpace(EventBusName))
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(EventBusName))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(EventBusName))} == null"));
 		}
 
 		if (HostLogger == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HostLogger))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HostLogger))} == null"));
 		}
 
 		if (HandlerLogger == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HandlerLogger))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HandlerLogger))} == null"));
 		}
 
 		if (MessageHandlerResultFactory == null)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MessageHandlerResultFactory))} == null");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(MessageHandlerResultFactory))} == null"));
 		}
 
 		if ((EventHandlerTypes == null || EventHandlerTypes.Count == 0) && (EventHandlerAssemblies == null || EventHandlerAssemblies.Count == 0))
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine(StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", $"{nameof(EventHandlerTypes)} == null && {nameof(EventHandlerAssemblies)} == null"));
+			parentErrorBuffer.Add(ValidationMessageFactory.Error(StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", $"{nameof(EventHandlerTypes)} == null && {nameof(EventHandlerAssemblies)} == null")));
 		}
 
 		return parentErrorBuffer;

@@ -70,8 +70,8 @@ public abstract class OrchestrationHostConfigurationBuilderBase<TBuilder, TObjec
 
 		_finalized = finalize;
 
-		var error = _orchestrationHostConfiguration.Validate(nameof(IOrchestrationHostConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _orchestrationHostConfiguration.Validate(nameof(IOrchestrationHostConfiguration));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _orchestrationHostConfiguration;

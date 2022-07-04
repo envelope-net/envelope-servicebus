@@ -69,8 +69,8 @@ public abstract class MessageQueueConfigurationBuilderBase<TBuilder, TObject, TM
 
 		_finalized = finalize;
 
-		var error = _messageQueueConfiguration.Validate(nameof(IMessageQueueConfiguration<TMessage>))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _messageQueueConfiguration.Validate(nameof(IMessageQueueConfiguration<TMessage>));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _messageQueueConfiguration;

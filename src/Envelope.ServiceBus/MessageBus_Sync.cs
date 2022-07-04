@@ -20,55 +20,20 @@ namespace Envelope.ServiceBus;
 
 public partial class MessageBus : IMessageBus
 {
-	protected IServiceProvider ServiceProvider { get; }
-	protected IMessageBusOptions MessageBusOptions { get; }
-	protected IMessageHandlerRegistry MessageHandlerRegistry { get; }
-
-	private static readonly ConcurrentDictionary<Type, MessageHandlerProcessorBase> _asyncMessageHandlerProcessors = new();
-	private static readonly ConcurrentDictionary<Type, MessageHandlerProcessorBase> _asyncVoidMessageHandlerProcessors = new();
-
-	public MessageBus(IServiceProvider serviceProvider, IMessageBusConfiguration configuration, IMessageHandlerRegistry messageHandlerRegistry)
-	{
-		ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-		MessageHandlerRegistry = messageHandlerRegistry ?? throw new ArgumentNullException(nameof(messageHandlerRegistry));
-
-		if (configuration == null)
-			throw new ArgumentNullException(nameof(configuration));
-
-		var error = configuration.Validate(nameof(MessageBusConfiguration));
-		if (0 < error?.Count)
-			throw new ConfigurationException(error);
-
-		MessageBusOptions = new MessageBusOptions()
-		{
-			HostInfo = new HostInfo(configuration.MessageBusName),
-			HostLogger = configuration.HostLogger(serviceProvider),
-			HandlerLogger = configuration.HandlerLogger(serviceProvider),
-			MessageHandlerResultFactory = configuration.MessageHandlerResultFactory(serviceProvider),
-			MessageBodyProvider = configuration.MessageBodyProvider
-		};
-
-		error = MessageBusOptions.Validate(nameof(MessageBusOptions));
-		if (0 < error?.Count)
-			throw new ConfigurationException(error);
-	}
-
-	public Task<IResult<Guid>> SendAsync(
+	public IResult<Guid> Send(
 		IRequestMessage message,
-		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
-		=> SendAsync(message, null!, cancellationToken, memberName, sourceFilePath, sourceLineNumber);
+		=> Send(message, null!, memberName, sourceFilePath, sourceLineNumber);
 
-	public Task<IResult<Guid>> SendAsync(
+	public IResult<Guid> Send(
 		IRequestMessage message,
 		Action<MessageOptionsBuilder> optionsBuilder,
-		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
-		=> SendAsync(
+		=> Send(
 			message,
 			optionsBuilder,
 			TraceInfo.Create(
@@ -77,20 +42,17 @@ public partial class MessageBus : IMessageBus
 				null,
 				memberName,
 				sourceFilePath,
-				sourceLineNumber),
-			cancellationToken);
+				sourceLineNumber));
 
-	public Task<IResult<Guid>> SendAsync(
+	public IResult<Guid> Send(
 		IRequestMessage message,
-		ITraceInfo traceInfo,
-		CancellationToken cancellationToken = default)
-		=> SendAsync(message, (Action<MessageOptionsBuilder>?)null, traceInfo, cancellationToken);
+		ITraceInfo traceInfo)
+		=> Send(message, (Action<MessageOptionsBuilder>?)null, traceInfo);
 
-	public async Task<IResult<Guid>> SendAsync(
+	public IResult<Guid> Send(
 		IRequestMessage message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
-		ITraceInfo traceInfo,
-		CancellationToken cancellationToken = default)
+		ITraceInfo traceInfo)
 	{
 		if (message == null)
 		{
@@ -105,20 +67,19 @@ public partial class MessageBus : IMessageBus
 		var isLocalTransactionManager = false;
 		if (options.TransactionContext == null)
 		{
-			var transactionManager = await CreateTransactionManagerAsync(cancellationToken).ConfigureAwait(false);
+			var transactionManager = CreateTransactionManager();
 			options.TransactionContext = transactionManager.CreateTransactionContext();
 			isLocalTransactionManager = true;
 		}
 
-		return await SendAsync(message, options, isLocalTransactionManager, traceInfo, cancellationToken).ConfigureAwait(false);
+		return Send(message, options, isLocalTransactionManager, traceInfo);
 	}
 
-	protected async Task<IResult<Guid>> SendAsync(
+	protected IResult<Guid> Send(
 		IRequestMessage message,
 		IMessageOptions options,
 		bool isLocalTransactionManager,
-		ITraceInfo traceInfo,
-		CancellationToken cancellationToken = default)
+		ITraceInfo traceInfo)
 	{
 		var result = new ResultBuilder<Guid>();
 
@@ -138,15 +99,15 @@ public partial class MessageBus : IMessageBus
 
 		var transactionContext = options.TransactionContext;
 
-		return await ServiceTransactionInterceptor.ExecuteActionAsync(
+		return ServiceTransactionInterceptor.ExecuteAction(
 			false,
 			traceInfo,
 			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			(traceInfo, transactionContext) =>
 			{
 				var requestMessageType = message.GetType();
 
-				var savedMessageResult = await SaveRequestMessageAsync(message, options, traceInfo, cancellationToken).ConfigureAwait(false);
+				var savedMessageResult = SaveRequestMessage(message, options, traceInfo);
 				if (result.MergeHasError(savedMessageResult))
 					return result.Build();
 
@@ -188,11 +149,11 @@ public partial class MessageBus : IMessageBus
 
 				handlerContext.Initialize(MessageStatus.Created, null);
 
-				var handlerProcessor = (AsyncVoidMessageHandlerProcessor)_asyncVoidMessageHandlerProcessors.GetOrAdd(
+				var handlerProcessor = (VoidMessageHandlerProcessor)_asyncVoidMessageHandlerProcessors.GetOrAdd(
 					requestMessageType,
 					requestMessageType =>
 					{
-						var processor = Activator.CreateInstance(typeof(AsyncVoidMessageHandlerProcessor<,>).MakeGenericType(requestMessageType, handlerContext.GetType())) as MessageHandlerProcessorBase;
+						var processor = Activator.CreateInstance(typeof(VoidMessageHandlerProcessor<,>).MakeGenericType(requestMessageType, handlerContext.GetType())) as MessageHandlerProcessorBase;
 
 						if (processor == null)
 							result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {requestMessageType}");
@@ -206,7 +167,7 @@ public partial class MessageBus : IMessageBus
 				if (handlerProcessor == null)
 					return result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {requestMessageType}");
 
-				var handlerResult = await handlerProcessor.HandleAsync(savedMessage.Message, handlerContext, ServiceProvider, cancellationToken).ConfigureAwait(false);
+				var handlerResult = handlerProcessor.Handle(savedMessage.Message, handlerContext, ServiceProvider);
 				result.MergeAllHasError(handlerResult);
 
 				if (result.HasError())
@@ -221,42 +182,38 @@ public partial class MessageBus : IMessageBus
 
 				return result.WithData(savedMessage.MessageId).Build();
 			},
-			$"{nameof(SendAsync)}<{message?.GetType().FullName}> return {typeof(IResult<Guid>).FullName}",
-			async (traceInfo, exception, detail) =>
+			$"{nameof(Send)}<{message?.GetType().FullName}> return {typeof(IResult<Guid>).FullName}",
+			(traceInfo, exception, detail) =>
 			{
 				var errorMessage =
-					await MessageBusOptions.HostLogger.LogErrorAsync(
+					MessageBusOptions.HostLogger.LogError(
 						traceInfo,
 						MessageBusOptions.HostInfo,
 						HostStatus.Unchanged,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
-						null,
-						cancellationToken: default).ConfigureAwait(false);
+						null);
 
 				return errorMessage;
 			},
 			null,
-			isLocalTransactionManager,
-			cancellationToken).ConfigureAwait(false);
+			isLocalTransactionManager);
 	}
 
-	public Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	public IResult<ISendResponse<TResponse>> Send<TResponse>(
 		IRequestMessage<TResponse> message,
-		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
-		=> SendAsync(message, null!, cancellationToken, memberName, sourceFilePath, sourceLineNumber);
+		=> Send(message, null!, memberName, sourceFilePath, sourceLineNumber);
 
-	public Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	public IResult<ISendResponse<TResponse>> Send<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder> optionsBuilder,
-		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
-		=> SendAsync(
+		=> Send(
 			message,
 			optionsBuilder,
 			TraceInfo.Create(
@@ -265,20 +222,17 @@ public partial class MessageBus : IMessageBus
 				null,
 				memberName,
 				sourceFilePath,
-				sourceLineNumber),
-			cancellationToken);
+				sourceLineNumber));
 
-	public Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	public IResult<ISendResponse<TResponse>> Send<TResponse>(
 		IRequestMessage<TResponse> message,
-		ITraceInfo traceInfo,
-		CancellationToken cancellationToken = default)
-		=> SendAsync(message, null, traceInfo, cancellationToken);
+		ITraceInfo traceInfo)
+		=> Send(message, null, traceInfo);
 
-	public async Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	public IResult<ISendResponse<TResponse>> Send<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
-		ITraceInfo traceInfo,
-		CancellationToken cancellationToken = default)
+		ITraceInfo traceInfo)
 	{
 		if (message == null)
 		{
@@ -293,20 +247,19 @@ public partial class MessageBus : IMessageBus
 		var isLocalTransactionManager = false;
 		if (options.TransactionContext == null)
 		{
-			var transactionManager = await CreateTransactionManagerAsync(cancellationToken).ConfigureAwait(false);
+			var transactionManager = CreateTransactionManager();
 			options.TransactionContext = transactionManager.CreateTransactionContext();
 			isLocalTransactionManager = true;
 		}
 
-		return await SendAsync(message, options, isLocalTransactionManager, traceInfo, cancellationToken).ConfigureAwait(false);
+		return Send(message, options, isLocalTransactionManager, traceInfo);
 	}
 
-	protected async Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	protected IResult<ISendResponse<TResponse>> Send<TResponse>(
 		IRequestMessage<TResponse> message,
 		IMessageOptions options,
 		bool isLocalTransactionManager,
-		ITraceInfo traceInfo,
-		CancellationToken cancellationToken = default)
+		ITraceInfo traceInfo)
 	{
 		var result = new ResultBuilder<ISendResponse<TResponse>>();
 
@@ -326,15 +279,15 @@ public partial class MessageBus : IMessageBus
 
 		var transactionContext = options.TransactionContext;
 
-		return await ServiceTransactionInterceptor.ExecuteActionAsync(
+		return ServiceTransactionInterceptor.ExecuteAction(
 			false,
 			traceInfo,
 			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			(traceInfo, transactionContext) =>
 			{
 				var requestMessageType = message.GetType();
 
-				var savedMessageResult = await SaveRequestMessageAsync<IRequestMessage<TResponse>, TResponse>(message, options, traceInfo, cancellationToken).ConfigureAwait(false);
+				var savedMessageResult = SaveRequestMessage<IRequestMessage<TResponse>, TResponse>(message, options, traceInfo);
 				if (result.MergeHasError(savedMessageResult))
 					return result.Build();
 
@@ -359,11 +312,11 @@ public partial class MessageBus : IMessageBus
 				handlerContext.DisabledMessagePersistence = options.DisabledMessagePersistence;
 				handlerContext.ThrowNoHandlerException = true;
 
-				var handlerProcessor = (AsyncMessageHandlerProcessor<TResponse>)_asyncVoidMessageHandlerProcessors.GetOrAdd(
+				var handlerProcessor = (MessageHandlerProcessor<TResponse>)_asyncVoidMessageHandlerProcessors.GetOrAdd(
 					requestMessageType,
 					requestMessageType =>
 					{
-						var processor = Activator.CreateInstance(typeof(AsyncMessageHandlerProcessor<,,>).MakeGenericType(requestMessageType, typeof(TResponse), handlerContext.GetType())) as MessageHandlerProcessorBase;
+						var processor = Activator.CreateInstance(typeof(MessageHandlerProcessor<,,>).MakeGenericType(requestMessageType, typeof(TResponse), handlerContext.GetType())) as MessageHandlerProcessorBase;
 
 						if (processor == null)
 							result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {requestMessageType}");
@@ -377,7 +330,7 @@ public partial class MessageBus : IMessageBus
 				if (handlerProcessor == null)
 					return result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {requestMessageType}");
 
-				var handlerResult = await handlerProcessor.HandleAsync(savedMessage.Message, handlerContext, ServiceProvider, traceInfo, SaveResponseMessageAsync, cancellationToken).ConfigureAwait(false);
+				var handlerResult = handlerProcessor.Handle(savedMessage.Message, handlerContext, ServiceProvider, traceInfo, SaveResponseMessage);
 				result.MergeAllWithData(handlerResult);
 
 				if (result.HasError())
@@ -392,34 +345,31 @@ public partial class MessageBus : IMessageBus
 
 				return result.WithData(handlerResult.Data).Build();
 			},
-			$"{nameof(SendAsync)}<{message?.GetType().FullName}> return {typeof(IResult<ISendResponse<TResponse>>).FullName}",
-			async (traceInfo, exception, detail) =>
+			$"{nameof(Send)}<{message?.GetType().FullName}> return {typeof(IResult<ISendResponse<TResponse>>).FullName}",
+			(traceInfo, exception, detail) =>
 			{
 				var errorMessage =
-					await MessageBusOptions.HostLogger.LogErrorAsync(
+					MessageBusOptions.HostLogger.LogError(
 						traceInfo,
 						MessageBusOptions.HostInfo,
 						HostStatus.Unchanged,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
-						null,
-						cancellationToken: default).ConfigureAwait(false);
+						null);
 
 				return errorMessage;
 			},
 			null,
-			isLocalTransactionManager,
-			cancellationToken).ConfigureAwait(false);
+			isLocalTransactionManager);
 	}
 
-	protected virtual Task<ITransactionManager> CreateTransactionManagerAsync(CancellationToken cancellationToken = default)
-		=> Task.FromResult(ServiceProvider.GetService<ITransactionManagerFactory>()?.Create() ?? TransactionManagerFactory.CreateTransactionManager());
+	protected virtual ITransactionManager CreateTransactionManager()
+		=> ServiceProvider.GetService<ITransactionManagerFactory>()?.Create() ?? TransactionManagerFactory.CreateTransactionManager();
 
-	protected virtual async Task<IResult<ISavedMessage<TMessage>>> SaveRequestMessageAsync<TMessage, TResponse>(
+	protected virtual IResult<ISavedMessage<TMessage>> SaveRequestMessage<TMessage, TResponse>(
 		TMessage requestMessage,
 		IMessageOptions options,
-		ITraceInfo traceInfo,
-		CancellationToken cancellationToken = default)
+		ITraceInfo traceInfo)
 		where TMessage : class, IRequestMessage<TResponse>
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
@@ -453,7 +403,7 @@ public partial class MessageBus : IMessageBus
 		if (MessageBusOptions.MessageBodyProvider != null
 			&& MessageBusOptions.MessageBodyProvider.AllowMessagePersistence(options.DisabledMessagePersistence, metadata))
 		{
-			var saveResult = await MessageBusOptions.MessageBodyProvider.SaveToStorageAsync(new List<IMessageMetadata> { metadata }, requestMessage, traceInfo, options.TransactionContext, cancellationToken).ConfigureAwait(false);
+			var saveResult = MessageBusOptions.MessageBodyProvider.SaveToStorage(new List<IMessageMetadata> { metadata }, requestMessage, traceInfo, options.TransactionContext);
 			if (result.MergeHasError(saveResult))
 				return result.Build();
 		}
@@ -461,11 +411,10 @@ public partial class MessageBus : IMessageBus
 		return result.WithData(metadata).Build();
 	}
 
-	protected virtual async Task<IResult<ISavedMessage<TMessage>>> SaveRequestMessageAsync<TMessage>(
+	protected virtual IResult<ISavedMessage<TMessage>> SaveRequestMessage<TMessage>(
 		TMessage requestMessage,
 		IMessageOptions options,
-		ITraceInfo traceInfo,
-		CancellationToken cancellationToken = default)
+		ITraceInfo traceInfo)
 		where TMessage : class, IRequestMessage
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
@@ -499,7 +448,7 @@ public partial class MessageBus : IMessageBus
 		if (MessageBusOptions.MessageBodyProvider != null
 			&& MessageBusOptions.MessageBodyProvider.AllowMessagePersistence(options.DisabledMessagePersistence, metadata))
 		{
-			var saveResult = await MessageBusOptions.MessageBodyProvider.SaveToStorageAsync(new List<IMessageMetadata> { metadata }, requestMessage, traceInfo, options.TransactionContext, cancellationToken).ConfigureAwait(false);
+			var saveResult = MessageBusOptions.MessageBodyProvider.SaveToStorage(new List<IMessageMetadata> { metadata }, requestMessage, traceInfo, options.TransactionContext);
 			if (result.MergeHasError(saveResult))
 				return result.Build();
 		}
@@ -507,18 +456,17 @@ public partial class MessageBus : IMessageBus
 		return result.WithData(metadata).Build();
 	}
 
-	protected virtual async Task<IResult<Guid>> SaveResponseMessageAsync<TResponse>(
+	protected virtual IResult<Guid> SaveResponseMessage<TResponse>(
 		TResponse responseMessage,
 		IMessageHandlerContext handlerContext,
-		ITraceInfo traceInfo,
-		CancellationToken cancellationToken = default)
+		ITraceInfo traceInfo)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder<Guid>();
 
 		if (MessageBusOptions.MessageBodyProvider != null)
 		{
-			var saveResult = await MessageBusOptions.MessageBodyProvider.SaveReplyToStorageAsync(handlerContext.MessageId, responseMessage, traceInfo, handlerContext.TransactionContext, cancellationToken).ConfigureAwait(false);
+			var saveResult = MessageBusOptions.MessageBodyProvider.SaveReplyToStorage(handlerContext.MessageId, responseMessage, traceInfo, handlerContext.TransactionContext);
 			if (result.MergeHasError(saveResult))
 				return result.Build();
 

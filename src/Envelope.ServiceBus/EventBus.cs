@@ -5,7 +5,6 @@ using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Internals;
 using Envelope.ServiceBus.MessageHandlers.Processors;
 using Envelope.ServiceBus.Messages;
-using Envelope.ServiceBus.Messages.Internal;
 using Envelope.ServiceBus.Messages.Options;
 using Envelope.Services;
 using Envelope.Services.Transactions;
@@ -17,7 +16,7 @@ using System.Runtime.CompilerServices;
 
 namespace Envelope.ServiceBus;
 
-public class EventBus : IEventBus
+public partial class EventBus : IEventBus
 {
 	protected IServiceProvider ServiceProvider { get; }
 	protected IEventBusOptions EventBusOptions { get; }
@@ -34,8 +33,8 @@ public class EventBus : IEventBus
 		if (configuration == null)
 			throw new ArgumentNullException(nameof(configuration));
 
-		var error = configuration.Validate(nameof(EventBusConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = configuration.Validate(nameof(EventBusConfiguration));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		EventBusOptions = new EventBusOptions()
@@ -47,8 +46,8 @@ public class EventBus : IEventBus
 			EventBodyProvider = configuration.EventBodyProvider
 		};
 
-		error = EventBusOptions.Validate(nameof(EventBusOptions))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		error = EventBusOptions.Validate(nameof(EventBusOptions));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 	}
 
@@ -262,7 +261,7 @@ public class EventBus : IEventBus
 		TEvent @event,
 		IMessageOptions options,
 		ITraceInfo traceInfo,
-		CancellationToken cancellation = default)
+		CancellationToken cancellationToken = default)
 		where TEvent : class, IEvent
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
@@ -296,7 +295,7 @@ public class EventBus : IEventBus
 		if (EventBusOptions.EventBodyProvider != null
 			&& EventBusOptions.EventBodyProvider.AllowMessagePersistence(options.DisabledMessagePersistence, metadata))
 		{
-			var saveResult = await EventBusOptions.EventBodyProvider.SaveToStorageAsync(new List<IMessageMetadata> { metadata }, @event, traceInfo, options.TransactionContext, cancellation).ConfigureAwait(false);
+			var saveResult = await EventBusOptions.EventBodyProvider.SaveToStorageAsync(new List<IMessageMetadata> { metadata }, @event, traceInfo, options.TransactionContext, cancellationToken).ConfigureAwait(false);
 			if (result.MergeHasError(saveResult))
 				return result.Build();
 		}

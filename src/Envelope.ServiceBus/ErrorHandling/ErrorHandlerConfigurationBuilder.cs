@@ -44,8 +44,8 @@ public abstract class ErrorHandlerConfigurationBuilderBase<TBuilder, TObject> : 
 
 		_finalized = finalize;
 
-		var error = _errorHandlerConfiguration.Validate(nameof(IErrorHandlerConfiguration))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _errorHandlerConfiguration.Validate(nameof(IErrorHandlerConfiguration));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _errorHandlerConfiguration;

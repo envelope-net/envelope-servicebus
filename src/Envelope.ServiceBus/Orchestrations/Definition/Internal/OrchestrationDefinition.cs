@@ -5,7 +5,6 @@ using Envelope.ServiceBus.Orchestrations.Graphing;
 using Envelope.ServiceBus.Orchestrations.Graphing.Internal;
 using Envelope.Text;
 using Envelope.Validation;
-using System.Text;
 
 namespace Envelope.ServiceBus.Orchestrations.Definition.Internal;
 
@@ -99,22 +98,22 @@ internal class OrchestrationDefinition : IOrchestrationDefinition, IValidable
 		}
 	}
 
-	public StringBuilder? Validate(string? propertyPrefix = null, StringBuilder? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
+	public List<IValidationMessage>? Validate(string? propertyPrefix = null, List<IValidationMessage>? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
 	{
 		if (DefaultDistributedLockExpiration <= TimeSpan.Zero)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"Invalid {StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DefaultDistributedLockExpiration))} <= {TimeSpan.Zero}");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"Invalid {StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(DefaultDistributedLockExpiration))} <= {TimeSpan.Zero}"));
 		}
 
 		if (WorkerIdleTimeout <= TimeSpan.Zero)
 		{
 			if (parentErrorBuffer == null)
-				parentErrorBuffer = new StringBuilder();
+				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.AppendLine($"Invalid {StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(WorkerIdleTimeout))} <= {TimeSpan.Zero}");
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"Invalid {StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(WorkerIdleTimeout))} <= {TimeSpan.Zero}"));
 		}
 
 		return parentErrorBuffer;

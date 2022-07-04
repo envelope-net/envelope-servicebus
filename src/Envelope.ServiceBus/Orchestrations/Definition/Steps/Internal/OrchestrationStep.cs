@@ -1,7 +1,6 @@
 ﻿using Envelope.ServiceBus.ErrorHandling;
 using Envelope.ServiceBus.Orchestrations.Definition.Steps.Body;
 using Envelope.Validation;
-using System.Text;
 
 namespace Envelope.ServiceBus.Orchestrations.Definition.Steps.Internal;
 
@@ -72,7 +71,7 @@ internal abstract class OrchestrationStep : IOrchestrationStep, IValidable
 		return errorHandlingController.GetRetryTimeSpan(retryCount);
 	}
 
-	public StringBuilder? Validate(string? propertyPrefix = null, StringBuilder? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
+	public List<IValidationMessage>? Validate(string? propertyPrefix = null, List<IValidationMessage>? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
 	{
 		return parentErrorBuffer;
 	}

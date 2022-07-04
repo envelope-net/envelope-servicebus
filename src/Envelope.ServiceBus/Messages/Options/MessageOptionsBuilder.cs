@@ -73,8 +73,8 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 
 		_finalized = finalize;
 
-		var error = _messageOptions.Validate(nameof(IMessageOptions))?.ToString();
-		if (!string.IsNullOrWhiteSpace(error))
+		var error = _messageOptions.Validate(nameof(IMessageOptions));
+		if (0 < error?.Count)
 			throw new ConfigurationException(error);
 
 		return _messageOptions;
