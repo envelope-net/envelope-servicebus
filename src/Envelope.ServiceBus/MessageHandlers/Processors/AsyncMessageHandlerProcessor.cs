@@ -68,6 +68,7 @@ internal class AsyncMessageHandlerProcessor<TRequestMessage, TResponse, TContext
 			}
 
 			var resultBuilder = new ResultBuilder<ISendResponse<TResponse>>();
+			resultBuilder.Merge(result);
 			if (result.Data != null)
 			{
 				var response = result.Data;
