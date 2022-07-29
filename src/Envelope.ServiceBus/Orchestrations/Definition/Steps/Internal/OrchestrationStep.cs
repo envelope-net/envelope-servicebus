@@ -1,4 +1,5 @@
-﻿using Envelope.ServiceBus.ErrorHandling;
+﻿using Envelope.Converters;
+using Envelope.ServiceBus.ErrorHandling;
 using Envelope.ServiceBus.Orchestrations.Definition.Steps.Body;
 using Envelope.Validation;
 
@@ -6,11 +7,20 @@ namespace Envelope.ServiceBus.Orchestrations.Definition.Steps.Internal;
 
 internal abstract class OrchestrationStep : IOrchestrationStep, IValidable
 {
-	public virtual Guid IdStep { get; }
+	public virtual Guid IdStep { get; private set; }
 
 	public abstract Type? BodyType { get; }
 
-	public virtual string Name { get; set; }
+	private string _name;
+	public virtual string Name
+	{
+		get => _name;
+		set
+		{
+			_name = value;
+			IdStep = GuidConverter.ToGuid(_name);
+		}
+	}
 
 	public bool IsRootStep { get; set; }
 
@@ -42,7 +52,7 @@ internal abstract class OrchestrationStep : IOrchestrationStep, IValidable
 			? name
 			: throw new ArgumentNullException(nameof(name));
 
-		IdStep = Guid.NewGuid();
+		IdStep = GuidConverter.ToGuid(name);
 		Branches = new();
 	}
 

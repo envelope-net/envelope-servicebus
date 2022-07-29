@@ -13,6 +13,16 @@ public interface IQueueProvider
 	IFaultQueue FaultQueue { get; }
 
 	/// <summary>
+	/// Get's all queues
+	/// </summary>
+	List<IMessageQueue> GetAllQueues();
+
+	/// <summary>
+	/// Get's the queue for the specific queue name
+	/// </summary>
+	IMessageQueue? GetQueue(string queueName);
+
+	/// <summary>
 	/// Get's the queue for the specific queue name and message type
 	/// </summary>
 	IMessageQueue<TMessage>? GetQueue<TMessage>(string queueName)

@@ -1,5 +1,6 @@
 ﻿using Envelope.ServiceBus.DistributedCoordinator;
 using Envelope.ServiceBus.Orchestrations.Configuration;
+using Envelope.ServiceBus.Orchestrations.Definition;
 using Envelope.ServiceBus.Orchestrations.Logging;
 using Envelope.ServiceBus.Orchestrations.Model;
 using Envelope.ServiceBus.Orchestrations.Model.Internal;
@@ -40,11 +41,42 @@ internal class OrchestrationController : IOrchestrationController
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-	public void RegisterOrchestration<TOrchestration, TData>()
+	public IOrchestrationDefinition RegisterOrchestration<TOrchestration, TData>(ITraceInfo traceInfo)
 		where TOrchestration : IOrchestration<TData>
 	{
 		var orchestration = ActivatorUtilities.CreateInstance<TOrchestration>(_serviceProvider);
-		_registry.RegisterOrchestration(orchestration);
+		var orchestrationDefinition = _registry.RegisterOrchestration(orchestration);
+
+		_ = Task.Run(async () =>
+		{
+			try
+			{
+				var orchestrationInstances =
+					await GetAllUnfinishedOrchestrationInstancesAsync(
+						orchestrationDefinition.IdOrchestrationDefinition,
+						cancellationToken: default).ConfigureAwait(false);
+
+				foreach (var orchestrationInstance in orchestrationInstances)
+					await orchestrationInstance.GetExecutor().RestartAsync(orchestrationInstance, traceInfo).ConfigureAwait(false);
+			}
+			catch (Exception ex)
+			{
+				var detail = "";
+				await _logger.LogErrorAsync(
+					traceInfo,
+					null,
+					null,
+					null,
+					x => x.ExceptionInfo(ex).Detail(detail),
+					detail,
+					null,
+					cancellationToken: default).ConfigureAwait(false);
+			}
+
+		},
+		cancellationToken: default);
+
+		return orchestrationDefinition;
 	}
 
 	public Task<IResult<Guid>> StartOrchestrationAsync<TData>(
@@ -176,6 +208,44 @@ internal class OrchestrationController : IOrchestrationController
 				return result;
 			},
 			$"{nameof(OrchestrationController)} - {nameof(GetOrchestrationInstanceAsync)} {nameof(idOrchestrationInstance)} = {idOrchestrationInstance} Global exception",
+			async (traceInfo, exception, detail) =>
+			{
+				await _logger.LogErrorAsync(
+					traceInfo,
+					null,
+					null,
+					null,
+					x => x.ExceptionInfo(exception).Detail(detail),
+					detail,
+					null,
+					cancellationToken: default).ConfigureAwait(false);
+			},
+			null,
+			true,
+			cancellationToken: default).ConfigureAwait(false);
+	}
+
+	public async Task<List<IOrchestrationInstance>> GetAllUnfinishedOrchestrationInstancesAsync(Guid idOrchestrationDefinition, CancellationToken cancellationToken = default)
+	{
+		var transactionManager = _options.TransactionManagerFactory.Create();
+		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
+		var traceInfo = TraceInfo.Create(_options.HostName);
+
+		return await TransactionInterceptor.ExecuteAsync(
+			true,
+			traceInfo,
+			transactionContext,
+			async (traceInfo, transactionContext, cancellationToken) =>
+			{
+				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetAllUnfinishedOrchestrationInstancesAsync(
+					idOrchestrationDefinition,
+					_serviceProvider,
+					_options.HostInfo,
+					transactionContext,
+					cancellationToken).ConfigureAwait(false);
+				return result;
+			},
+			$"{nameof(OrchestrationController)} - {nameof(GetAllUnfinishedOrchestrationInstancesAsync)} Global exception",
 			async (traceInfo, exception, detail) =>
 			{
 				await _logger.LogErrorAsync(

@@ -15,6 +15,7 @@ namespace Envelope.ServiceBus.Configuration.Internal;
 internal class ServiceBusOptions : IServiceBusOptions, IValidable
 {
 	public IServiceProvider ServiceProvider { get; }
+	public ServiceBusMode ServiceBusMode { get; set; }
 	public IHostInfo HostInfo { get; set; }
 	public IMessageTypeResolver MessageTypeResolver { get; set; }
 	public IHostLogger HostLogger { get; set; }

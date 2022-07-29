@@ -1,5 +1,6 @@
 ﻿using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Orchestrations.Configuration;
+using Envelope.ServiceBus.Orchestrations.Definition;
 using Envelope.ServiceBus.Orchestrations.Execution;
 using Envelope.ServiceBus.Orchestrations.Execution.Internal;
 using Envelope.ServiceBus.Orchestrations.Model;
@@ -86,12 +87,15 @@ internal class OrchestrationHost : BackgroundService, IOrchestrationHost, IDispo
 			traceInfo,
 			workerIdleTimeout);
 
-	public void RegisterOrchestration<TOrchestration, TData>()
+	public IOrchestrationDefinition RegisterOrchestration<TOrchestration, TData>(ITraceInfo traceInfo)
 		where TOrchestration : IOrchestration<TData>
-		=> _orchestrationController.RegisterOrchestration<TOrchestration, TData>();
+		=> _orchestrationController.RegisterOrchestration<TOrchestration, TData>(traceInfo);
 
 	public Task<IOrchestrationInstance?> GetOrchestrationInstanceAsync(Guid idOrchestrationInstance, CancellationToken cancellationToken = default)
 		=> _orchestrationController.GetOrchestrationInstanceAsync(idOrchestrationInstance, cancellationToken);
+
+	public Task<List<IOrchestrationInstance>> GetAllUnfinishedOrchestrationInstancesAsync(Guid idOrchestrationDefinition, CancellationToken cancellationToken = default)
+		=> _orchestrationController.GetAllUnfinishedOrchestrationInstancesAsync(idOrchestrationDefinition, cancellationToken);
 
 	public Task<bool?> IsCompletedOrchestrationAsync(Guid idOrchestrationInstance, CancellationToken cancellationToken = default)
 		=> _orchestrationController.IsCompletedOrchestrationAsync(idOrchestrationInstance, cancellationToken);

@@ -26,7 +26,10 @@ internal class QueueProvider : IQueueProvider
 		_cache = new ConcurrentDictionary<string, IMessageQueue>();
 	}
 
-	IMessageQueue<TMessage>? IQueueProvider.GetQueue<TMessage>(string queueName)
+	public List<IMessageQueue> GetAllQueues()
+		=> _cache.Values.ToList();
+
+	public IMessageQueue? GetQueue(string queueName)
 	{
 		if (string.IsNullOrWhiteSpace(queueName))
 			return null;
@@ -37,13 +40,21 @@ internal class QueueProvider : IQueueProvider
 			{
 				var queue = queueFactory(_serviceProvider);
 				if (queue == null)
-					throw new InvalidOperationException($"QueueFactory with name {queueName} cannot create message queue. | Message type = {typeof(TMessage).FullName}");
+					throw new InvalidOperationException($"QueueFactory with name {queueName} cannot create message queue");
 
 				return queue;
 			}
 
 			throw new InvalidOperationException($"No queue with name {queueName} was registered.");
 		});
+
+		return queue;
+	}
+
+	public IMessageQueue<TMessage>? GetQueue<TMessage>(string queueName)
+		where TMessage : class, IMessage
+	{
+		var queue = GetQueue(queueName);
 
 		if (queue is IMessageQueue<TMessage> messageQueue)
 			return messageQueue;

@@ -1,4 +1,5 @@
-﻿using Envelope.ServiceBus.Orchestrations.Model;
+﻿using Envelope.ServiceBus.Orchestrations.Definition;
+using Envelope.ServiceBus.Orchestrations.Model;
 using Envelope.Services;
 using Envelope.Trace;
 using Envelope.Transactions;
@@ -7,7 +8,7 @@ namespace Envelope.ServiceBus.Orchestrations.Execution;
 
 public interface IOrchestrationController
 {
-	void RegisterOrchestration<TOrchestration, TData>()
+	IOrchestrationDefinition RegisterOrchestration<TOrchestration, TData>(ITraceInfo traceInfo)
 		where TOrchestration : IOrchestration<TData>;
 
 	event OrchestrationEventHandler OnLifeCycleEvent;
@@ -32,6 +33,8 @@ public interface IOrchestrationController
 		TimeSpan? workerIdleTimeout = null);
 
 	Task<IOrchestrationInstance?> GetOrchestrationInstanceAsync(Guid idOrchestrationInstance, CancellationToken cancellationToken = default);
+
+	Task<List<IOrchestrationInstance>> GetAllUnfinishedOrchestrationInstancesAsync(Guid idOrchestrationDefinition, CancellationToken cancellationToken = default);
 
 	Task<bool?> IsCompletedOrchestrationAsync(Guid idOrchestrationInstance, CancellationToken cancellationToken = default);
 

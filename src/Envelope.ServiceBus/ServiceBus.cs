@@ -1,13 +1,12 @@
 ﻿using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.Exchange;
 using Envelope.ServiceBus.Hosts;
+using Envelope.ServiceBus.Jobs;
 using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Options;
-using Envelope.ServiceBus.Queues;
 using Envelope.Services;
 using Envelope.Services.Transactions;
 using Envelope.Trace;
-using Envelope.Transactions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Runtime.CompilerServices;
 
@@ -26,6 +25,82 @@ internal class ServiceBus : IServiceBus
 	public ServiceBus(IServiceBusOptions options)
 	{
 		_options = options ?? throw new ArgumentNullException(nameof(options));
+	}
+
+	public void Initialize(ITraceInfo traceInfo, CancellationToken cancellationToken = default)
+	{
+		traceInfo = TraceInfo.Create(traceInfo);
+
+		foreach (var queue in _options.QueueProvider.GetAllQueues())
+		{
+			_ = Task.Run(async () =>
+			{
+				try
+				{
+					await queue.OnMessageAsync(traceInfo, cancellationToken).ConfigureAwait(false);
+				}
+				catch (Exception ex)
+				{
+					await _options.HostLogger.LogErrorAsync(
+						traceInfo,
+						_options.HostInfo,
+						HostStatus.Unchanged,
+						x => x.ExceptionInfo(ex),
+						$"{nameof(Initialize)} >> {nameof(queue.OnMessageAsync)}: QUEUE = {queue.QueueName}",
+						null,
+						cancellationToken: default).ConfigureAwait(false);
+				}
+
+			},
+			cancellationToken: default);
+		}
+
+		foreach (var exchange in _options.ExchangeProvider.GetAllExchanges())
+		{
+			_ = Task.Run(async () =>
+			{
+				try
+				{
+					await exchange.OnMessageAsync(traceInfo, cancellationToken).ConfigureAwait(false);
+				}
+				catch (Exception ex)
+				{
+					await _options.HostLogger.LogErrorAsync(
+						traceInfo,
+						_options.HostInfo,
+						HostStatus.Unchanged,
+						x => x.ExceptionInfo(ex),
+						$"{nameof(Initialize)} >> {nameof(exchange.OnMessageAsync)}: EXCHANGE = {exchange.QueueName}",
+						null,
+						cancellationToken: default).ConfigureAwait(false);
+				}
+
+			},
+			cancellationToken: default);
+		}
+
+		var jobController = _options.ServiceProvider.GetService<IJobController>();
+		if (jobController != null)
+			_ = Task.Run(async () =>
+			{
+				try
+				{
+					await jobController.StartAllAsync(traceInfo).ConfigureAwait(false);
+				}
+				catch (Exception ex)
+				{
+					await _options.HostLogger.LogErrorAsync(
+						traceInfo,
+						_options.HostInfo,
+						HostStatus.Unchanged,
+						x => x.ExceptionInfo(ex),
+						$"{nameof(Initialize)} >> {nameof(jobController.StartAllAsync)}: Jobs",
+						null,
+						cancellationToken: default).ConfigureAwait(false);
+				}
+
+			},
+			cancellationToken: default);
 	}
 
 	public Task<IResult<List<Guid>>> PublishAsync<TMessage>(
@@ -167,7 +242,7 @@ internal class ServiceBus : IServiceBus
 						return result.Build();
 					}
 
-					var contextResult = _options.ExchangeProvider.CreateExchangeEnqueueContext(traceInfo, options, exchange.ExchangeType);
+					var contextResult = _options.ExchangeProvider.CreateExchangeEnqueueContext(traceInfo, options, exchange.ExchangeType, _options.ServiceBusMode);
 					if (result.MergeHasError(contextResult))
 						return result.Build();
 
@@ -215,7 +290,7 @@ internal class ServiceBus : IServiceBus
 		if (result.MergeHasError(executeResult))
 			return result.Build();
 
-		if (exchange != null && exchangeContext?.CallExchangeOnMessage == true)
+		if (exchange != null && _options.ServiceBusMode == ServiceBusMode.PublishSubscribe && exchangeContext?.CallExchangeOnMessage == true)
 		{
 			_ = Task.Run(async () =>
 			{

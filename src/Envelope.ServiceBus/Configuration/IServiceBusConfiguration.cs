@@ -14,6 +14,8 @@ namespace Envelope.ServiceBus.Configuration;
 
 public interface IServiceBusConfiguration : IValidable
 {
+	ServiceBusMode? ServiceBusMode { get; set; }
+
 	IHostInfo HostInfo { get; set; }
 
 	string ServiceBusName { get; set; }

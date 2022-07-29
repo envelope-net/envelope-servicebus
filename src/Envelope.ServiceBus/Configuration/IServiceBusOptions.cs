@@ -13,6 +13,7 @@ namespace Envelope.ServiceBus.Configuration;
 public interface IServiceBusOptions : IValidable
 {
 	IServiceProvider ServiceProvider { get; }
+	ServiceBusMode ServiceBusMode { get; }
 	IHostInfo HostInfo { get; }
 	IMessageTypeResolver MessageTypeResolver { get; }
 	IHostLogger HostLogger { get; }

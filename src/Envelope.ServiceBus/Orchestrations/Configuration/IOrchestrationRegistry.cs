@@ -6,7 +6,7 @@ public interface IOrchestrationRegistry
 {
 	void RegisterOrchestration(IOrchestrationDefinition orchestrationDefinition);
 
-	void RegisterOrchestration<TData>(IOrchestration<TData> orchestration);
+	IOrchestrationDefinition RegisterOrchestration<TData>(IOrchestration<TData> orchestration);
 
 	IOrchestrationDefinition? GetDefinition(Guid idOrchestrationDefinition, int? version = null);
 

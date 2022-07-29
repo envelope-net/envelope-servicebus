@@ -16,12 +16,22 @@ public interface IExchangeProvider
 	IFaultQueue FaultQueue { get; }
 
 	/// <summary>
+	/// Get's all exchanges
+	/// </summary>
+	List<IExchange> GetAllExchanges();
+
+	/// <summary>
+	/// Get's the exchange for the specific exchange name
+	/// </summary>
+	IExchange? GetExchange(string exchangeName);
+
+	/// <summary>
 	/// Get's the exchange for the specific exchange name and message type
 	/// </summary>
 	IExchange<TMessage>? GetExchange<TMessage>(string exchangeName)
 		where TMessage : class, IMessage;
 
-	IResult<IExchangeEnqueueContext> CreateExchangeEnqueueContext(ITraceInfo traceInfo, IMessageOptions options, ExchangeType exchangeType);
+	IResult<IExchangeEnqueueContext> CreateExchangeEnqueueContext(ITraceInfo traceInfo, IMessageOptions options, ExchangeType exchangeType, ServiceBusMode serviceBusMode);
 
 	IFaultQueueContext CreateFaultQueueContext(ITraceInfo traceInfo, IMessageOptions options);
 }

@@ -23,6 +23,8 @@ public interface IServiceBusConfigurationBuilder<TBuilder, TObject>
 
 	TObject Build(bool finalize = false);
 
+	TBuilder ServiceBusMode(ServiceBusMode serviceBusMode, bool force = true);
+
 	TBuilder HostInfo(IHostInfo hostInfo, bool force = true);
 
 	TBuilder ServiceBusName(string serviceBusName, bool force = true);
@@ -87,6 +89,17 @@ public abstract class ServiceBusConfigurationBuilderBase<TBuilder, TObject> : IS
 			throw new ConfigurationException(error);
 
 		return _serviceBusConfiguration;
+	}
+
+	public TBuilder ServiceBusMode(ServiceBusMode serviceBusMode, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || !_serviceBusConfiguration.ServiceBusMode.HasValue)
+			_serviceBusConfiguration.ServiceBusMode = serviceBusMode;
+
+		return _builder;
 	}
 
 	public TBuilder HostInfo(IHostInfo hostInfo, bool force = true)
@@ -293,6 +306,7 @@ public class ServiceBusConfigurationBuilder : ServiceBusConfigurationBuilderBase
 
 	public static ServiceBusConfigurationBuilder GetDefaultBuilder()
 		=> new ServiceBusConfigurationBuilder()
+			.ServiceBusMode(Envelope.ServiceBus.ServiceBusMode.PublishSubscribe)
 			//.HostInfo(null)
 			//.ServiceBusName(null)
 			.TransactionManagerFactory(sp => new TransactionManagerFactory())

@@ -15,6 +15,7 @@ namespace Envelope.ServiceBus.Configuration;
 
 public class ServiceBusConfiguration : IServiceBusConfiguration, IValidable
 {
+	public ServiceBusMode? ServiceBusMode { get; set; }
 	public IHostInfo HostInfo { get; set; }
 	public string ServiceBusName { get; set; }
 	public Func<IServiceProvider, IMessageTypeResolver> MessageTypeResolver { get; set; }
@@ -42,6 +43,14 @@ public class ServiceBusConfiguration : IServiceBusConfiguration, IValidable
 
 	public List<IValidationMessage>? Validate(string? propertyPrefix = null, List<IValidationMessage>? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
 	{
+		if (!ServiceBusMode.HasValue)
+		{
+			if (parentErrorBuffer == null)
+				parentErrorBuffer = new List<IValidationMessage>();
+
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(ServiceBusMode))} == null"));
+		}
+
 		if (HostInfo == null && string.IsNullOrWhiteSpace(ServiceBusName))
 		{
 			if (parentErrorBuffer == null)
