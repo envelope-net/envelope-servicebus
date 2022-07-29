@@ -45,7 +45,7 @@ internal class OrchestrationRegistry : IOrchestrationRegistry
 				throw new InvalidOperationException($"Orchestration {orchestrationDefinition.IdOrchestrationDefinition} version {orchestrationDefinition.Version} is already registered"));
 	}
 
-	public void RegisterOrchestration<TData>(IOrchestration<TData> orchestration)
+	public IOrchestrationDefinition RegisterOrchestration<TData>(IOrchestration<TData> orchestration)
 	{
 		var builder = new OrchestrationBuilder<TData>();
 		orchestration.Build(builder);
@@ -56,6 +56,8 @@ internal class OrchestrationRegistry : IOrchestrationRegistry
 			throw new ConfigurationException(error);
 
 		RegisterOrchestration(orchestrationDefinition);
+
+		return orchestrationDefinition;
 	}
 
 	public bool IsRegistered(Guid idOrchestrationDefinition, int version)

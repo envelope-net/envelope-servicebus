@@ -72,6 +72,18 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.FromResult(orchestrationInstances ?? new List<IOrchestrationInstance>());
 	}
 
+	public Task<List<IOrchestrationInstance>> GetAllUnfinishedOrchestrationInstancesAsync(
+		Guid idOrchestrationDefinition,
+		IServiceProvider serviceProvider,
+		IHostInfo hostInfo,
+		ITransactionContext transactionContext,
+		CancellationToken cancellationToken = default)
+	{
+		return Task.FromResult(_instances.Values.Where(x =>
+			x.IdOrchestrationDefinition == idOrchestrationDefinition
+			&& (x.Status == OrchestrationStatus.Running || x.Status == OrchestrationStatus.Executing)).ToList());
+	}
+
 	public Task<bool?> IsCompletedOrchestrationAsync(Guid idOrchestrationInstance, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
 	{
 		if (_instances.TryGetValue(idOrchestrationInstance, out var orchestrationInstance))

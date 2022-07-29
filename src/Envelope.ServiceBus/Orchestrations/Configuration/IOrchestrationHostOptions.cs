@@ -1,5 +1,4 @@
-﻿using Envelope.ServiceBus.Configuration;
-using Envelope.ServiceBus.DistributedCoordinator;
+﻿using Envelope.ServiceBus.DistributedCoordinator;
 using Envelope.ServiceBus.ErrorHandling;
 using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Orchestrations.Execution;

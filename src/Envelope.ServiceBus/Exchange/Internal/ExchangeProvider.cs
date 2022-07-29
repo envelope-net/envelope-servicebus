@@ -2,6 +2,7 @@
 using Envelope.ServiceBus.Exchange.Configuration;
 using Envelope.ServiceBus.Exchange.Routing;
 using Envelope.ServiceBus.Internals;
+using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Options;
 using Envelope.ServiceBus.Queues;
 using Envelope.ServiceBus.Queues.Internal;
@@ -30,7 +31,10 @@ internal class ExchangeProvider : IExchangeProvider
 		_cache = new ConcurrentDictionary<string, IExchange>();
 	}
 
-	IExchange<TMessage>? IExchangeProvider.GetExchange<TMessage>(string exchangeName)
+	public List<IExchange> GetAllExchanges()
+		=> _cache.Values.ToList();
+
+	public IExchange? GetExchange(string exchangeName)
 	{
 		if (string.IsNullOrWhiteSpace(exchangeName))
 			return null;
@@ -41,7 +45,7 @@ internal class ExchangeProvider : IExchangeProvider
 			{
 				var exchange = exchangeFactory(_serviceProvider);
 				if (exchange == null)
-					throw new InvalidOperationException($"ExchangeFactory with name {exchangeName} cannot create an exchange. | Message type = {typeof(TMessage).FullName}");
+					throw new InvalidOperationException($"ExchangeFactory with name {exchangeName} cannot create an exchange.");
 
 				return exchange;
 			}
@@ -49,16 +53,27 @@ internal class ExchangeProvider : IExchangeProvider
 			throw new InvalidOperationException($"No exchange with name {exchangeName} was registered.");
 		});
 
+		return exchange;
+	}
+
+	public IExchange<TMessage>? GetExchange<TMessage>(string exchangeName)
+		where TMessage : class, IMessage
+	{
+		var exchange = ((IExchangeProvider)this).GetExchange(exchangeName);
+
 		if (exchange is IExchange<TMessage> messageExchange)
 			return messageExchange;
 		else
 			throw new InvalidOperationException($"Exchange with name {exchangeName} cannot store message type {typeof(TMessage).FullName}");
 	}
 
-	public IResult<IExchangeEnqueueContext> CreateExchangeEnqueueContext(ITraceInfo traceInfo, IMessageOptions options, ExchangeType exchangeType)
+	public IResult<IExchangeEnqueueContext> CreateExchangeEnqueueContext(ITraceInfo traceInfo, IMessageOptions options, ExchangeType exchangeType, ServiceBusMode serviceBusMode)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder<IExchangeEnqueueContext>();
+
+		if (!options.IsAsynchronousInvocation && serviceBusMode == ServiceBusMode.PublishOnly)
+			return result.WithInvalidOperationException(traceInfo, $"Cannot call synchronous invocation on {nameof(ServiceBusMode.PublishOnly)} service bus mode");
 
 		if (!options.IsAsynchronousInvocation && exchangeType != ExchangeType.Direct)
 			return result.WithInvalidOperationException(traceInfo, $"Cannot call synchronous invocation on non-Direct exchange");

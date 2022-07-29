@@ -34,6 +34,13 @@ public interface IOrchestrationRepository : IOrchestrationEventQueue
 		ITransactionContext transactionContext,
 		CancellationToken cancellationToken = default);
 
+	public Task<List<IOrchestrationInstance>> GetAllUnfinishedOrchestrationInstancesAsync(
+		Guid idOrchestrationDefinition,
+		IServiceProvider serviceProvider,
+		IHostInfo hostInfo,
+		ITransactionContext transactionContext,
+		CancellationToken cancellationToken = default);
+
 	Task<bool?> IsCompletedOrchestrationAsync(Guid idOrchestrationInstance, ITransactionContext transactionContext, CancellationToken cancellationToken = default);
 
 	Task AddExecutionPointerAsync(ExecutionPointer executionPointer, ITransactionContext transactionContext);

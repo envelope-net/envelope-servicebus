@@ -1,6 +1,5 @@
 ﻿using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Options;
-using Envelope.ServiceBus.Model;
 using Envelope.Services;
 using Envelope.Trace;
 using System.Runtime.CompilerServices;

@@ -10,6 +10,8 @@ namespace Envelope.ServiceBus.Exchange;
 public interface IExchange : IQueueInfo, IDisposable, IAsyncDisposable
 {
 	ExchangeType ExchangeType { get; }
+
+	internal Task OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken);
 }
 
 public interface IExchange<TMessage> : IExchange, IQueueInfo, IDisposable, IAsyncDisposable
@@ -23,6 +25,4 @@ public interface IExchange<TMessage> : IExchange, IQueueInfo, IDisposable, IAsyn
 	Task<IResult<IExchangeMessage<TMessage>?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken);
 
 	Task<IResult> TryRemoveAsync(IExchangeMessage<TMessage> message, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken);
-
-	internal Task OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken);
 }

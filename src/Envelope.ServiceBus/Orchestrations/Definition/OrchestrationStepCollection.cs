@@ -46,6 +46,9 @@ public class OrchestrationStepCollection : ICollection<IOrchestrationStep>, IRea
 		if (step == null)
 			throw new ArgumentNullException(nameof(step));
 
+		if (_dictionary.ContainsKey(step.IdStep))
+			throw new InvalidOperationException($"Step {step.IdStep} - {step.Name} is already added.");
+
 		_dictionary.Add(step.IdStep, step);
 		_stepsSequence.Add(step);
 	}

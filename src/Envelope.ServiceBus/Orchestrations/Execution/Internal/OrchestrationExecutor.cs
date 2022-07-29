@@ -48,6 +48,49 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		_orchestrationHost = new(() => _serviceProvider.GetRequiredService<IOrchestrationHost>());
 	}
 
+	public async Task RestartAsync(
+		IOrchestrationInstance orchestrationInstance,
+		ITraceInfo traceInfo)
+	{
+		if (orchestrationInstance == null)
+			throw new ArgumentNullException(nameof(orchestrationInstance));
+
+		if (orchestrationInstance.Status == OrchestrationStatus.Executing)
+		{
+			var localUpdateTransactionManager = _options.TransactionManagerFactory.Create();
+			var localUpdateTransactionContext = await _options.TransactionContextFactory(_serviceProvider, localUpdateTransactionManager).ConfigureAwait(false);
+
+			await TransactionInterceptor.ExecuteAsync(
+				false,
+				traceInfo,
+				localUpdateTransactionContext,
+				async (traceInfo, transactionContext, cancellationToken) =>
+				{
+					await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Running, null, transactionContext).ConfigureAwait(false);
+					orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Running, null);
+					transactionContext.ScheduleCommit();
+				},
+				$"{nameof(OrchestrationExecutor)} - {nameof(ExecuteInternalAsync)} {nameof(OrchestrationStatus.Running)} | {nameof(orchestrationInstance.IdOrchestrationInstance)} = {orchestrationInstance.IdOrchestrationInstance}",
+				async (traceInfo, exception, detail) =>
+				{
+					await _logger.LogErrorAsync(
+						traceInfo,
+						orchestrationInstance?.IdOrchestrationInstance,
+						null,
+						null,
+						x => x.ExceptionInfo(exception).Detail(detail),
+						detail,
+						null,
+						cancellationToken: default).ConfigureAwait(false);
+				},
+				null,
+				true,
+				cancellationToken: default).ConfigureAwait(false);
+		}
+
+		await orchestrationInstance.StartOrchestrationWorkerAsync().ConfigureAwait(false);
+	}
+
 	public Task ExecuteAsync(
 		IOrchestrationInstance orchestrationInstance,
 		ITraceInfo traceInfo)

@@ -9,7 +9,6 @@ using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Model;
 using Envelope.ServiceBus.Queues;
 using Envelope.Services;
-using Envelope.Services.Transactions;
 using Envelope.Threading;
 using Envelope.Trace;
 using Envelope.Transactions;
@@ -46,6 +45,31 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 
 	/// <inheritdoc/>
 	public int? MaxSize { get; }
+
+	/// <inheritdoc/>
+	public Exchange(ExchangeContext<TMessage> exchangeContext)
+	{
+		_exchangeContext = exchangeContext ?? throw new ArgumentNullException(nameof(exchangeContext));
+		ExchangeName = _exchangeContext.ExchangeName;
+		ExchangeId = GuidConverter.ToGuid(ExchangeName);
+		QueueType = _exchangeContext.QueueType;
+		MaxSize = _exchangeContext.MaxSize;
+
+		if (QueueType == QueueType.Sequential_FIFO)
+		{
+			_queue = _exchangeContext.FIFOQueue;
+		}
+		else if (QueueType == QueueType.Sequential_Delayable)
+		{
+			_queue = _exchangeContext.DelayableQueue;
+		}
+		else
+		{
+			throw new NotImplementedException(QueueType.ToString());
+		}
+
+		_queue.MaxSize = MaxSize;
+	}
 
 	/// <inheritdoc/>
 	public async Task<int> GetCountAsync(ITraceInfo traceInfo, ITransactionManagerFactory transactionManagerFactory, CancellationToken cancellationToken = default)
@@ -91,31 +115,6 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 			cancellationToken).ConfigureAwait(false);
 
 		return count;
-	}
-
-	/// <inheritdoc/>
-	public Exchange(ExchangeContext<TMessage> exchangeContext)
-	{
-		_exchangeContext = exchangeContext ?? throw new ArgumentNullException(nameof(exchangeContext));
-		ExchangeName = _exchangeContext.ExchangeName;
-		ExchangeId = GuidConverter.ToGuid(ExchangeName);
-		QueueType = _exchangeContext.QueueType;
-		MaxSize = _exchangeContext.MaxSize;
-
-		if (QueueType == QueueType.Sequential_FIFO)
-		{
-			_queue = _exchangeContext.FIFOQueue;
-		}
-		else if (QueueType == QueueType.Sequential_Delayable)
-		{
-			_queue = _exchangeContext.DelayableQueue;
-		}
-		else
-		{
-			throw new NotImplementedException(QueueType.ToString());
-		}
-
-		_queue.MaxSize = MaxSize;
 	}
 
 	/// <inheritdoc/>
@@ -307,13 +306,13 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 			result.WithData(exchangeMessage).Build()).ConfigureAwait(false);
 	}
 
-	Task IExchange<TMessage>.OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
+	Task IExchange.OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
 		=> OnMessageAsync(traceInfo, cancellationToken);
 
 	private readonly AsyncLock _onMessageLock = new();
 	private async Task OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
-		if (disposed)
+		if (disposed || _exchangeContext.ServiceBusOptions.ServiceBusMode == ServiceBusMode.PublishOnly)
 			return;
 
 		traceInfo = TraceInfo.Create(traceInfo);

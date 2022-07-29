@@ -37,6 +37,7 @@ public static class ServiceBusOptionsFactory
 
 		var options = new ServiceBusOptions(serviceProvider)
 		{
+			ServiceBusMode = configuration.ServiceBusMode!.Value,
 			HostInfo = configuration.HostInfo ?? new HostInfo(configuration.ServiceBusName),
 			MessageTypeResolver = configuration.MessageTypeResolver(serviceProvider),
 			HostLogger = configuration.HostLogger(serviceProvider),
