@@ -9,13 +9,6 @@ public interface IMessageHandlerResultFactory
 {
 	MessageHandlerResult FromResult(
 		IResult result,
-		TimeSpan? errorRetryInterval = null,
-		[CallerMemberName] string memberName = "",
-		[CallerFilePath] string sourceFilePath = "",
-		[CallerLineNumber] int sourceLineNumber = 0);
-
-	MessageHandlerResult FromResult(
-		IResult result,
 		ITraceInfo traceInfo,
 		TimeSpan? errorRetryInterval = null,
 		[CallerMemberName] string memberName = "",
@@ -35,13 +28,6 @@ public interface IMessageHandlerResultFactory
 	MessageHandlerResult AbortedInternal(IResult errorResult);
 
 
-
-	MessageHandlerResult<TResponse> FromResult<TResponse>(
-		IResult<TResponse> result,
-		TimeSpan? errorRetryInterval = null,
-		[CallerMemberName] string memberName = "",
-		[CallerFilePath] string sourceFilePath = "",
-		[CallerLineNumber] int sourceLineNumber = 0);
 
 	MessageHandlerResult<TResponse> FromResult<TResponse>(
 		IResult<TResponse> result,

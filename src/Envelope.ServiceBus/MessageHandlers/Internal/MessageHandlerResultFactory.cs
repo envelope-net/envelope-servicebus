@@ -10,30 +10,6 @@ internal class MessageHandlerResultFactory : IMessageHandlerResultFactory
 {
 	public MessageHandlerResult FromResult(
 		IResult result,
-		TimeSpan? errorRetryInterval = null,
-		[CallerMemberName] string memberName = "",
-		[CallerFilePath] string sourceFilePath = "",
-		[CallerLineNumber] int sourceLineNumber = 0)
-	{
-		if (result == null)
-		{
-			ITraceInfo traceInfo = TraceInfo.Create($"---{nameof(ServiceBus)}---", (Guid?)null, null, null, memberName, sourceFilePath, sourceLineNumber);
-			var resultBuilder = new ResultBuilder();
-			result = resultBuilder.WithArgumentNullException(traceInfo, nameof(result));
-		}
-
-		if (result.HasError)
-		{
-			return Error(result, errorRetryInterval);
-		}
-		else
-		{
-			return Completed();
-		}
-	}
-
-	public MessageHandlerResult FromResult(
-		IResult result,
 		ITraceInfo traceInfo,
 		TimeSpan? errorRetryInterval = null,
 		[CallerMemberName] string memberName = "",
@@ -137,29 +113,6 @@ internal class MessageHandlerResultFactory : IMessageHandlerResultFactory
 
 
 
-	public MessageHandlerResult<TResponse> FromResult<TResponse>(
-		IResult<TResponse> result,
-		TimeSpan? errorRetryInterval = null,
-		[CallerMemberName] string memberName = "",
-		[CallerFilePath] string sourceFilePath = "",
-		[CallerLineNumber] int sourceLineNumber = 0)
-	{
-		if (result == null)
-		{
-			ITraceInfo traceInfo = TraceInfo.Create($"---{nameof(ServiceBus)}---", (Guid?)null, null, null, memberName, sourceFilePath, sourceLineNumber);
-			var resultBuilder = new ResultBuilder<TResponse>();
-			result = resultBuilder.WithArgumentNullException(traceInfo, nameof(result));
-		}
-
-		if (result.HasError)
-		{
-			return Error<TResponse>(result, errorRetryInterval);
-		}
-		else
-		{
-			return Completed(result.Data!);
-		}
-	}
 
 	public MessageHandlerResult<TResponse> FromResult<TResponse>(
 		IResult<TResponse> result,

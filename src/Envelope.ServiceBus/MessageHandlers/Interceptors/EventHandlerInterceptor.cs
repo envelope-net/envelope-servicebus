@@ -30,7 +30,7 @@ public abstract class EventHandlerInterceptor<TEvent, TContext> : IEventHandlerI
 		long callEndTicks;
 		decimal methodCallElapsedMilliseconds = -1;
 		Type? eventType = @event?.GetType();
-		var traceInfo = new TraceInfoBuilder(handlerContext.HostInfo.HostName, TraceFrame.Create(), handlerContext.TraceInfo).Build();
+		var traceInfo = new TraceInfoBuilder(handlerContext.ServiceProvider!, TraceFrame.Create(), handlerContext.TraceInfo).Build();
 		using var scope = Logger.BeginMethodCallScope(traceInfo);
 
 		Logger.LogTraceMessage(

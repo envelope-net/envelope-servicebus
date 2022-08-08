@@ -66,7 +66,7 @@ public class OrchestrationInstanceDto
 			OrchestrationKey,
 			Data,
 			OrchestrationExecutorManager.GetOrCreateOrchestrationExecutor(IdOrchestrationInstance, serviceProvider, serviceProvider.GetRequiredService<IOrchestrationHostOptions>()),
-			hostInfo,
+			serviceProvider,
 			WorkerIdleTimeout)
 		{
 			OrchestrationKey = OrchestrationKey,

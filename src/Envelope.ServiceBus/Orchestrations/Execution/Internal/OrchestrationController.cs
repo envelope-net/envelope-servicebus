@@ -54,7 +54,7 @@ internal class OrchestrationController : IOrchestrationController
 				var orchestrationInstances =
 					await GetAllUnfinishedOrchestrationInstancesAsync(
 						orchestrationDefinition.IdOrchestrationDefinition,
-						cancellationToken: default).ConfigureAwait(false);
+						cancellationToken: default);
 
 				foreach (var orchestrationInstance in orchestrationInstances)
 					await orchestrationInstance.GetExecutor().RestartAsync(orchestrationInstance, traceInfo).ConfigureAwait(false);
@@ -130,7 +130,7 @@ internal class OrchestrationController : IOrchestrationController
 							orchestrationKey,
 							data,
 							OrchestrationExecutorManager.GetOrCreateOrchestrationExecutor(idOrchestrationInstance, _serviceProvider, _options),
-							_orchestrationHost.Value.HostInfo,
+							_serviceProvider,
 							workerIdleTimeout);
 
 					orchestrationInstance = orchestrationDefinition.GetOrSetSingletonInstance(factory, orchestrationKey);
@@ -196,7 +196,7 @@ internal class OrchestrationController : IOrchestrationController
 	{
 		var transactionManager = _options.TransactionManagerFactory.Create();
 		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
-		var traceInfo = TraceInfo.Create(_options.HostName);
+		var traceInfo = TraceInfo.Create(_serviceProvider);
 
 		return await TransactionInterceptor.ExecuteAsync(
 			true,
@@ -229,7 +229,7 @@ internal class OrchestrationController : IOrchestrationController
 	{
 		var transactionManager = _options.TransactionManagerFactory.Create();
 		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
-		var traceInfo = TraceInfo.Create(_options.HostName);
+		var traceInfo = TraceInfo.Create(_serviceProvider);
 
 		return await TransactionInterceptor.ExecuteAsync(
 			true,
@@ -267,7 +267,7 @@ internal class OrchestrationController : IOrchestrationController
 	{
 		var transactionManager = _options.TransactionManagerFactory.Create();
 		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
-		var traceInfo = TraceInfo.Create(_options.HostName);
+		var traceInfo = TraceInfo.Create(_serviceProvider);
 
 		return await TransactionInterceptor.ExecuteAsync(
 			true,
@@ -304,7 +304,7 @@ internal class OrchestrationController : IOrchestrationController
 	{
 		var transactionManager = _options.TransactionManagerFactory.Create();
 		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
-		var traceInfo = TraceInfo.Create(_options.HostName);
+		var traceInfo = TraceInfo.Create(_serviceProvider);
 
 		return await TransactionInterceptor.ExecuteAsync(
 			true,

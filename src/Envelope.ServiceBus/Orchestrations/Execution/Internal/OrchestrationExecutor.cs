@@ -88,7 +88,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				cancellationToken: default).ConfigureAwait(false);
 		}
 
-		await orchestrationInstance.StartOrchestrationWorkerAsync().ConfigureAwait(false);
+		await orchestrationInstance.StartOrchestrationWorkerAsync();
 	}
 
 	public Task ExecuteAsync(

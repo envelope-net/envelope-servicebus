@@ -312,7 +312,7 @@ public partial class EventBus : IEventBus
 		string sourceFilePath,
 		int sourceLineNumber)
 	{
-		var traceInfo = TraceInfo.Create(null, EventBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber);
+		var traceInfo = TraceInfo.Create(ServiceProvider.GetRequiredService<IApplicationContext>(), null, memberName, sourceFilePath, sourceLineNumber);
 
 		var result = new ResultBuilder<List<Guid>>();
 
@@ -345,7 +345,7 @@ public partial class EventBus : IEventBus
 		string sourceFilePath,
 		int sourceLineNumber)
 	{
-		var traceInfo = TraceInfo.Create(null, EventBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber);
+		var traceInfo = TraceInfo.Create(ServiceProvider.GetRequiredService<IApplicationContext>(), null, memberName, sourceFilePath, sourceLineNumber);
 
 		var result = new ResultBuilder<List<Guid>>();
 

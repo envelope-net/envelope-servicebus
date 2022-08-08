@@ -113,7 +113,7 @@ public abstract class MessageHandlerContext : IMessageHandlerContext, IMessageMe
 
 		var traceInfo =
 			new TraceInfoBuilder(
-				HostInfo.HostName,
+				ServiceBusOptions.ServiceProvider,
 				new TraceFrameBuilder(TraceInfo?.TraceFrame)
 					.CallerMemberName(memberName)
 					.CallerFilePath(sourceFilePath)

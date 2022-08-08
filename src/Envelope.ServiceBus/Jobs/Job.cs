@@ -129,7 +129,7 @@ public abstract class Job : IJob
 	private async Task<bool> OnSequentialAsyncTimerTickAsync(object? state)
 	{
 		Status = JobStatus.InProcess;
-		var @continue = await ExecuteAsync().ConfigureAwait(false);
+		var @continue = await ExecuteAsync();
 
 		if (!@continue)
 			Status = JobStatus.Stopped;
@@ -139,7 +139,7 @@ public abstract class Job : IJob
 
 	private async Task<bool> OnSequentialAsyncTimerExceptionAsync(object? state, Exception exception)
 	{
-		var @continue = await OnUnhandledExceptionAsync(TraceInfo.Create(HostInfo.HostName), exception).ConfigureAwait(false);
+		var @continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), exception);
 
 		if (!@continue)
 			Status = JobStatus.Stopped;
@@ -156,15 +156,15 @@ public abstract class Job : IJob
 
 		try
 		{
-			@continue = await ExecuteAsync().ConfigureAwait(false);
+			@continue = await ExecuteAsync();
 		}
 		catch (Exception ex)
 		{
-			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(HostInfo.HostName), ex).ConfigureAwait(false);
+			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), ex);
 		}
 
 		if (!@continue)
-			await StopAsync().ConfigureAwait(false);
+			await StopAsync();
 	}
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
 #pragma warning restore VSTHRD100 // Avoid async void methods
@@ -178,17 +178,17 @@ public abstract class Job : IJob
 
 		try
 		{
-			@continue = await ExecuteAsync().ConfigureAwait(false);
+			@continue = await ExecuteAsync();
 		}
 		catch (Exception ex)
 		{
-			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(HostInfo.HostName), ex).ConfigureAwait(false);
+			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), ex);
 		}
 
 		if (!@continue)
 		{
 			_cronAsyncTimerIsStopped = true;
-			await StopAsync().ConfigureAwait(false);
+			await StopAsync();
 		}
 	}
 
@@ -204,13 +204,13 @@ public abstract class Job : IJob
 			return;
 
 		if (BeforeStartAsync != null)
-			await BeforeStartAsync.Invoke(traceInfo).ConfigureAwait(false);
+			await BeforeStartAsync.Invoke(traceInfo);
 
 		Status = JobStatus.Idle;
 
 		if (Mode == JobExecutingMode.SequentialIntervalTimer)
 		{
-			await _sequentialAsyncTimer!.StartAsync().ConfigureAwait(false);
+			await _sequentialAsyncTimer!.StartAsync();
 		}
 		else if (Mode == JobExecutingMode.ExactPeriodicTimer)
 		{
@@ -226,9 +226,9 @@ public abstract class Job : IJob
 		{
 			_cronAsyncTimerIsStopped = false;
 
-			while (await _cronAsyncTimer!.WaitForNextTickAsync().ConfigureAwait(false))
+			while (await _cronAsyncTimer!.WaitForNextTickAsync())
 			{
-				await OnNextCronTimerTickAsync().ConfigureAwait(false);
+				await OnNextCronTimerTickAsync();
 			}
 		}
 	}
@@ -248,7 +248,7 @@ public abstract class Job : IJob
 
 		if (Mode == JobExecutingMode.SequentialIntervalTimer)
 		{
-			await _sequentialAsyncTimer!.StopAsync().ConfigureAwait(false);
+			await _sequentialAsyncTimer!.StopAsync();
 		}
 		else if (Mode == JobExecutingMode.ExactPeriodicTimer)
 		{
@@ -266,7 +266,7 @@ public abstract class Job : IJob
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var detail = $"{this.GetType().FullName} >> {nameof(OnUnhandledExceptionAsync)}";
-		await Logger.LogErrorAsync(traceInfo, Name, x => x.ExceptionInfo(exception).Detail(detail), detail, null, cancellationToken: default).ConfigureAwait(false);
+		await Logger.LogErrorAsync(traceInfo, Name, x => x.ExceptionInfo(exception).Detail(detail), detail, null, cancellationToken: default);
 		return true;
 	}
 }
@@ -292,7 +292,7 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 				transactionContext,
 				async (traceInfo, tc, cancellationToken) =>
 				{
-					Data = await JobRepository.LoadDataAsync<TData>(Name, tc, cancellationToken).ConfigureAwait(false);
+					Data = await JobRepository.LoadDataAsync<TData>(Name, tc, cancellationToken);
 					return result.Build();
 				},
 				$"{nameof(Job)}<{typeof(TData).FullName}> - {nameof(BeforeStartInternalAsync)}> Global exception",
@@ -332,7 +332,7 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 				transactionContext,
 				async (traceInfo, tc, cancellationToken) =>
 				{
-					await JobRepository.SaveDataAsync(Name, data, tc, cancellationToken).ConfigureAwait(false);
+					await JobRepository.SaveDataAsync<TData>(Name, data, tc, cancellationToken);
 					return result.Build();
 				},
 				$"{nameof(Job)}<{typeof(TData).FullName}> - {nameof(BeforeStartInternalAsync)}> Global exception",
