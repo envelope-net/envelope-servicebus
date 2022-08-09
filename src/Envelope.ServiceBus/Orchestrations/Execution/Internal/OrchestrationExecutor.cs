@@ -88,7 +88,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				cancellationToken: default).ConfigureAwait(false);
 		}
 
-		await orchestrationInstance.StartOrchestrationWorkerAsync();
+		await orchestrationInstance.StartOrchestrationWorkerAsync().ConfigureAwait(false);
 	}
 
 	public Task ExecuteAsync(
@@ -423,7 +423,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 						x => x.ExceptionInfo(ex).Detail(nameof(_lockProvider.ReleaseLockAsync)),
 						nameof(_lockProvider.ReleaseLockAsync),
 						null,
-						cancellationToken: default);
+						cancellationToken: default).ConfigureAwait(false);
 				}
 			}
 

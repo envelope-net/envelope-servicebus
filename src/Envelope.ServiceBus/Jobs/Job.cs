@@ -7,6 +7,7 @@ using Envelope.Services.Transactions;
 using Envelope.Timers;
 using Envelope.Trace;
 using Envelope.Transactions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Envelope.ServiceBus.Jobs;
 
@@ -129,7 +130,7 @@ public abstract class Job : IJob
 	private async Task<bool> OnSequentialAsyncTimerTickAsync(object? state)
 	{
 		Status = JobStatus.InProcess;
-		var @continue = await ExecuteAsync();
+		var @continue = await ExecuteAsync().ConfigureAwait(false);
 
 		if (!@continue)
 			Status = JobStatus.Stopped;
@@ -139,7 +140,7 @@ public abstract class Job : IJob
 
 	private async Task<bool> OnSequentialAsyncTimerExceptionAsync(object? state, Exception exception)
 	{
-		var @continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), exception);
+		var @continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), exception).ConfigureAwait(false);
 
 		if (!@continue)
 			Status = JobStatus.Stopped;
@@ -156,15 +157,15 @@ public abstract class Job : IJob
 
 		try
 		{
-			@continue = await ExecuteAsync();
+			@continue = await ExecuteAsync().ConfigureAwait(false);
 		}
 		catch (Exception ex)
 		{
-			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), ex);
+			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), ex).ConfigureAwait(false);
 		}
 
 		if (!@continue)
-			await StopAsync();
+			await StopAsync().ConfigureAwait(false);
 	}
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
 #pragma warning restore VSTHRD100 // Avoid async void methods
@@ -178,17 +179,17 @@ public abstract class Job : IJob
 
 		try
 		{
-			@continue = await ExecuteAsync();
+			@continue = await ExecuteAsync().ConfigureAwait(false);
 		}
 		catch (Exception ex)
 		{
-			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), ex);
+			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), ex).ConfigureAwait(false);
 		}
 
 		if (!@continue)
 		{
 			_cronAsyncTimerIsStopped = true;
-			await StopAsync();
+			await StopAsync().ConfigureAwait(false);
 		}
 	}
 
@@ -204,13 +205,13 @@ public abstract class Job : IJob
 			return;
 
 		if (BeforeStartAsync != null)
-			await BeforeStartAsync.Invoke(traceInfo);
+			await BeforeStartAsync.Invoke(traceInfo).ConfigureAwait(false);
 
 		Status = JobStatus.Idle;
 
 		if (Mode == JobExecutingMode.SequentialIntervalTimer)
 		{
-			await _sequentialAsyncTimer!.StartAsync();
+			await _sequentialAsyncTimer!.StartAsync().ConfigureAwait(false);
 		}
 		else if (Mode == JobExecutingMode.ExactPeriodicTimer)
 		{
@@ -226,9 +227,9 @@ public abstract class Job : IJob
 		{
 			_cronAsyncTimerIsStopped = false;
 
-			while (await _cronAsyncTimer!.WaitForNextTickAsync())
+			while (await _cronAsyncTimer!.WaitForNextTickAsync().ConfigureAwait(false))
 			{
-				await OnNextCronTimerTickAsync();
+				await OnNextCronTimerTickAsync().ConfigureAwait(false);
 			}
 		}
 	}
@@ -248,7 +249,7 @@ public abstract class Job : IJob
 
 		if (Mode == JobExecutingMode.SequentialIntervalTimer)
 		{
-			await _sequentialAsyncTimer!.StopAsync();
+			await _sequentialAsyncTimer!.StopAsync().ConfigureAwait(false);
 		}
 		else if (Mode == JobExecutingMode.ExactPeriodicTimer)
 		{
@@ -266,9 +267,13 @@ public abstract class Job : IJob
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var detail = $"{this.GetType().FullName} >> {nameof(OnUnhandledExceptionAsync)}";
-		await Logger.LogErrorAsync(traceInfo, Name, x => x.ExceptionInfo(exception).Detail(detail), detail, null, cancellationToken: default);
+		await Logger.LogErrorAsync(traceInfo, Name, x => x.ExceptionInfo(exception).Detail(detail), detail, null, cancellationToken: default).ConfigureAwait(false);
 		return true;
 	}
+
+	protected virtual Task<ITransactionManager> CreateTransactionManagerAsync(CancellationToken cancellationToken = default)
+		=> Task.FromResult(ServiceProvider.GetService<ITransactionManagerFactory>()?.Create()
+			?? Transactions.TransactionManagerFactory.CreateTransactionManager());
 }
 
 public abstract class Job<TData> : Job, IJob<TData>, IJob
@@ -292,7 +297,7 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 				transactionContext,
 				async (traceInfo, tc, cancellationToken) =>
 				{
-					Data = await JobRepository.LoadDataAsync<TData>(Name, tc, cancellationToken);
+					Data = await JobRepository.LoadDataAsync<TData>(Name, tc, cancellationToken).ConfigureAwait(false);
 					return result.Build();
 				},
 				$"{nameof(Job)}<{typeof(TData).FullName}> - {nameof(BeforeStartInternalAsync)}> Global exception",
@@ -332,7 +337,7 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 				transactionContext,
 				async (traceInfo, tc, cancellationToken) =>
 				{
-					await JobRepository.SaveDataAsync<TData>(Name, data, tc, cancellationToken);
+					await JobRepository.SaveDataAsync(Name, data, tc, cancellationToken).ConfigureAwait(false);
 					return result.Build();
 				},
 				$"{nameof(Job)}<{typeof(TData).FullName}> - {nameof(BeforeStartInternalAsync)}> Global exception",

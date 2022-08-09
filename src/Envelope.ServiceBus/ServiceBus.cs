@@ -37,7 +37,7 @@ internal class ServiceBus : IServiceBus
 			{
 				try
 				{
-					await queue.OnMessageAsync(traceInfo, cancellationToken);
+					await queue.OnMessageAsync(traceInfo, cancellationToken).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
@@ -61,7 +61,7 @@ internal class ServiceBus : IServiceBus
 			{
 				try
 				{
-					await exchange.OnMessageAsync(traceInfo, cancellationToken);
+					await exchange.OnMessageAsync(traceInfo, cancellationToken).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
@@ -85,7 +85,7 @@ internal class ServiceBus : IServiceBus
 			{
 				try
 				{
-					await jobController.StartAllAsync(traceInfo);
+					await jobController.StartAllAsync(traceInfo).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{

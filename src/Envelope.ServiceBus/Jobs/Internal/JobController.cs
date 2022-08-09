@@ -44,7 +44,7 @@ internal class JobController : IJobController
 		{
 			try
 			{
-				await job.StartAsync(traceInfo);
+				await job.StartAsync(traceInfo).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -58,7 +58,7 @@ internal class JobController : IJobController
 							x => x.ExceptionInfo(ex).Detail(detail),
 							detail,
 							null,
-							cancellationToken: default);
+							cancellationToken: default).ConfigureAwait(false);
 			}
 		}
 	}
@@ -69,7 +69,7 @@ internal class JobController : IJobController
 		{
 			try
 			{
-				await job.StopAsync();
+				await job.StopAsync().ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -83,7 +83,7 @@ internal class JobController : IJobController
 							x => x.ExceptionInfo(ex).Detail(detail),
 							detail,
 							null,
-							cancellationToken: default);
+							cancellationToken: default).ConfigureAwait(false);
 			}
 		}
 	}
