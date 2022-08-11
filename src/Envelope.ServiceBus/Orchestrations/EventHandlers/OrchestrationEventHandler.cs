@@ -84,7 +84,7 @@ public static class OrchestrationEventHandler
 		//	await _orchestrationRepository.AddExecutionPointerAsync(orchestrationInstance.IdOrchestrationInstance, executionPointer).ConfigureAwait(false);
 
 
-		var orchestrationInstances = await orchestrationRepository.GetOrchestrationInstancesAsync(@event.OrchestrationKey, context.ServiceProvider!, context.ServiceBusOptions.HostInfo, context.TransactionContext, default).ConfigureAwait(false);
+		var orchestrationInstances = await orchestrationRepository.GetOrchestrationInstancesAsync(@event.OrchestrationKey, context.ServiceProvider!, context.ServiceBusOptions!.HostInfo, context.TransactionContext, default).ConfigureAwait(false);
 		if (orchestrationInstances == null)
 			return context.MessageHandlerResultFactory.FromResult(result.Build(), traceInfo);
 

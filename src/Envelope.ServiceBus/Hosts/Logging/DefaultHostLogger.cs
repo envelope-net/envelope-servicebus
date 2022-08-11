@@ -1,7 +1,6 @@
 ﻿using Envelope.Logging;
 using Envelope.Logging.Extensions;
 using Envelope.Services;
-using Envelope.Services.Extensions;
 using Envelope.Trace;
 using Envelope.Transactions;
 using Microsoft.Extensions.Logging;

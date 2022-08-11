@@ -9,7 +9,7 @@ namespace Envelope.ServiceBus.MessageHandlers;
 
 public interface IMessageHandlerContext : IMessageMetadata
 {
-	IServiceBusOptions ServiceBusOptions { get; }
+	IServiceBusOptions? ServiceBusOptions { get; }
 
 	bool ThrowNoHandlerException { get; }
 

@@ -16,7 +16,7 @@ public abstract class MessageHandlerContext : IMessageHandlerContext, IMessageMe
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-	public IServiceBusOptions ServiceBusOptions { get; internal set; }
+	public IServiceBusOptions? ServiceBusOptions { get; internal set; }
 
 	public bool ThrowNoHandlerException { get; internal set; }
 
@@ -101,19 +101,47 @@ public abstract class MessageHandlerContext : IMessageHandlerContext, IMessageMe
 	void IMessageMetadata.Update(bool processed, MessageStatus status, int retryCount, DateTime? delayedToUtc)
 		=> Update(processed, status, retryCount, delayedToUtc);
 
-	public MethodLogScope CreateScope(
-		ILogger logger,
+	//public MethodLogScope CreateScope(
+	//	ILogger logger,
+	//	IEnumerable<MethodParameter>? methodParameters = null,
+	//	[CallerMemberName] string memberName = "",
+	//	[CallerFilePath] string sourceFilePath = "",
+	//	[CallerLineNumber] int sourceLineNumber = 0)
+	//{
+	//	if (logger == null)
+	//		throw new ArgumentNullException(nameof(logger));
+
+	//	var traceInfo =
+	//		new TraceInfoBuilder(
+	//			(ServiceProvider ?? ServiceBusOptions?.ServiceProvider)!,
+	//			new TraceFrameBuilder(TraceInfo?.TraceFrame)
+	//				.CallerMemberName(memberName)
+	//				.CallerFilePath(sourceFilePath)
+	//				.CallerLineNumber(sourceLineNumber == 0 ? (int?)null : sourceLineNumber)
+	//				.MethodParameters(methodParameters)
+	//				.Build(),
+	//			TraceInfo)
+	//			.Build();
+
+	//	var disposable = logger.BeginScope(new Dictionary<string, Guid?>
+	//	{
+	//		[nameof(ILogMessage.TraceInfo.TraceFrame.MethodCallId)] = traceInfo.TraceFrame.MethodCallId,
+	//		[nameof(ILogMessage.TraceInfo.CorrelationId)] = traceInfo.CorrelationId
+	//	});
+
+	//	var scope = new MethodLogScope(traceInfo, disposable);
+	//	return scope;
+	//}
+
+	public ITraceInfo CreateTraceInfo(
 		IEnumerable<MethodParameter>? methodParameters = null,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
 	{
-		if (logger == null)
-			throw new ArgumentNullException(nameof(logger));
-
 		var traceInfo =
 			new TraceInfoBuilder(
-				ServiceBusOptions.ServiceProvider,
+				(ServiceProvider ?? ServiceBusOptions?.ServiceProvider)!,
 				new TraceFrameBuilder(TraceInfo?.TraceFrame)
 					.CallerMemberName(memberName)
 					.CallerFilePath(sourceFilePath)
@@ -123,14 +151,7 @@ public abstract class MessageHandlerContext : IMessageHandlerContext, IMessageMe
 				TraceInfo)
 				.Build();
 
-		var disposable = logger.BeginScope(new Dictionary<string, Guid?>
-		{
-			[nameof(ILogMessage.TraceInfo.TraceFrame.MethodCallId)] = traceInfo.TraceFrame.MethodCallId,
-			[nameof(ILogMessage.TraceInfo.CorrelationId)] = traceInfo.CorrelationId
-		});
-
-		var scope = new MethodLogScope(traceInfo, disposable);
-		return scope;
+		return traceInfo;
 	}
 
 	public virtual IErrorMessage? LogCritical(
