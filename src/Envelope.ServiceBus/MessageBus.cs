@@ -102,21 +102,20 @@ public partial class MessageBus : IMessageBus
 		optionsBuilder?.Invoke(builder);
 		var options = builder.Build(true);
 
-		var isLocalTransactionManager = false;
-		if (options.TransactionContext == null)
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
 		{
-			var transactionManager = await CreateTransactionManagerAsync(cancellationToken).ConfigureAwait(false);
-			options.TransactionContext = transactionManager.CreateTransactionContext();
-			isLocalTransactionManager = true;
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
 		}
 
-		return await SendAsync(message, options, isLocalTransactionManager, traceInfo, cancellationToken).ConfigureAwait(false);
+		return await SendAsync(message, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 	}
 
 	protected async Task<IResult<Guid>> SendAsync(
 		IRequestMessage message,
 		IMessageOptions options,
-		bool isLocalTransactionManager,
+		bool isLocalTransactionCoordinator,
 		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 	{
@@ -136,13 +135,13 @@ public partial class MessageBus : IMessageBus
 
 		traceInfo = TraceInfo.Create(traceInfo);
 
-		var transactionContext = options.TransactionContext;
+		var transactionController = options.TransactionController;
 
 		return await ServiceTransactionInterceptor.ExecuteActionAsync(
 			false,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
 				var requestMessageType = message.GetType();
 
@@ -163,7 +162,7 @@ public partial class MessageBus : IMessageBus
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(handlerContext)} == null| {nameof(requestMessageType)} = {requestMessageType.FullName}");
 
 				handlerContext.MessageHandlerResultFactory = MessageBusOptions.MessageHandlerResultFactory;
-				handlerContext.TransactionContext = transactionContext;
+				handlerContext.TransactionController = transactionController;
 				handlerContext.ServiceProvider = ServiceProvider;
 				handlerContext.TraceInfo = traceInfo;
 				handlerContext.HostInfo = MessageBusOptions.HostInfo;
@@ -211,12 +210,12 @@ public partial class MessageBus : IMessageBus
 
 				if (result.HasError())
 				{
-					transactionContext.ScheduleRollback();
+					transactionController.ScheduleRollback();
 				}
 				else
 				{
-					if (isLocalTransactionManager)
-						transactionContext.ScheduleCommit();
+					if (isLocalTransactionCoordinator)
+						transactionController.ScheduleCommit();
 				}
 
 				return result.WithData(savedMessage.MessageId).Build();
@@ -237,7 +236,7 @@ public partial class MessageBus : IMessageBus
 				return errorMessage;
 			},
 			null,
-			isLocalTransactionManager,
+			isLocalTransactionCoordinator,
 			cancellationToken).ConfigureAwait(false);
 	}
 
@@ -290,21 +289,20 @@ public partial class MessageBus : IMessageBus
 		optionsBuilder?.Invoke(builder);
 		var options = builder.Build(true);
 
-		var isLocalTransactionManager = false;
-		if (options.TransactionContext == null)
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
 		{
-			var transactionManager = await CreateTransactionManagerAsync(cancellationToken).ConfigureAwait(false);
-			options.TransactionContext = transactionManager.CreateTransactionContext();
-			isLocalTransactionManager = true;
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
 		}
 
-		return await SendAsync(message, options, isLocalTransactionManager, traceInfo, cancellationToken).ConfigureAwait(false);
+		return await SendAsync(message, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 	}
 
 	protected async Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		IMessageOptions options,
-		bool isLocalTransactionManager,
+		bool isLocalTransactionCoordinator,
 		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 	{
@@ -324,13 +322,13 @@ public partial class MessageBus : IMessageBus
 
 		traceInfo = TraceInfo.Create(traceInfo);
 
-		var transactionContext = options.TransactionContext;
+		var transactionController = options.TransactionController;
 
 		return await ServiceTransactionInterceptor.ExecuteActionAsync(
 			false,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
 				var requestMessageType = message.GetType();
 
@@ -350,7 +348,7 @@ public partial class MessageBus : IMessageBus
 				if (handlerContext == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(handlerContext)} == null| {nameof(requestMessageType)} = {requestMessageType.FullName}");
 
-				handlerContext.TransactionContext = transactionContext;
+				handlerContext.TransactionController = transactionController;
 				handlerContext.ServiceProvider = ServiceProvider;
 				handlerContext.TraceInfo = traceInfo;
 				handlerContext.HostInfo = MessageBusOptions.HostInfo;
@@ -382,12 +380,12 @@ public partial class MessageBus : IMessageBus
 
 				if (result.HasError())
 				{
-					transactionContext.ScheduleRollback();
+					transactionController.ScheduleRollback();
 				}
 				else
 				{
-					if (isLocalTransactionManager)
-						transactionContext.ScheduleCommit();
+					if (isLocalTransactionCoordinator)
+						transactionController.ScheduleCommit();
 				}
 
 				return result.WithData(handlerResult.Data).Build();
@@ -408,12 +406,12 @@ public partial class MessageBus : IMessageBus
 				return errorMessage;
 			},
 			null,
-			isLocalTransactionManager,
+			isLocalTransactionCoordinator,
 			cancellationToken).ConfigureAwait(false);
 	}
 
-	protected virtual Task<ITransactionManager> CreateTransactionManagerAsync(CancellationToken cancellationToken = default)
-		=> Task.FromResult(ServiceProvider.GetService<ITransactionManagerFactory>()?.Create() ?? TransactionManagerFactory.CreateTransactionManager());
+	protected virtual ITransactionController CreateTransactionController()
+		=> ServiceProvider.GetRequiredService<ITransactionCoordinator>().TransactionController;
 
 	protected virtual async Task<IResult<ISavedMessage<TMessage>>> SaveRequestMessageAsync<TMessage, TResponse>(
 		TMessage requestMessage,
@@ -453,7 +451,7 @@ public partial class MessageBus : IMessageBus
 		if (MessageBusOptions.MessageBodyProvider != null
 			&& MessageBusOptions.MessageBodyProvider.AllowMessagePersistence(options.DisabledMessagePersistence, metadata))
 		{
-			var saveResult = await MessageBusOptions.MessageBodyProvider.SaveToStorageAsync(new List<IMessageMetadata> { metadata }, requestMessage, traceInfo, options.TransactionContext, cancellationToken).ConfigureAwait(false);
+			var saveResult = await MessageBusOptions.MessageBodyProvider.SaveToStorageAsync(new List<IMessageMetadata> { metadata }, requestMessage, traceInfo, options.TransactionController, cancellationToken).ConfigureAwait(false);
 			if (result.MergeHasError(saveResult))
 				return result.Build();
 		}
@@ -499,7 +497,7 @@ public partial class MessageBus : IMessageBus
 		if (MessageBusOptions.MessageBodyProvider != null
 			&& MessageBusOptions.MessageBodyProvider.AllowMessagePersistence(options.DisabledMessagePersistence, metadata))
 		{
-			var saveResult = await MessageBusOptions.MessageBodyProvider.SaveToStorageAsync(new List<IMessageMetadata> { metadata }, requestMessage, traceInfo, options.TransactionContext, cancellationToken).ConfigureAwait(false);
+			var saveResult = await MessageBusOptions.MessageBodyProvider.SaveToStorageAsync(new List<IMessageMetadata> { metadata }, requestMessage, traceInfo, options.TransactionController, cancellationToken).ConfigureAwait(false);
 			if (result.MergeHasError(saveResult))
 				return result.Build();
 		}
@@ -518,7 +516,7 @@ public partial class MessageBus : IMessageBus
 
 		if (MessageBusOptions.MessageBodyProvider != null)
 		{
-			var saveResult = await MessageBusOptions.MessageBodyProvider.SaveReplyToStorageAsync(handlerContext.MessageId, responseMessage, traceInfo, handlerContext.TransactionContext, cancellationToken).ConfigureAwait(false);
+			var saveResult = await MessageBusOptions.MessageBodyProvider.SaveReplyToStorageAsync(handlerContext.MessageId, responseMessage, traceInfo, handlerContext.TransactionController, cancellationToken).ConfigureAwait(false);
 			if (result.MergeHasError(saveResult))
 				return result.Build();
 

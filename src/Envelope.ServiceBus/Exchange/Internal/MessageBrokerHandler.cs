@@ -11,7 +11,7 @@ namespace Envelope.ServiceBus.Exchange.Internal;
 internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 	where TMessage : class, IMessage
 {
-	public async Task<MessageHandlerResult> HandleAsync(IExchangeMessage<TMessage> message, ExchangeContext<TMessage> exchangeContext, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	public async Task<MessageHandlerResult> HandleAsync(IExchangeMessage<TMessage> message, ExchangeContext<TMessage> exchangeContext, ITransactionController transactionController, CancellationToken cancellationToken)
 	{
 		var traceInfo = TraceInfo.Create(exchangeContext.ServiceBusOptions.ServiceProvider);
 		var result = new ResultBuilder();
@@ -30,7 +30,7 @@ internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 		{
 			var context = exchangeContext.ServiceBusOptions.QueueProvider.CreateQueueEnqueueContext(traceInfo, message);
 			disableFaultQueue = context.DisableFaultQueue;
-			var enqueueResult = await queue.EnqueueAsync(message.Message, context, transactionContext, cancellationToken).ConfigureAwait(false);
+			var enqueueResult = await queue.EnqueueAsync(message.Message, context, transactionController, cancellationToken).ConfigureAwait(false);
 			if (result.MergeHasError(enqueueResult))
 			{
 				return messageHandlerResultFactory.Error(result.Build());
@@ -59,7 +59,7 @@ internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 				try
 				{
 					var faultContext = exchangeContext.ServiceBusOptions.QueueProvider.CreateFaultQueueContext(traceInfo, message);
-					await exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync(message.Message, faultContext, transactionContext, cancellationToken).ConfigureAwait(false);
+					await exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync(message.Message, faultContext, transactionController, cancellationToken).ConfigureAwait(false);
 				}
 				catch (Exception faultEx)
 				{

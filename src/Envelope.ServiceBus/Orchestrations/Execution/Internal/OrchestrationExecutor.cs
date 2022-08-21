@@ -48,6 +48,9 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		_orchestrationHost = new(() => _serviceProvider.GetRequiredService<IOrchestrationHost>());
 	}
 
+	protected virtual ITransactionController CreateTransactionController()
+		=> _serviceProvider.GetRequiredService<ITransactionCoordinator>().TransactionController;
+
 	public async Task RestartAsync(
 		IOrchestrationInstance orchestrationInstance,
 		ITraceInfo traceInfo)
@@ -57,18 +60,17 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 
 		if (orchestrationInstance.Status == OrchestrationStatus.Executing)
 		{
-			var localUpdateTransactionManager = _options.TransactionManagerFactory.Create();
-			var localUpdateTransactionContext = await _options.TransactionContextFactory(_serviceProvider, localUpdateTransactionManager).ConfigureAwait(false);
+			var localUpdateTransactionController = CreateTransactionController();
 
 			await TransactionInterceptor.ExecuteAsync(
 				false,
 				traceInfo,
-				localUpdateTransactionContext,
-				async (traceInfo, transactionContext, cancellationToken) =>
+				localUpdateTransactionController,
+				async (traceInfo, transactionController, cancellationToken) =>
 				{
-					await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Running, null, transactionContext).ConfigureAwait(false);
+					await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Running, null, transactionController).ConfigureAwait(false);
 					orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Running, null);
-					transactionContext.ScheduleCommit();
+					transactionController.ScheduleCommit();
 				},
 				$"{nameof(OrchestrationExecutor)} - {nameof(ExecuteInternalAsync)} {nameof(OrchestrationStatus.Running)} | {nameof(orchestrationInstance.IdOrchestrationInstance)} = {orchestrationInstance.IdOrchestrationInstance}",
 				async (traceInfo, exception, detail) =>
@@ -108,19 +110,18 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 			{
 				if (orchestrationInstance.Status != OrchestrationStatus.Terminated)
 				{
-					var localTransactionManager = _options.TransactionManagerFactory.Create();
-					var localTransactionContext = await _options.TransactionContextFactory(_serviceProvider, localTransactionManager).ConfigureAwait(false);
+					var localTransactionController = CreateTransactionController();
 
 					await TransactionInterceptor.ExecuteAsync(
 						false,
 						traceInfo,
-						localTransactionContext,
-						async (traceInfo, transactionContext, cancellationToken) =>
+						localTransactionController,
+						async (traceInfo, transactionController, cancellationToken) =>
 						{
-							await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Terminated, null, transactionContext).ConfigureAwait(false);
+							await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Terminated, null, transactionController).ConfigureAwait(false);
 							orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Terminated, null);
 
-							transactionContext.ScheduleCommit();
+							transactionController.ScheduleCommit();
 						},
 						$"{nameof(OrchestrationExecutor)} - {nameof(ExecuteAsync)} | {nameof(orchestrationInstance.IdOrchestrationInstance)} = {orchestrationInstance.IdOrchestrationInstance}  - {nameof(_orchestrationRepository.UpdateOrchestrationStatusAsync)}",
 						async (traceInfo, exception, detail) =>
@@ -167,17 +168,16 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		List<ExecutionPointer>? exePointers = null;
 
 		traceInfo = TraceInfo.Create(traceInfo);
-		var startTransactionManager = _options.TransactionManagerFactory.Create();
-		var startTransactionContext = await _options.TransactionContextFactory(_serviceProvider, startTransactionManager).ConfigureAwait(false);
+		var startTransactionController = CreateTransactionController();
 
 		var next = 
 			await TransactionInterceptor.ExecuteAsync(
 				false,
 				traceInfo,
-				startTransactionContext,
-				async (traceInfo, transactionContext, cancellationToken) =>
+				startTransactionController,
+				async (traceInfo, transactionController, cancellationToken) =>
 				{
-					exePointers = await GetExecutionPointersAsync(orchestrationInstance, traceInfo, transactionContext).ConfigureAwait(false);
+					exePointers = await GetExecutionPointersAsync(orchestrationInstance, traceInfo, transactionController).ConfigureAwait(false);
 
 					if (exePointers.Count == 0
 						&& (orchestrationInstance.Status == OrchestrationStatus.Running
@@ -191,10 +191,10 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 						if (orchestrationInstance.Status == OrchestrationStatus.Executing)
 							return false;
 
-						await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Executing, null, transactionContext).ConfigureAwait(false);
+						await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Executing, null, transactionController).ConfigureAwait(false);
 						orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Executing, null);
 
-						transactionContext.ScheduleCommit();
+						transactionController.ScheduleCommit();
 					}
 
 					return true;
@@ -232,15 +232,14 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 
 				foreach (var pointer in exePointers)
 				{
-					var localExecuteTransactionManager = _options.TransactionManagerFactory.Create();
-					var localExecuteTransactionContext = await _options.TransactionContextFactory(_serviceProvider, localExecuteTransactionManager).ConfigureAwait(false);
+					var localExecuteTransactionController = CreateTransactionController();
 
 					var loopControl =
 						await TransactionInterceptor.ExecuteAsync(
 							false,
 							traceInfo,
-							localExecuteTransactionContext,
-							async (traceInfo, transactionContext, cancellationToken) =>
+							localExecuteTransactionController,
+							async (traceInfo, transactionController, cancellationToken) =>
 							{
 								if (orchestrationInstance.Status != OrchestrationStatus.Running
 									&& orchestrationInstance.Status != OrchestrationStatus.Executing)
@@ -261,16 +260,16 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 
 								try
 								{
-									await InitializeStepAsync(orchestrationInstance, pointer, traceInfo, transactionContext).ConfigureAwait(false);
-									await ExecuteStepAsync(orchestrationInstance, pointer, traceInfo, transactionContext, default).ConfigureAwait(false);
+									await InitializeStepAsync(orchestrationInstance, pointer, traceInfo, transactionController).ConfigureAwait(false);
+									await ExecuteStepAsync(orchestrationInstance, pointer, traceInfo, transactionController, default).ConfigureAwait(false);
 								}
 								catch (Exception ex)
 								{
-									await RetryAsync(orchestrationInstance, pointer, null, traceInfo, transactionContext, ex, "Unhandled exception").ConfigureAwait(false);
+									await RetryAsync(orchestrationInstance, pointer, null, traceInfo, transactionController, ex, "Unhandled exception").ConfigureAwait(false);
 									return LoopControlEnum.Break;
 								}
 
-								transactionContext.ScheduleCommit();
+								transactionController.ScheduleCommit();
 
 								return LoopControlEnum.None;
 							},
@@ -311,17 +310,16 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					currentPointer = pointer;
 				}
 
-				var localGetTransactionManager = _options.TransactionManagerFactory.Create();
-				var localGetTransactionContext = await _options.TransactionContextFactory(_serviceProvider, localGetTransactionManager).ConfigureAwait(false);
+				var localGetTransactionController = CreateTransactionController();
 
 				await TransactionInterceptor.ExecuteAsync(
 					false,
 					traceInfo,
-					localGetTransactionContext,
-					async (traceInfo, transactionContext, cancellationToken) =>
+					localGetTransactionController,
+					async (traceInfo, transactionController, cancellationToken) =>
 					{
-						exePointers = await GetExecutionPointersAsync(orchestrationInstance, traceInfo, transactionContext).ConfigureAwait(false);
-						transactionContext.ScheduleCommit();
+						exePointers = await GetExecutionPointersAsync(orchestrationInstance, traceInfo, transactionController).ConfigureAwait(false);
+						transactionController.ScheduleCommit();
 					},
 					$"{nameof(OrchestrationExecutor)} - {nameof(ExecuteInternalAsync)} {nameof(GetExecutionPointersAsync)} | {nameof(orchestrationInstance.IdOrchestrationInstance)} = {orchestrationInstance.IdOrchestrationInstance}",
 					async (traceInfo, exception, detail) =>
@@ -341,17 +339,16 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					cancellationToken: default).ConfigureAwait(false);
 			}
 
-			var localDetermineTransactionManager = _options.TransactionManagerFactory.Create();
-			var localDetermineTransactionContext = await _options.TransactionContextFactory(_serviceProvider, localDetermineTransactionManager).ConfigureAwait(false);
+			var localDetermineTransactionController = CreateTransactionController();
 
 			await TransactionInterceptor.ExecuteAsync(
 				false,
 				traceInfo,
-				localDetermineTransactionContext,
-				async (traceInfo, transactionContext, cancellationToken) =>
+				localDetermineTransactionController,
+				async (traceInfo, transactionController, cancellationToken) =>
 				{
-					await DetermineOrchestrationIsCompletedAsync(orchestrationInstance, traceInfo, transactionContext).ConfigureAwait(false);
-					transactionContext.ScheduleCommit();
+					await DetermineOrchestrationIsCompletedAsync(orchestrationInstance, traceInfo, transactionController).ConfigureAwait(false);
+					transactionController.ScheduleCommit();
 				},
 				$"{nameof(OrchestrationExecutor)} - {nameof(ExecuteInternalAsync)} {nameof(DetermineOrchestrationIsCompletedAsync)} | {nameof(orchestrationInstance.IdOrchestrationInstance)} = {orchestrationInstance.IdOrchestrationInstance}",
 				async (traceInfo, exception, detail) =>
@@ -374,18 +371,17 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		{
 			if (orchestrationInstance.Status == OrchestrationStatus.Executing)
 			{
-				var localUpdateTransactionManager = _options.TransactionManagerFactory.Create();
-				var localUpdateTransactionContext = await _options.TransactionContextFactory(_serviceProvider, localUpdateTransactionManager).ConfigureAwait(false);
+				var localUpdateTransactionController = CreateTransactionController();
 
 				await TransactionInterceptor.ExecuteAsync(
 					false,
 					traceInfo,
-					localUpdateTransactionContext,
-					async (traceInfo, transactionContext, cancellationToken) =>
+					localUpdateTransactionController,
+					async (traceInfo, transactionController, cancellationToken) =>
 					{
-						await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Running, null, transactionContext).ConfigureAwait(false);
+						await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Running, null, transactionController).ConfigureAwait(false);
 						orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Running, null);
-						transactionContext.ScheduleCommit();
+						transactionController.ScheduleCommit();
 					},
 					$"{nameof(OrchestrationExecutor)} - {nameof(ExecuteInternalAsync)} {nameof(OrchestrationStatus.Running)} | {nameof(orchestrationInstance.IdOrchestrationInstance)} = {orchestrationInstance.IdOrchestrationInstance}",
 					async (traceInfo, exception, detail) =>
@@ -433,7 +429,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		}
 	}
 
-	private async Task<List<ExecutionPointer>> GetExecutionPointersAsync(IOrchestrationInstance orchestrationInstance, ITraceInfo traceInfo, ITransactionContext transactionContext)
+	private async Task<List<ExecutionPointer>> GetExecutionPointersAsync(IOrchestrationInstance orchestrationInstance, ITraceInfo traceInfo, ITransactionController transactionController)
 	{
 		var nowUtc = DateTime.UtcNow;
 
@@ -446,14 +442,14 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		var executionPointers =
 			await _orchestrationRepository.GetOrchestrationExecutionPointersAsync(
 				orchestrationInstance.IdOrchestrationInstance,
-				transactionContext).ConfigureAwait(false);
+				transactionController).ConfigureAwait(false);
 
 		var pointers = new List<ExecutionPointer>(
 			executionPointers
 				.Where(x => (x.Active && (!x.SleepUntilUtc.HasValue || (x.SleepUntilUtc < nowUtc && x.Status == PointerStatus.Retrying)))
 					|| (!x.Active && x.SleepUntilUtc < nowUtc && x.Status == PointerStatus.Retrying)));
 
-		var eventsResult = await _orchestrationRepository.GetUnprocessedEventsAsync(orchestrationInstance.OrchestrationKey, traceInfo, transactionContext, default).ConfigureAwait(false);
+		var eventsResult = await _orchestrationRepository.GetUnprocessedEventsAsync(orchestrationInstance.OrchestrationKey, traceInfo, transactionController, default).ConfigureAwait(false);
 		if (eventsResult.HasError)
 			throw eventsResult.ToException()!;
 
@@ -475,7 +471,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					continue;
 
 				@event.ProcessedUtc = nowUtc;
-				var updateEventResult = await _orchestrationRepository.SetProcessedUtcAsync(@event, traceInfo, transactionContext, default).ConfigureAwait(false);
+				var updateEventResult = await _orchestrationRepository.SetProcessedUtcAsync(@event, traceInfo, transactionController, default).ConfigureAwait(false);
 				if (updateEventResult.HasError)
 					throw updateEventResult.ToException()!;
 
@@ -485,7 +481,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					OrchestrationEvent = @event,
 					Status = PointerStatus.InProcess
 				};
-				await _orchestrationRepository.UpdateExecutionPointerAsync(eventPointer, update, transactionContext).ConfigureAwait(false);
+				await _orchestrationRepository.UpdateExecutionPointerAsync(eventPointer, update, transactionController).ConfigureAwait(false);
 				pointers.AddUniqueItem(eventPointer);
 			}
 		}
@@ -499,7 +495,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				Active = false,
 				Status = PointerStatus.Completed
 			};
-			await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionContext).ConfigureAwait(false);
+			await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionController).ConfigureAwait(false);
 			removedPointers.Add(pointer);
 
 			var nextStep = pointer.GetStep().NextStep;
@@ -514,7 +510,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					throw new InvalidOperationException($"{nameof(nextPointer)} == null | Step = {nextStep}");
 				else
 				{
-					await _orchestrationRepository.AddExecutionPointerAsync(nextPointer, transactionContext).ConfigureAwait(false);
+					await _orchestrationRepository.AddExecutionPointerAsync(nextPointer, transactionController).ConfigureAwait(false);
 				}
 
 				newPointers.AddUniqueItem(nextPointer);
@@ -530,7 +526,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		return pointers;
 	}
 
-	private async Task InitializeStepAsync(IOrchestrationInstance orchestrationInstance, ExecutionPointer pointer, ITraceInfo traceInfo, ITransactionContext transactionContext)
+	private async Task InitializeStepAsync(IOrchestrationInstance orchestrationInstance, ExecutionPointer pointer, ITraceInfo traceInfo, ITransactionController transactionController)
 	{
 		if (pointer.Status != PointerStatus.InProcess)
 		{
@@ -552,8 +548,8 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				null,
 				cancellationToken: default).ConfigureAwait(false);
 
-			await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionContext).ConfigureAwait(false);
-			await _orchestrationController.Value.PublishLifeCycleEventAsync(new StepStarted(orchestrationInstance, pointer), traceInfo, transactionContext).ConfigureAwait(false);
+			await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionController).ConfigureAwait(false);
+			await _orchestrationController.Value.PublishLifeCycleEventAsync(new StepStarted(orchestrationInstance, pointer), traceInfo, transactionController).ConfigureAwait(false);
 		}
 	}
 
@@ -561,7 +557,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		IOrchestrationInstance orchestrationInstance,
 		ExecutionPointer pointer,
 		ITraceInfo traceInfo,
-		ITransactionContext transactionContext,
+		ITransactionController transactionController,
 		CancellationToken cancellationToken = default)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
@@ -571,9 +567,9 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 			finalizedBranch = pointer.GetStep().Branches.Values.FirstOrDefault(x => x.IdStep == pointer.PredecessorExecutionPointerStartingStepId.Value);
 
 		if (finalizedBranch != null)
-			await _orchestrationRepository.AddFinalizedBranchAsync(orchestrationInstance.IdOrchestrationInstance, finalizedBranch, transactionContext, cancellationToken).ConfigureAwait(false);
+			await _orchestrationRepository.AddFinalizedBranchAsync(orchestrationInstance.IdOrchestrationInstance, finalizedBranch, transactionController, cancellationToken).ConfigureAwait(false);
 
-		var finalizedBrancheIds = await _orchestrationRepository.GetFinalizedBrancheIdsAsync(orchestrationInstance.IdOrchestrationInstance, transactionContext, cancellationToken).ConfigureAwait(false);
+		var finalizedBrancheIds = await _orchestrationRepository.GetFinalizedBrancheIdsAsync(orchestrationInstance.IdOrchestrationInstance, transactionController, cancellationToken).ConfigureAwait(false);
 
 		var context = new StepExecutionContext(orchestrationInstance, pointer, finalizedBrancheIds, traceInfo)
 		{
@@ -617,7 +613,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				null,
 				cancellationToken).ConfigureAwait(false);
 
-			await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionContext).ConfigureAwait(false);
+			await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionController).ConfigureAwait(false);
 			return;
 		}
 
@@ -638,7 +634,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 			}
 		}
 
-		await ProcessExecutionResultAsync(orchestrationInstance, pointer, result, traceInfo, transactionContext).ConfigureAwait(false);
+		await ProcessExecutionResultAsync(orchestrationInstance, pointer, result, traceInfo, transactionController).ConfigureAwait(false);
 
 		if (pointer.Status == PointerStatus.Completed && step.SetOutputParameters != null)
 			step.SetOutputParameters(stepBody, orchestrationInstance.Data, context);
@@ -649,7 +645,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		ExecutionPointer pointer,
 		IExecutionResult? result,
 		ITraceInfo traceInfo,
-		ITransactionContext transactionContext)
+		ITransactionController transactionController)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var step = pointer.GetStep();
@@ -658,7 +654,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		{
 			if (result.Retry)
 			{
-				await RetryAsync(orchestrationInstance, pointer, result, traceInfo, transactionContext, null, null).ConfigureAwait(false);
+				await RetryAsync(orchestrationInstance, pointer, result, traceInfo, transactionController, null, null).ConfigureAwait(false);
 			}
 			else if (!string.IsNullOrEmpty(result.EventName))
 			{
@@ -683,7 +679,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					null,
 					cancellationToken: default).ConfigureAwait(false);
 
-				await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionContext).ConfigureAwait(false);
+				await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionController).ConfigureAwait(false);
 				return;
 			}
 			else
@@ -707,8 +703,8 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					null,
 					cancellationToken: default).ConfigureAwait(false);
 
-				await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionContext).ConfigureAwait(false);
-				await _orchestrationController.Value.PublishLifeCycleEventAsync(new StepCompleted(orchestrationInstance, pointer), traceInfo, transactionContext).ConfigureAwait(false);
+				await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionController).ConfigureAwait(false);
+				await _orchestrationController.Value.PublishLifeCycleEventAsync(new StepCompleted(orchestrationInstance, pointer), traceInfo, transactionController).ConfigureAwait(false);
 			}
 
 			if (result.NestedSteps != null)
@@ -725,8 +721,8 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 
 					if (nestedExecutionPointer != null)
 					{
-						await _orchestrationRepository.AddNestedExecutionPointerAsync(nestedExecutionPointer, pointer, transactionContext).ConfigureAwait(false);
-						//await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, transactionContext).ConfigureAwait(false);
+						await _orchestrationRepository.AddNestedExecutionPointerAsync(nestedExecutionPointer, pointer, transactionController).ConfigureAwait(false);
+						//await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, transactionController).ConfigureAwait(false);
 					}
 				}
 			}
@@ -749,7 +745,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 							}
 							else
 							{
-								await _orchestrationRepository.AddExecutionPointerAsync(executionPointer, transactionContext).ConfigureAwait(false);
+								await _orchestrationRepository.AddExecutionPointerAsync(executionPointer, transactionController).ConfigureAwait(false);
 							}
 						}
 						else
@@ -762,7 +758,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 									await _orchestrationRepository.GetStepExecutionPointerAsync(
 										orchestrationInstance.IdOrchestrationInstance,
 										branchController.IdStep,
-										transactionContext).ConfigureAwait(false);
+										transactionController).ConfigureAwait(false);
 
 								if (branchControllerExecutionPointer == null)
 									throw new InvalidOperationException($"{nameof(branchControllerExecutionPointer)} == null | {nameof(step)} = {step}");
@@ -778,7 +774,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 								}
 								else
 								{
-									await _orchestrationRepository.AddExecutionPointerAsync(executionPointer, transactionContext).ConfigureAwait(false);
+									await _orchestrationRepository.AddExecutionPointerAsync(executionPointer, transactionController).ConfigureAwait(false);
 								}
 
 								createdNextPointer = true;
@@ -805,7 +801,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 						}
 						else
 						{
-							await _orchestrationRepository.AddExecutionPointerAsync(executionPointer, transactionContext).ConfigureAwait(false);
+							await _orchestrationRepository.AddExecutionPointerAsync(executionPointer, transactionController).ConfigureAwait(false);
 						}
 					}
 				}
@@ -813,11 +809,11 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		}
 		else //result == null
 		{
-			await SuspendAsync(orchestrationInstance, pointer, traceInfo, transactionContext, null, $"{nameof(result)} == NULL").ConfigureAwait(false);
+			await SuspendAsync(orchestrationInstance, pointer, traceInfo, transactionController, null, $"{nameof(result)} == NULL").ConfigureAwait(false);
 		}
 	}
 
-	private async Task DetermineOrchestrationIsCompletedAsync(IOrchestrationInstance orchestrationInstance, ITraceInfo traceInfo, ITransactionContext transactionContext)
+	private async Task DetermineOrchestrationIsCompletedAsync(IOrchestrationInstance orchestrationInstance, ITraceInfo traceInfo, ITransactionController transactionController)
 	{
 		if (orchestrationInstance.Status != OrchestrationStatus.Running
 			&& orchestrationInstance.Status != OrchestrationStatus.Executing)
@@ -826,7 +822,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		var executionPointers =
 			await _orchestrationRepository.GetOrchestrationExecutionPointersAsync(
 				orchestrationInstance.IdOrchestrationInstance,
-				transactionContext).ConfigureAwait(false);
+				transactionController).ConfigureAwait(false);
 
 		var hasCompletedEndStep = executionPointers.Any(x => x.GetStep() is EndOrchestrationStep && x.Status == PointerStatus.Completed);
 		var hasNotEndedPointer = executionPointers.Any(x => x.EndTimeUtc == null);
@@ -849,9 +845,9 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 			cancellationToken: default).ConfigureAwait(false);
 
 		var utcNow = DateTime.UtcNow;
-		await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Completed, utcNow, transactionContext).ConfigureAwait(false);
+		await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Completed, utcNow, transactionController).ConfigureAwait(false);
 		orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Completed, utcNow);
-		await _orchestrationController.Value.PublishLifeCycleEventAsync(new OrchestrationCompleted(orchestrationInstance), traceInfo, transactionContext).ConfigureAwait(false);
+		await _orchestrationController.Value.PublishLifeCycleEventAsync(new OrchestrationCompleted(orchestrationInstance), traceInfo, transactionController).ConfigureAwait(false);
 	}
 
 	private async Task RetryAsync(
@@ -859,7 +855,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		ExecutionPointer pointer,
 		IExecutionResult? result,
 		ITraceInfo traceInfo,
-		ITransactionContext transactionContext,
+		ITransactionController transactionController,
 		Exception? exception,
 		string? detailMessage)
 	{
@@ -885,7 +881,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					? $"{nameof(pointer.Status)} = {pointer.Status}"
 					: $"{detailMessage} | {nameof(pointer.Status)} = {pointer.Status}";
 
-				await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionContext).ConfigureAwait(false);
+				await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionController).ConfigureAwait(false);
 
 				if (result == null || result.IsError)
 				{
@@ -901,7 +897,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 							cancellationToken: default).ConfigureAwait(false);
 
 					await _orchestrationController.Value.PublishLifeCycleEventAsync(
-						new OrchestrationError(orchestrationInstance, pointer, errorMessage), traceInfo, transactionContext).ConfigureAwait(false);
+						new OrchestrationError(orchestrationInstance, pointer, errorMessage), traceInfo, transactionController).ConfigureAwait(false);
 				}
 			}
 			else
@@ -910,7 +906,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					? $"{nameof(pointer.RetryCount)} = {pointer.RetryCount}"
 					: $"{detailMessage} | {nameof(pointer.RetryCount)} = {pointer.RetryCount}";
 
-				await SuspendAsync(orchestrationInstance, pointer, traceInfo, transactionContext, exception, detail).ConfigureAwait(false);
+				await SuspendAsync(orchestrationInstance, pointer, traceInfo, transactionController, exception, detail).ConfigureAwait(false);
 			}
 		}
 		else
@@ -919,7 +915,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				? $"{nameof(step.CanRetry)} = false"
 				: $"{detailMessage} | {nameof(step.CanRetry)} = false";
 
-			await SuspendAsync(orchestrationInstance, pointer, traceInfo, transactionContext, exception, detail).ConfigureAwait(false);
+			await SuspendAsync(orchestrationInstance, pointer, traceInfo, transactionController, exception, detail).ConfigureAwait(false);
 		}
 	}
 
@@ -927,7 +923,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		IOrchestrationInstance orchestrationInstance,
 		ExecutionPointer pointer,
 		ITraceInfo traceInfo,
-		ITransactionContext transactionContext,
+		ITransactionController transactionController,
 		Exception? exception,
 		string? detailMessage)
 	{
@@ -958,12 +954,12 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 			null,
 			cancellationToken: default).ConfigureAwait(false);
 
-		await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionContext).ConfigureAwait(false);
+		await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionController).ConfigureAwait(false);
 		var utcNow = DateTime.UtcNow;
-		await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Suspended, utcNow, transactionContext).ConfigureAwait(false);
+		await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Suspended, utcNow, transactionController).ConfigureAwait(false);
 		orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Suspended, utcNow);
 
-		await _orchestrationController.Value.PublishLifeCycleEventAsync(new StepSuspended(orchestrationInstance, pointer), traceInfo, transactionContext).ConfigureAwait(false);
-		await _orchestrationController.Value.PublishLifeCycleEventAsync(new OrchestrationSuspended(orchestrationInstance, SuspendSource.ByExecutor), traceInfo, transactionContext).ConfigureAwait(false);
+		await _orchestrationController.Value.PublishLifeCycleEventAsync(new StepSuspended(orchestrationInstance, pointer), traceInfo, transactionController).ConfigureAwait(false);
+		await _orchestrationController.Value.PublishLifeCycleEventAsync(new OrchestrationSuspended(orchestrationInstance, SuspendSource.ByExecutor), traceInfo, transactionController).ConfigureAwait(false);
 	}
 }

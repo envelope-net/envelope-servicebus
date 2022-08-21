@@ -24,10 +24,6 @@ public interface IServiceBusConfiguration : IValidable
 
 	Func<IServiceProvider, IHostLogger> HostLogger { get; set; }
 
-	Func<IServiceProvider, ITransactionManagerFactory> TransactionManagerFactory { get; set; }
-
-	Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
-
 	Action<ExchangeProviderConfigurationBuilder> ExchangeProviderConfiguration { get; set; }
 
 	Action<QueueProviderConfigurationBuilder> QueueProviderConfiguration { get; set; }

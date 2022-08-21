@@ -69,8 +69,8 @@ public abstract class EventHandlerInterceptor<TEvent, TContext> : IEventHandlerI
 						Logger.LogErrorMessage(errMsg, false);
 					}
 
-					if (handlerContext.TransactionContext != null)
-						handlerContext.TransactionContext.ScheduleRollback(result.ToException()!.ToStringTrace());
+					if (handlerContext.TransactionController != null)
+						handlerContext.TransactionController.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 
 				callEndTicks = StaticWatch.CurrentTicks;
@@ -81,8 +81,8 @@ public abstract class EventHandlerInterceptor<TEvent, TContext> : IEventHandlerI
 				callEndTicks = StaticWatch.CurrentTicks;
 				methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
-				if (handlerContext.TransactionContext != null)
-					handlerContext.TransactionContext.ScheduleRollback(executeEx.ToStringTrace());
+				if (handlerContext.TransactionController != null)
+					handlerContext.TransactionController.ScheduleRollback(executeEx.ToStringTrace());
 
 				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 

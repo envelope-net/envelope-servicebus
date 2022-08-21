@@ -41,6 +41,9 @@ internal class OrchestrationController : IOrchestrationController
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
+	protected virtual ITransactionController CreateTransactionController()
+		=> _serviceProvider.GetRequiredService<ITransactionCoordinator>().TransactionController;
+
 	public IOrchestrationDefinition RegisterOrchestration<TOrchestration, TData>(ITraceInfo traceInfo)
 		where TOrchestration : IOrchestration<TData>
 	{
@@ -100,8 +103,7 @@ internal class OrchestrationController : IOrchestrationController
 		var result = new ResultBuilder<Guid>();
 		traceInfo = TraceInfo.Create(traceInfo);
 
-		var transactionManager = _options.TransactionManagerFactory.Create();
-		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 
 		IOrchestrationInstance? orchestrationInstance = null;
 
@@ -109,8 +111,8 @@ internal class OrchestrationController : IOrchestrationController
 			await ServiceTransactionInterceptor.ExecuteActionAsync(
 				false,
 				traceInfo,
-				transactionContext,
-				async (traceInfo, transactionContext, cancellationToken) =>
+				transactionController,
+				async (traceInfo, transactionController, cancellationToken) =>
 				{
 					if (data == null)
 						return result.WithArgumentNullException(traceInfo, nameof(data));
@@ -139,12 +141,12 @@ internal class OrchestrationController : IOrchestrationController
 						orchestrationInstance = factory();
 
 						var orchestrationRepository = _options.OrchestrationRepositoryFactory(_serviceProvider, _registry);
-						await orchestrationRepository.CreateNewOrchestrationAsync(orchestrationInstance, transactionContext, cancellationToken).ConfigureAwait(false);
+						await orchestrationRepository.CreateNewOrchestrationAsync(orchestrationInstance, transactionController, cancellationToken).ConfigureAwait(false);
 
 						var genesisExecutionPointer = _pointerFactory.BuildGenesisPointer(orchestrationInstance);
 						await orchestrationRepository.AddExecutionPointerAsync(
 							genesisExecutionPointer,
-							transactionContext).ConfigureAwait(false);
+							transactionController).ConfigureAwait(false);
 
 						await _logger.LogInformationAsync(
 							traceInfo,
@@ -156,9 +158,9 @@ internal class OrchestrationController : IOrchestrationController
 							null,
 							cancellationToken: default).ConfigureAwait(false);
 
-						await PublishLifeCycleEventAsync(new OrchestrationStarted(orchestrationInstance), traceInfo, transactionContext).ConfigureAwait(false);
+						await PublishLifeCycleEventAsync(new OrchestrationStarted(orchestrationInstance), traceInfo, transactionController).ConfigureAwait(false);
 
-						transactionContext.ScheduleCommit();
+						transactionController.ScheduleCommit();
 					}
 
 					return result.WithData(orchestrationInstance.IdOrchestrationInstance).Build();
@@ -194,17 +196,16 @@ internal class OrchestrationController : IOrchestrationController
 
 	public async Task<IOrchestrationInstance?> GetOrchestrationInstanceAsync(Guid idOrchestrationInstance, CancellationToken cancellationToken = default)
 	{
-		var transactionManager = _options.TransactionManagerFactory.Create();
-		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 		var traceInfo = TraceInfo.Create(_serviceProvider);
 
 		return await TransactionInterceptor.ExecuteAsync(
 			true,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
-				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				return result;
 			},
 			$"{nameof(OrchestrationController)} - {nameof(GetOrchestrationInstanceAsync)} {nameof(idOrchestrationInstance)} = {idOrchestrationInstance} Global exception",
@@ -227,21 +228,20 @@ internal class OrchestrationController : IOrchestrationController
 
 	public async Task<List<IOrchestrationInstance>> GetAllUnfinishedOrchestrationInstancesAsync(Guid idOrchestrationDefinition, CancellationToken cancellationToken = default)
 	{
-		var transactionManager = _options.TransactionManagerFactory.Create();
-		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 		var traceInfo = TraceInfo.Create(_serviceProvider);
 
 		return await TransactionInterceptor.ExecuteAsync(
 			true,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
 				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetAllUnfinishedOrchestrationInstancesAsync(
 					idOrchestrationDefinition,
 					_serviceProvider,
 					_options.HostInfo,
-					transactionContext,
+					transactionController,
 					cancellationToken).ConfigureAwait(false);
 				return result;
 			},
@@ -265,20 +265,19 @@ internal class OrchestrationController : IOrchestrationController
 
 	public async Task<bool?> IsCompletedOrchestrationAsync(Guid idOrchestrationInstance, CancellationToken cancellationToken = default)
 	{
-		var transactionManager = _options.TransactionManagerFactory.Create();
-		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 		var traceInfo = TraceInfo.Create(_serviceProvider);
 
 		return await TransactionInterceptor.ExecuteAsync(
 			true,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
-				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).IsCompletedOrchestrationAsync(idOrchestrationInstance, transactionContext, cancellationToken).ConfigureAwait(false);
+				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).IsCompletedOrchestrationAsync(idOrchestrationInstance, transactionController, cancellationToken).ConfigureAwait(false);
 
-				//var inst = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetOrchestrationInstanceAsync(orchestrationKey, _serviceProvider, _options.HostInfo, transactionContext, cancellationToken).ConfigureAwait(false);
-				//var a = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetOrchestrationExecutionPointersAsync(inst.IdOrchestrationInstance, transactionContext).ConfigureAwait(false);
+				//var inst = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetOrchestrationInstanceAsync(orchestrationKey, _serviceProvider, _options.HostInfo, transactionController, cancellationToken).ConfigureAwait(false);
+				//var a = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetOrchestrationExecutionPointersAsync(inst.IdOrchestrationInstance, transactionController).ConfigureAwait(false);
 
 				return result;
 			},
@@ -302,17 +301,16 @@ internal class OrchestrationController : IOrchestrationController
 
 	public async Task<List<ExecutionPointer>> GetOrchestrationExecutionPointersAsync(Guid idOrchestrationInstance, CancellationToken cancellationToken = default)
 	{
-		var transactionManager = _options.TransactionManagerFactory.Create();
-		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 		var traceInfo = TraceInfo.Create(_serviceProvider);
 
 		return await TransactionInterceptor.ExecuteAsync(
 			true,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
-				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetOrchestrationExecutionPointersAsync(idOrchestrationInstance, transactionContext).ConfigureAwait(false);
+				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetOrchestrationExecutionPointersAsync(idOrchestrationInstance, transactionController).ConfigureAwait(false);
 				return result;
 			},
 			$"{nameof(OrchestrationController)} - {nameof(GetOrchestrationExecutionPointersAsync)} {nameof(idOrchestrationInstance)} = {idOrchestrationInstance} Global exception",
@@ -340,17 +338,16 @@ internal class OrchestrationController : IOrchestrationController
 
 		IOrchestrationInstance? orchestrationInstance = null;
 
-		var transactionManager = _options.TransactionManagerFactory.Create();
-		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 
 		return await ServiceTransactionInterceptor.ExecuteActionAsync(
 			false,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
 				var orchestrationRepository = _options.OrchestrationRepositoryFactory(_serviceProvider, _registry);
-				orchestrationInstance = await orchestrationRepository.GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+				orchestrationInstance = await orchestrationRepository.GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (orchestrationInstance == null)
 				{
 					await _logger.LogErrorAsync(
@@ -375,7 +372,7 @@ internal class OrchestrationController : IOrchestrationController
 					|| orchestrationInstance.Status == OrchestrationStatus.Executing)
 				{
 					var utcNow = DateTime.UtcNow;
-					await orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Suspended, utcNow, transactionContext).ConfigureAwait(false);
+					await orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Suspended, utcNow, transactionController).ConfigureAwait(false);
 					orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Suspended, utcNow);
 
 					await _logger.LogInformationAsync(
@@ -388,9 +385,9 @@ internal class OrchestrationController : IOrchestrationController
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 
-					await PublishLifeCycleEventAsync(new OrchestrationSuspended(orchestrationInstance, SuspendSource.ByController), traceInfo, transactionContext).ConfigureAwait(false);
+					await PublishLifeCycleEventAsync(new OrchestrationSuspended(orchestrationInstance, SuspendSource.ByController), traceInfo, transactionController).ConfigureAwait(false);
 
-					transactionContext.ScheduleCommit();
+					transactionController.ScheduleCommit();
 
 					return result.WithData(true).Build();
 				}
@@ -425,17 +422,16 @@ internal class OrchestrationController : IOrchestrationController
 
 		IOrchestrationInstance? orchestrationInstance = null;
 
-		var transactionManager = _options.TransactionManagerFactory.Create();
-		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 
 		return await ServiceTransactionInterceptor.ExecuteActionAsync(
 			false,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
 				var orchestrationRepository = _options.OrchestrationRepositoryFactory(_serviceProvider, _registry);
-				orchestrationInstance = await orchestrationRepository.GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+				orchestrationInstance = await orchestrationRepository.GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (orchestrationInstance == null)
 				{
 					await _logger.LogErrorAsync(
@@ -458,7 +454,7 @@ internal class OrchestrationController : IOrchestrationController
 
 				if (orchestrationInstance.Status == OrchestrationStatus.Suspended)
 				{
-					await orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Running, null, transactionContext).ConfigureAwait(false);
+					await orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Running, null, transactionController).ConfigureAwait(false);
 					orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Running, null);
 
 					await _logger.LogInformationAsync(
@@ -471,9 +467,9 @@ internal class OrchestrationController : IOrchestrationController
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 
-					await PublishLifeCycleEventAsync(new OrchestrationResumed(orchestrationInstance), traceInfo, transactionContext).ConfigureAwait(false);
+					await PublishLifeCycleEventAsync(new OrchestrationResumed(orchestrationInstance), traceInfo, transactionController).ConfigureAwait(false);
 
-					transactionContext.ScheduleCommit();
+					transactionController.ScheduleCommit();
 
 					return result.WithData(true).Build();
 				}
@@ -508,17 +504,16 @@ internal class OrchestrationController : IOrchestrationController
 
 		IOrchestrationInstance? orchestrationInstance = null;
 
-		var transactionManager = _options.TransactionManagerFactory.Create();
-		var transactionContext = await _options.TransactionContextFactory(_serviceProvider, transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 
 		return await ServiceTransactionInterceptor.ExecuteActionAsync(
 			false,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
 				var orchestrationRepository = _options.OrchestrationRepositoryFactory(_serviceProvider, _registry);
-				orchestrationInstance = await orchestrationRepository.GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+				orchestrationInstance = await orchestrationRepository.GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (orchestrationInstance == null)
 				{
 					await _logger.LogErrorAsync(
@@ -542,7 +537,7 @@ internal class OrchestrationController : IOrchestrationController
 				if (orchestrationInstance.Status != OrchestrationStatus.Terminated)
 				{
 					var utcNow = DateTime.UtcNow;
-					await orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Terminated, utcNow, transactionContext).ConfigureAwait(false);
+					await orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Terminated, utcNow, transactionController).ConfigureAwait(false);
 					orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Terminated, utcNow);
 
 					await _logger.LogInformationAsync(
@@ -555,9 +550,9 @@ internal class OrchestrationController : IOrchestrationController
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 
-					await PublishLifeCycleEventAsync(new OrchestrationTerminated(orchestrationInstance), traceInfo, transactionContext).ConfigureAwait(false);
+					await PublishLifeCycleEventAsync(new OrchestrationTerminated(orchestrationInstance), traceInfo, transactionController).ConfigureAwait(false);
 
-					transactionContext.ScheduleCommit();
+					transactionController.ScheduleCommit();
 
 					return result.WithData(true).Build();
 				}
@@ -585,7 +580,7 @@ internal class OrchestrationController : IOrchestrationController
 			cancellationToken: default).ConfigureAwait(false);
 	}
 
-	private async Task PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionContext transactionContext)
+	private async Task PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionController transactionController)
 	{
 		if (OnLifeCycleEvent != null)
 		{
@@ -596,7 +591,7 @@ internal class OrchestrationController : IOrchestrationController
 				//_ = Task.Run(async () => await OnLifeCycleEvent.Invoke(lifeCycleEvent)).ConfigureAwait(false);
 				//return Task.CompletedTask;
 
-				await OnLifeCycleEvent.Invoke(lifeCycleEvent, traceInfo, transactionContext).ConfigureAwait(false);
+				await OnLifeCycleEvent.Invoke(lifeCycleEvent, traceInfo, transactionController).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -621,6 +616,6 @@ internal class OrchestrationController : IOrchestrationController
 		}
 	}
 
-	Task IOrchestrationController.PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionContext transactionContext)
-		=> PublishLifeCycleEventAsync(lifeCycleEvent, traceInfo, transactionContext);
+	Task IOrchestrationController.PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionController transactionController)
+		=> PublishLifeCycleEventAsync(lifeCycleEvent, traceInfo, transactionController);
 }

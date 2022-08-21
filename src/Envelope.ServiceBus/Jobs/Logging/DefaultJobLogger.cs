@@ -1,5 +1,6 @@
 ﻿using Envelope.Logging;
 using Envelope.Logging.Extensions;
+using Envelope.Services;
 using Envelope.Trace;
 using Envelope.Transactions;
 using Microsoft.Extensions.Logging;
@@ -50,7 +51,7 @@ public class DefaultJobLogger : IJobLogger
 		string jobName,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, jobName, detail);
@@ -63,7 +64,7 @@ public class DefaultJobLogger : IJobLogger
 		string jobName,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, jobName, detail);
@@ -76,7 +77,7 @@ public class DefaultJobLogger : IJobLogger
 		string jobName,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, jobName, detail);
@@ -89,7 +90,7 @@ public class DefaultJobLogger : IJobLogger
 		string jobName,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, jobName, detail);
@@ -102,7 +103,7 @@ public class DefaultJobLogger : IJobLogger
 		string jobName,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, jobName, detail);
@@ -115,11 +116,61 @@ public class DefaultJobLogger : IJobLogger
 		string jobName,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, jobName, detail);
 		var msg = _logger.LogCriticalMessage(traceInfo, messageBuilder, true);
 		return Task.FromResult(msg);
+	}
+
+	public Task LogResultErrorMessagesAsync(
+		string jobName,
+		IResult result,
+		ITransactionCoordinator? transactionCoordinator = null,
+		CancellationToken cancellationToken = default)
+	{
+		if (result == null)
+			throw new ArgumentNullException(nameof(result));
+
+		foreach (var msg in result.ErrorMessages)
+		{
+			var builder = new ErrorMessageBuilder(msg);
+			builder.AppendDetail($"{nameof(jobName)} = {jobName}");
+		}
+
+		_logger.LogResultErrorMessages(result, true);
+		return Task.CompletedTask;
+	}
+
+	public Task LogResultAllMessagesAsync(
+		string jobName,
+		IResult result,
+		ITransactionCoordinator? transactionCoordinator = null,
+		CancellationToken cancellationToken = default)
+	{
+		if (result == null)
+			throw new ArgumentNullException(nameof(result));
+
+		foreach (var msg in result.SuccessMessages)
+		{
+			var builder = new LogMessageBuilder(msg);
+			builder.AppendDetail($"{nameof(jobName)} = {jobName}");
+		}
+
+		foreach (var msg in result.WarningMessages)
+		{
+			var builder = new LogMessageBuilder(msg);
+			builder.AppendDetail($"{nameof(jobName)} = {jobName}");
+		}
+
+		foreach (var msg in result.ErrorMessages)
+		{
+			var builder = new ErrorMessageBuilder(msg);
+			builder.AppendDetail($"{nameof(jobName)} = {jobName}");
+		}
+
+		_logger.LogResultAllMessages(result, true);
+		return Task.CompletedTask;
 	}
 }

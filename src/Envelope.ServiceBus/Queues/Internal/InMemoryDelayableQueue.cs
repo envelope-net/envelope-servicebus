@@ -10,7 +10,7 @@ internal class InMemoryDelayableQueue<T> : IQueue<T>, IDisposable
 {
 	private readonly object _lock = new();
 
-	private bool disposed;
+	private bool _disposed;
 	private int _size;
 	private T[] _messages;
 
@@ -23,11 +23,11 @@ internal class InMemoryDelayableQueue<T> : IQueue<T>, IDisposable
 		MaxSize = maxSize;
 	}
 
-	public Task<IResult<int>> GetCountAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task<IResult<int>> GetCountAsync(ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken = default)
 		=> Task.FromResult(new ResultBuilder<int>().WithData(_size).Build());
 
 	/// <inheritdoc/>
-	public Task<IResult> EnqueueAsync(List<T> messagesMetadata, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task<IResult> EnqueueAsync(List<T> messagesMetadata, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder();
@@ -60,7 +60,7 @@ internal class InMemoryDelayableQueue<T> : IQueue<T>, IDisposable
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult> TryRemoveAsync(T messageMetadata, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task<IResult> TryRemoveAsync(T messageMetadata, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder();
@@ -102,7 +102,7 @@ internal class InMemoryDelayableQueue<T> : IQueue<T>, IDisposable
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult<QueueStatus>> UpdateAsync(T messageMetadata, IMessageMetadataUpdate update, ITraceInfo traceInfo, ITransactionContext localTransactionContext, CancellationToken cancellationToken = default)
+	public Task<IResult<QueueStatus>> UpdateAsync(T messageMetadata, IMessageMetadataUpdate update, ITraceInfo traceInfo, ITransactionController localTransactionController, CancellationToken cancellationToken = default)
 	{
 		var result = new ResultBuilder<QueueStatus>();
 
@@ -127,7 +127,7 @@ internal class InMemoryDelayableQueue<T> : IQueue<T>, IDisposable
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult<T?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task<IResult<T?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	{
 		var result = new ResultBuilder<T?>();
 
@@ -179,15 +179,13 @@ internal class InMemoryDelayableQueue<T> : IQueue<T>, IDisposable
 
 	protected virtual void Dispose(bool disposing)
 	{
-		if (!disposed)
-		{
-			if (disposing)
-			{
-				Clear();
-			}
+		if (_disposed)
+			return;
 
-			disposed = true;
-		}
+		_disposed = true;
+
+		if (disposing)
+			Clear();
 	}
 
 	public void Dispose()

@@ -41,8 +41,6 @@ public static class ServiceBusOptionsFactory
 			HostInfo = configuration.HostInfo ?? new HostInfo(configuration.ServiceBusName),
 			MessageTypeResolver = configuration.MessageTypeResolver(serviceProvider),
 			HostLogger = configuration.HostLogger(serviceProvider),
-			TransactionManagerFactory = configuration.TransactionManagerFactory(serviceProvider),
-			TransactionContextFactory = configuration.TransactionContextFactory,
 			MessageHandlerContextType = configuration.MessageHandlerContextType,
 			MessageHandlerContextFactory = configuration.MessageHandlerContextFactory,
 			HandlerLogger = configuration.HandlerLogger(serviceProvider),

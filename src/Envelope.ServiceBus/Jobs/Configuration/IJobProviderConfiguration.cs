@@ -11,10 +11,6 @@ public interface IJobProviderConfiguration : IValidable
 
 	internal IJobRegister JobRegister { get; set; }
 
-	ITransactionManagerFactory TransactionManagerFactory { get; set; }
-	
-	Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
-
 	Func<IServiceProvider, IJobRepository> JobRepository { get; set;}
 
 	Func<IServiceProvider, IJobLogger> JobLogger { get; set; }

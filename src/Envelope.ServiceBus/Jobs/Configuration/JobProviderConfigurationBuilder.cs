@@ -21,10 +21,6 @@ public interface IJobProviderConfigurationBuilder<TBuilder, TObject>
 
 	internal TBuilder HostInfo(IHostInfo hostInfo, bool force = true);
 
-	TBuilder TransactionManagerFactory(ITransactionManagerFactory transactionManagerFactory, bool force = true);
-
-	TBuilder TransactionContextFactory(Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> transactionContextFactory, bool force = true);
-
 	TBuilder JobRepository(Func<IServiceProvider, IJobRepository> jobRepository, bool force = true);
 
 	TBuilder JobLogger(Func<IServiceProvider, IJobLogger> jobLogger, bool force = true);
@@ -91,28 +87,6 @@ public abstract class JobProviderConfigurationBuilderBase<TBuilder, TObject> : I
 
 	TBuilder IJobProviderConfigurationBuilder<TBuilder, TObject>.HostInfo(IHostInfo hostInfo, bool force)
 		=> HostInfo(hostInfo, force);
-
-	public TBuilder TransactionManagerFactory(ITransactionManagerFactory transactionManagerFactory, bool force = true)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || _jobProviderConfiguration.TransactionManagerFactory == null)
-			_jobProviderConfiguration.TransactionManagerFactory = transactionManagerFactory;
-
-		return _builder;
-	}
-
-	public TBuilder TransactionContextFactory(Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> transactionContextFactory, bool force = true)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || _jobProviderConfiguration.TransactionContextFactory == null)
-			_jobProviderConfiguration.TransactionContextFactory = transactionContextFactory;
-
-		return _builder;
-	}
 
 	public TBuilder JobRepository(Func<IServiceProvider, IJobRepository> jobRepository, bool force = true)
 	{
@@ -183,8 +157,6 @@ public class JobProviderConfigurationBuilder : JobProviderConfigurationBuilderBa
 
 	public static JobProviderConfigurationBuilder GetDefaultBuilder()
 		=> new JobProviderConfigurationBuilder()
-			.TransactionManagerFactory(new TransactionManagerFactory())
-			.TransactionContextFactory((sp, manager) => Task.FromResult((ITransactionContext)new InMemoryTransactionContext(manager)))
 			.JobRepository(sp => new InMemoryJobRepository())
 			.JobLogger(sp => new DefaultJobLogger(sp.GetRequiredService<ILogger<DefaultJobLogger>>()))
 			;

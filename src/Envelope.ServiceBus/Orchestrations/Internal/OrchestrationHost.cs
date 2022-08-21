@@ -112,6 +112,6 @@ internal class OrchestrationHost : BackgroundService, IOrchestrationHost, IDispo
 	public Task<IResult<bool>> TerminateOrchestrationAsync(Guid orchestrationId, string lockOwner, ITraceInfo traceInfo)
 		=> _orchestrationController.TerminateOrchestrationAsync(orchestrationId, lockOwner, traceInfo);
 
-	Task IOrchestrationController.PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionContext transactionContext)
-		=> _orchestrationController.PublishLifeCycleEventAsync(lifeCycleEvent, traceInfo, transactionContext);
+	Task IOrchestrationController.PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionController transactionController)
+		=> _orchestrationController.PublishLifeCycleEventAsync(lifeCycleEvent, traceInfo, transactionController);
 }

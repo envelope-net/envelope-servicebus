@@ -20,8 +20,6 @@ public class ServiceBusConfiguration : IServiceBusConfiguration, IValidable
 	public string ServiceBusName { get; set; }
 	public Func<IServiceProvider, IMessageTypeResolver> MessageTypeResolver { get; set; }
 	public Func<IServiceProvider, IHostLogger> HostLogger { get; set; }
-	public Func<IServiceProvider, ITransactionManagerFactory> TransactionManagerFactory { get; set; }
-	public Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
 	public Action<ExchangeProviderConfigurationBuilder> ExchangeProviderConfiguration { get; set; }
 	public Action<QueueProviderConfigurationBuilder> QueueProviderConfiguration { get; set; }
 	public Type MessageHandlerContextType { get; set; }
@@ -73,22 +71,6 @@ public class ServiceBusConfiguration : IServiceBusConfiguration, IValidable
 				parentErrorBuffer = new List<IValidationMessage>();
 
 			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HostLogger))} == null"));
-		}
-
-		if (TransactionManagerFactory == null)
-		{
-			if (parentErrorBuffer == null)
-				parentErrorBuffer = new List<IValidationMessage>();
-
-			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionManagerFactory))} == null"));
-		}
-
-		if (TransactionContextFactory == null)
-		{
-			if (parentErrorBuffer == null)
-				parentErrorBuffer = new List<IValidationMessage>();
-
-			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionContextFactory))} == null"));
 		}
 
 		//kvoli tomu, ze sa neskor automaticky prida exchange pre orchestracie

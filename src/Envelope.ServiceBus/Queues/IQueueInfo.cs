@@ -36,6 +36,6 @@ public interface IQueueInfo
 	/// <summary>
 	///  Gets the number of elements contained in the queue.
 	/// </summary>
-	Task<int> GetCountAsync(ITraceInfo traceInfo, ITransactionManagerFactory transactionManagerFactory, CancellationToken cancellationToken = default);
+	Task<int> GetCountAsync(ITraceInfo traceInfo, CancellationToken cancellationToken = default);
 
 }

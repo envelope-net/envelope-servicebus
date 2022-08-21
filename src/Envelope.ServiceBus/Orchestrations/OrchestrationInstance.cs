@@ -15,7 +15,7 @@ public class OrchestrationInstance : IOrchestrationInstance
 	private readonly IOrchestrationDefinition _orchestrationDefinition;
 
 	private bool nextTimerStart;
-	private bool disposed;
+	private bool _disposed;
 
 	public Guid IdOrchestrationInstance { get; }
 
@@ -131,6 +131,11 @@ public class OrchestrationInstance : IOrchestrationInstance
 
 	public async ValueTask DisposeAsync()
 	{
+		if (_disposed)
+			return;
+
+		_disposed = true;
+
 		await DisposeAsyncCoreAsync().ConfigureAwait(false);
 
 		Dispose(disposing: false);
@@ -142,13 +147,13 @@ public class OrchestrationInstance : IOrchestrationInstance
 
 	protected virtual void Dispose(bool disposing)
 	{
-		if (!disposed)
-		{
-			if (disposing)
-				_timer.Dispose();
+		if (_disposed)
+			return;
 
-			disposed = true;
-		}
+		_disposed = true;
+
+		if (disposing)
+			_timer.Dispose();
 	}
 
 	public void Dispose()

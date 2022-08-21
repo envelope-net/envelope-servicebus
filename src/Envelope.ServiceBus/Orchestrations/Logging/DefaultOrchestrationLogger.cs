@@ -68,7 +68,7 @@ public class DefaultOrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);
@@ -83,7 +83,7 @@ public class DefaultOrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);
@@ -98,7 +98,7 @@ public class DefaultOrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);
@@ -113,7 +113,7 @@ public class DefaultOrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);
@@ -128,7 +128,7 @@ public class DefaultOrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);
@@ -143,7 +143,7 @@ public class DefaultOrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext= null,
+		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, idOrchestration, idStep, idExecutionPointer, detail);

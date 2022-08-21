@@ -21,13 +21,9 @@ public abstract class Job : IJob
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-	protected IServiceProvider ServiceProvider { get; private set; }
+	protected internal IServiceProvider MainServiceProvider { get; private set; }
 
 	protected IHostInfo HostInfo { get; private set; }
-
-	protected ITransactionManagerFactory TransactionManagerFactory { get; private set; }
-
-	protected Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; private set; }
 
 	internal IJobRepository JobRepository { get; private set; }
 
@@ -75,10 +71,8 @@ public abstract class Job : IJob
 			if (Config == null)
 				throw new InvalidOperationException($"{nameof(Config)} == null");
 
-			ServiceProvider = serviceProvider;
+			MainServiceProvider = serviceProvider;
 			HostInfo = config.HostInfo ?? throw new InvalidOperationException($"{nameof(HostInfo)} == null");
-			TransactionManagerFactory = config.TransactionManagerFactory ?? throw new InvalidOperationException($"{nameof(TransactionManagerFactory)} == null");
-			TransactionContextFactory = config.TransactionContextFactory ?? throw new InvalidOperationException($"{nameof(TransactionContextFactory)} == null");
 			Logger = config.JobLogger(serviceProvider) ?? throw new InvalidOperationException($"{nameof(Logger)} == null");
 			JobRepository = config.JobRepository(serviceProvider) ?? throw new InvalidOperationException($"{nameof(JobRepository)} == null"); ;
 
@@ -120,8 +114,14 @@ public abstract class Job : IJob
 				_cronAsyncTimer = new CronAsyncTimer(CronTimerSettings.CronExpression);
 			}
 
+			OnInitialize();
+
 			Initialized = true;
 		}
+	}
+
+	protected virtual void OnInitialize()
+	{
 	}
 
 	void IJob.Initialize(IJobProviderConfiguration config, IServiceProvider serviceProvider)
@@ -130,7 +130,8 @@ public abstract class Job : IJob
 	private async Task<bool> OnSequentialAsyncTimerTickAsync(object? state)
 	{
 		Status = JobStatus.InProcess;
-		var @continue = await ExecuteAsync().ConfigureAwait(false);
+		await using var scoperServiceProvider = MainServiceProvider.CreateAsyncScope();
+		var @continue = await ExecuteAsync(scoperServiceProvider.ServiceProvider).ConfigureAwait(false);
 
 		if (!@continue)
 			Status = JobStatus.Stopped;
@@ -140,7 +141,7 @@ public abstract class Job : IJob
 
 	private async Task<bool> OnSequentialAsyncTimerExceptionAsync(object? state, Exception exception)
 	{
-		var @continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), exception).ConfigureAwait(false);
+		var @continue = await OnUnhandledExceptionAsync(TraceInfo.Create(MainServiceProvider), exception).ConfigureAwait(false);
 
 		if (!@continue)
 			Status = JobStatus.Stopped;
@@ -157,11 +158,12 @@ public abstract class Job : IJob
 
 		try
 		{
-			@continue = await ExecuteAsync().ConfigureAwait(false);
+			await using var scoperServiceProvider = MainServiceProvider.CreateAsyncScope();
+			@continue = await ExecuteAsync(scoperServiceProvider.ServiceProvider).ConfigureAwait(false);
 		}
 		catch (Exception ex)
 		{
-			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), ex).ConfigureAwait(false);
+			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(MainServiceProvider), ex).ConfigureAwait(false);
 		}
 
 		if (!@continue)
@@ -179,11 +181,12 @@ public abstract class Job : IJob
 
 		try
 		{
-			@continue = await ExecuteAsync().ConfigureAwait(false);
+			await using var scoperServiceProvider = MainServiceProvider.CreateAsyncScope();
+			@continue = await ExecuteAsync(scoperServiceProvider.ServiceProvider).ConfigureAwait(false);
 		}
 		catch (Exception ex)
 		{
-			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(ServiceProvider), ex).ConfigureAwait(false);
+			@continue = await OnUnhandledExceptionAsync(TraceInfo.Create(MainServiceProvider), ex).ConfigureAwait(false);
 		}
 
 		if (!@continue)
@@ -261,7 +264,7 @@ public abstract class Job : IJob
 		}
 	}
 
-	public abstract Task<bool> ExecuteAsync();
+	public abstract Task<bool> ExecuteAsync(IServiceProvider scopedServiceProvider);
 
 	public virtual async Task<bool> OnUnhandledExceptionAsync(ITraceInfo traceInfo, Exception exception)
 	{
@@ -270,10 +273,6 @@ public abstract class Job : IJob
 		await Logger.LogErrorAsync(traceInfo, Name, x => x.ExceptionInfo(exception).Detail(detail), detail, null, cancellationToken: default).ConfigureAwait(false);
 		return true;
 	}
-
-	protected virtual Task<ITransactionManager> CreateTransactionManagerAsync(CancellationToken cancellationToken = default)
-		=> Task.FromResult(ServiceProvider.GetService<ITransactionManagerFactory>()?.Create()
-			?? Transactions.TransactionManagerFactory.CreateTransactionManager());
 }
 
 public abstract class Job<TData> : Job, IJob<TData>, IJob
@@ -282,19 +281,21 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 
 	internal override Func<ITraceInfo, Task>? BeforeStartAsync => BeforeStartInternalAsync;
 
+	internal ITransactionController CreateTransactionController()
+		=> MainServiceProvider.GetRequiredService<ITransactionCoordinator>().TransactionController;
+
 	private async Task BeforeStartInternalAsync(ITraceInfo traceInfo)
 	{
 		var result = new ResultBuilder();
 		traceInfo = TraceInfo.Create(traceInfo);
 
-		var transactionManager = TransactionManagerFactory.Create();
-		var transactionContext = await TransactionContextFactory(ServiceProvider, transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 
 		var executeResult =
 			await ServiceTransactionInterceptor.ExecuteActionAsync(
 				false,
 				traceInfo,
-				transactionContext,
+				transactionController,
 				async (traceInfo, tc, cancellationToken) =>
 				{
 					Data = await JobRepository.LoadDataAsync<TData>(Name, tc, cancellationToken).ConfigureAwait(false);
@@ -327,14 +328,13 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 		var result = new ResultBuilder();
 		traceInfo = TraceInfo.Create(traceInfo);
 
-		var transactionManager = TransactionManagerFactory.Create();
-		var transactionContext = await TransactionContextFactory(ServiceProvider, transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 
 		var executeResult =
 			await ServiceTransactionInterceptor.ExecuteActionAsync(
 				false,
 				traceInfo,
-				transactionContext,
+				transactionController,
 				async (traceInfo, tc, cancellationToken) =>
 				{
 					await JobRepository.SaveDataAsync(Name, data, tc, cancellationToken).ConfigureAwait(false);

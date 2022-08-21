@@ -17,10 +17,6 @@ internal class JobProviderConfiguration : IJobProviderConfiguration, IValidable
 		set { JobRegister = value; }
 	}
 
-	public ITransactionManagerFactory TransactionManagerFactory { get; set; }
-
-	public Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
-
 	public Func<IServiceProvider, IJobRepository> JobRepository { get; set; }
 
 	public Func<IServiceProvider, IJobLogger> JobLogger { get; set; }
@@ -36,22 +32,6 @@ internal class JobProviderConfiguration : IJobProviderConfiguration, IValidable
 				parentErrorBuffer = new List<IValidationMessage>();
 
 			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HostInfo))} == null"));
-		}
-
-		if (TransactionManagerFactory == null)
-		{
-			if (parentErrorBuffer == null)
-				parentErrorBuffer = new List<IValidationMessage>();
-
-			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionManagerFactory))} == null"));
-		}
-
-		if (TransactionContextFactory == null)
-		{
-			if (parentErrorBuffer == null)
-				parentErrorBuffer = new List<IValidationMessage>();
-
-			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionContextFactory))} == null"));
 		}
 
 		if (JobRepository == null)

@@ -58,7 +58,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
 		var msg = _logger.LogTraceMessage(traceInfo, messageBuilder, true);
@@ -71,7 +71,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
 		var msg = _logger.LogDebugMessage(traceInfo, messageBuilder, true);
@@ -84,7 +84,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
 		var msg = _logger.LogInformationMessage(traceInfo, messageBuilder, true);
@@ -97,7 +97,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
 		var msg = _logger.LogWarningMessage(traceInfo, messageBuilder, true);
@@ -110,7 +110,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
 		var msg = _logger.LogErrorMessage(traceInfo, messageBuilder, true);
@@ -123,7 +123,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
 		var msg = _logger.LogCriticalMessage(traceInfo, messageBuilder, true);
@@ -132,12 +132,12 @@ public class DefaultHostLogger : IHostLogger
 
 	public void LogResultErrorMessages(
 		IResult result,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 		=> _logger.LogResultErrorMessages(result, true);
 
 	public void LogResultAllMessages(
 		IResult result,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 		=> _logger.LogResultAllMessages(result, true);
 
 	public Task<ILogMessage?> LogTraceAsync(
@@ -146,7 +146,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
@@ -160,7 +160,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
@@ -174,7 +174,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
@@ -188,7 +188,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
@@ -202,7 +202,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
@@ -216,7 +216,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
@@ -226,7 +226,7 @@ public class DefaultHostLogger : IHostLogger
 
 	public Task LogResultErrorMessagesAsync(
 		IResult result,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		_logger.LogResultErrorMessages(result, true);
@@ -235,7 +235,7 @@ public class DefaultHostLogger : IHostLogger
 
 	public Task LogResultAllMessagesAsync(
 		IResult result,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		_logger.LogResultAllMessages(result, true);

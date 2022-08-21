@@ -2,7 +2,6 @@
 using Envelope.ServiceBus.DistributedCoordinator;
 using Envelope.ServiceBus.Orchestrations.Execution;
 using Envelope.ServiceBus.Orchestrations.Logging;
-using Envelope.Transactions;
 using Envelope.Validation;
 
 namespace Envelope.ServiceBus.Orchestrations.Configuration;
@@ -10,8 +9,6 @@ namespace Envelope.ServiceBus.Orchestrations.Configuration;
 public interface IOrchestrationHostConfiguration : IValidable
 {
 	bool RegisterAsHostedService { get; set; }
-	public ITransactionManagerFactory TransactionManagerFactory { get; set; }
-	public Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
 	Func<IServiceProvider, IOrchestrationRegistry> OrchestrationRegistry { get; set; }
 	Func<IServiceProvider, IExecutionPointerFactory> ExecutionPointerFactory { get; set; }
 	Func<IServiceProvider, IOrchestrationRegistry, IOrchestrationRepository> OrchestrationRepositoryFactory { get; set; }

@@ -62,21 +62,20 @@ public partial class EventBus : IEventBus
 		optionsBuilder?.Invoke(builder);
 		var options = builder.Build(true);
 
-		var isLocalTransactionManager = false;
-		if (options.TransactionContext == null)
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
 		{
-			var transactionManager = CreateTransactionManager();
-			options.TransactionContext = transactionManager.CreateTransactionContext();
-			isLocalTransactionManager = true;
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
 		}
 
-		return Publish(@event, options, isLocalTransactionManager, traceInfo);
+		return Publish(@event, options, isLocalTransactionCoordinator, traceInfo);
 	}
 
 	protected IResult<Guid> Publish(
 		IEvent @event,
 		IMessageOptions options,
-		bool isLocalTransactionManager,
+		bool isLocalTransactionCoordinator,
 		ITraceInfo traceInfo)
 	{
 		var result = new ResultBuilder<Guid>();
@@ -95,13 +94,13 @@ public partial class EventBus : IEventBus
 
 		traceInfo = TraceInfo.Create(traceInfo);
 
-		var transactionContext = options.TransactionContext;
+		var transactionController = options.TransactionController;
 
 		return ServiceTransactionInterceptor.ExecuteAction(
 			false,
 			traceInfo,
-			transactionContext,
-			(traceInfo, transactionContext) =>
+			transactionController,
+			(traceInfo, transactionController) =>
 			{
 				var eventType = @event.GetType();
 
@@ -133,7 +132,7 @@ public partial class EventBus : IEventBus
 				}
 
 				handlerContext.MessageHandlerResultFactory = EventBusOptions.MessageHandlerResultFactory;
-				handlerContext.TransactionContext = transactionContext;
+				handlerContext.TransactionController = transactionController;
 				handlerContext.ServiceProvider = ServiceProvider;
 				handlerContext.TraceInfo = traceInfo;
 				handlerContext.HostInfo = EventBusOptions.HostInfo;
@@ -181,12 +180,12 @@ public partial class EventBus : IEventBus
 
 				if (result.HasError())
 				{
-					transactionContext.ScheduleRollback();
+					transactionController.ScheduleRollback();
 				}
 				else
 				{
-					if (isLocalTransactionManager)
-						transactionContext.ScheduleCommit();
+					if (isLocalTransactionCoordinator)
+						transactionController.ScheduleCommit();
 				}
 
 				return result.WithData(savedEvent.MessageId).Build();
@@ -206,11 +205,8 @@ public partial class EventBus : IEventBus
 				return errorMessage;
 			},
 			null,
-			isLocalTransactionManager);
+			isLocalTransactionCoordinator);
 	}
-
-	protected virtual ITransactionManager CreateTransactionManager()
-		=> ServiceProvider.GetService<ITransactionManagerFactory>()?.Create() ?? TransactionManagerFactory.CreateTransactionManager();
 
 	protected virtual IResult<ISavedMessage<TEvent>> SaveEvent<TEvent>(
 		TEvent @event,
@@ -249,7 +245,7 @@ public partial class EventBus : IEventBus
 		if (EventBusOptions.EventBodyProvider != null
 			&& EventBusOptions.EventBodyProvider.AllowMessagePersistence(options.DisabledMessagePersistence, metadata))
 		{
-			var saveResult = EventBusOptions.EventBodyProvider.SaveToStorage(new List<IMessageMetadata> { metadata }, @event, traceInfo, options.TransactionContext);
+			var saveResult = EventBusOptions.EventBodyProvider.SaveToStorage(new List<IMessageMetadata> { metadata }, @event, traceInfo, options.TransactionController);
 			if (result.MergeHasError(saveResult))
 				return result.Build();
 		}

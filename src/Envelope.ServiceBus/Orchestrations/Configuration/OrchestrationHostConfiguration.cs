@@ -13,8 +13,6 @@ public class OrchestrationHostConfiguration : IOrchestrationHostConfiguration, I
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 	public bool RegisterAsHostedService { get; set; }
-	public ITransactionManagerFactory TransactionManagerFactory { get; set; }
-	public Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
 	public Func<IServiceProvider, IOrchestrationRegistry> OrchestrationRegistry { get; set; }
 	public Func<IServiceProvider, IExecutionPointerFactory> ExecutionPointerFactory { get; set; }
 	public Func<IServiceProvider, IOrchestrationRegistry, IOrchestrationRepository> OrchestrationRepositoryFactory { get; set; }
@@ -27,22 +25,6 @@ public class OrchestrationHostConfiguration : IOrchestrationHostConfiguration, I
 
 	public List<IValidationMessage>? Validate(string? propertyPrefix = null, List<IValidationMessage>? parentErrorBuffer = null, Dictionary<string, object>? validationContext = null)
 	{
-		if (TransactionManagerFactory == null)
-		{
-			if (parentErrorBuffer == null)
-				parentErrorBuffer = new List<IValidationMessage>();
-
-			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionManagerFactory))} == null"));
-		}
-
-		if (TransactionContextFactory == null)
-		{
-			if (parentErrorBuffer == null)
-				parentErrorBuffer = new List<IValidationMessage>();
-
-			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionContextFactory))} == null"));
-		}
-
 		if (OrchestrationRegistry == null)
 		{
 			if (parentErrorBuffer == null)

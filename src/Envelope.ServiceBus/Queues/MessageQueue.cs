@@ -12,6 +12,7 @@ using Envelope.Services;
 using Envelope.Threading;
 using Envelope.Trace;
 using Envelope.Transactions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Envelope.ServiceBus.Queues;
 
@@ -20,7 +21,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 {
 	private readonly IQueue<IQueuedMessage<TMessage>> _queue;
 	private readonly MessageQueueContext<TMessage> _messageQueueContext;
-	private bool disposed;
+	private bool _disposed;
 
 	/// <inheritdoc/>
 	public Guid QueueId { get; }
@@ -53,28 +54,24 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 
 	public HandleMessage<TMessage>? MessageHandler { get; }
 
+	protected virtual ITransactionController CreateTransactionController()
+		=> _messageQueueContext.ServiceBusOptions.ServiceProvider.GetRequiredService<ITransactionCoordinator>().TransactionController;
+
 	/// <inheritdoc/>
-	public async Task<int> GetCountAsync(ITraceInfo traceInfo, ITransactionManagerFactory transactionManagerFactory, CancellationToken cancellationToken = default)
+	public async Task<int> GetCountAsync(ITraceInfo traceInfo, CancellationToken cancellationToken = default)
 	{
 		if (traceInfo == null)
 			throw new ArgumentNullException(nameof(traceInfo));
 
-		if (transactionManagerFactory == null)
-			throw new ArgumentNullException(nameof(transactionManagerFactory));
-
-		var transactionManager = transactionManagerFactory.Create();
-		var transactionContext =
-			await _messageQueueContext.ServiceBusOptions.TransactionContextFactory(
-				_messageQueueContext.ServiceBusOptions.ServiceProvider,
-				transactionManager).ConfigureAwait(false);
+		var transactionController = CreateTransactionController();
 
 		var count = await TransactionInterceptor.ExecuteAsync(
 			true,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
-				var result = await _queue.GetCountAsync(traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+				var result = await _queue.GetCountAsync(traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (result.HasError)
 					throw result.ToException()!;
 
@@ -88,7 +85,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 					_messageQueueContext.ServiceBusOptions.HostInfo,
 					HostStatus.Unchanged,
 					x => x.ExceptionInfo(exception),
-					$"{nameof(GetCountAsync)} dispose {nameof(transactionContext)} error",
+					$"{nameof(GetCountAsync)} dispose {nameof(transactionController)} error",
 					null,
 					cancellationToken: default).ConfigureAwait(false);
 			},
@@ -127,12 +124,12 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 	}
 
 	/// <inheritdoc/>
-	public async Task<IResult> EnqueueAsync(TMessage? message, IQueueEnqueueContext context, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	public async Task<IResult> EnqueueAsync(TMessage? message, IQueueEnqueueContext context, ITransactionController transactionController, CancellationToken cancellationToken)
 	{
 		var traceInfo = TraceInfo.Create(context.TraceInfo);
 		var result = new ResultBuilder();
 
-		if (disposed)
+		if (_disposed)
 			return result.WithInvalidOperationException(traceInfo, $"QueueName = {_messageQueueContext.QueueName}", new ObjectDisposedException(GetType().FullName));
 
 		if (QueueStatus == QueueStatus.Terminated)
@@ -150,7 +147,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 						messagesMetadata.Cast<IMessageMetadata>().ToList(),
 						message,
 						traceInfo,
-						transactionContext,
+						transactionController,
 						cancellationToken).ConfigureAwait(false);
 
 				if (result.MergeHasError(saveResult))
@@ -172,7 +169,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 
 		if (IsPull)
 		{
-			var enqueueResult = await _queue.EnqueueAsync(messagesMetadata, traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+			var enqueueResult = await _queue.EnqueueAsync(messagesMetadata, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 			if (result.MergeHasError(enqueueResult))
 				return await PublishQueueEventAsync(queuedMessage, traceInfo, QueueEventType.Enqueue, result.Build()).ConfigureAwait(false);
 		}
@@ -187,13 +184,13 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 
 			if (context.IsAsynchronousInvocation)
 			{
-				var enqueueResult = await _queue.EnqueueAsync(messagesMetadata, traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+				var enqueueResult = await _queue.EnqueueAsync(messagesMetadata, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (result.MergeHasError(enqueueResult))
 					return await PublishQueueEventAsync(queuedMessage, traceInfo, QueueEventType.Enqueue, result.Build()).ConfigureAwait(false);
 			}
 			else //is synchronous invocation
 			{
-				var handlerResult = await HandleMessageAsync(queuedMessage, traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+				var handlerResult = await HandleMessageAsync(queuedMessage, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				result.MergeHasError(handlerResult);
 				if (handlerResult.Data?.Processed == false)
 					result.WithError(traceInfo, x => x.InternalMessage(handlerResult.Data.ToString()));
@@ -207,12 +204,12 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 	}
 
 	/// <inheritdoc/>
-	public async Task<IResult> TryRemoveAsync(IQueuedMessage<TMessage> message, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	public async Task<IResult> TryRemoveAsync(IQueuedMessage<TMessage> message, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder();
 
-		if (disposed)
+		if (_disposed)
 			return result.WithInvalidOperationException(traceInfo, $"QueueName = {_messageQueueContext.QueueName}", new ObjectDisposedException(GetType().FullName));
 
 		if (IsPull)
@@ -222,7 +219,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 				QueueEventType.Remove,
 				(IResult)result.WithInvalidOperationException(traceInfo, $"QueueName = {_messageQueueContext.QueueName} | {nameof(TryRemoveAsync)}: {nameof(IsPull)} = {IsPull}")).ConfigureAwait(false);
 
-		var removeResult = await _queue.TryRemoveAsync(message, traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+		var removeResult = await _queue.TryRemoveAsync(message, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 		result.MergeHasError(removeResult);
 		return await PublishQueueEventAsync(
 			message,
@@ -232,15 +229,15 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 	}
 
 	/// <inheritdoc/>
-	public async Task<IResult<IQueuedMessage<TMessage>?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	public async Task<IResult<IQueuedMessage<TMessage>?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder<IQueuedMessage<TMessage>?>();
 
-		if (disposed)
+		if (_disposed)
 			return result.WithInvalidOperationException(traceInfo, $"QueueName = {_messageQueueContext.QueueName}", new ObjectDisposedException(GetType().FullName));
 
-		var peekResult = await _queue.TryPeekAsync(traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+		var peekResult = await _queue.TryPeekAsync(traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 		if (result.MergeHasError(peekResult))
 			return await PublishQueueEventAsync(null, traceInfo, QueueEventType.Peek, result.Build()).ConfigureAwait(false);
 
@@ -279,7 +276,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 		{
 			try
 			{
-				var loadResult = await _messageQueueContext.MessageBodyProvider.LoadFromStorageAsync<TMessage>(queuedMessage, traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+				var loadResult = await _messageQueueContext.MessageBodyProvider.LoadFromStorageAsync<TMessage>(queuedMessage, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (result.MergeHasError(loadResult))
 					return await PublishQueueEventAsync(messageHeader, traceInfo, QueueEventType.Peek, result.Build()).ConfigureAwait(false);
 
@@ -320,42 +317,37 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 	private readonly AsyncLock _onMessageLock = new();
 	private async Task OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
 	{
-		if (disposed)
+		if (_disposed)
 			return;
 
 		traceInfo = TraceInfo.Create(traceInfo);
 
 		using (await _onMessageLock.LockAsync().ConfigureAwait(false))
 		{
-			if (disposed)
+			if (_disposed)
 				return;
 
-			var transactionManagerFactory = _messageQueueContext.ServiceBusOptions.TransactionManagerFactory;
-			while (0 < (await GetCountAsync(traceInfo, transactionManagerFactory, cancellationToken).ConfigureAwait(false)))
+			while (0 < (await GetCountAsync(traceInfo, cancellationToken).ConfigureAwait(false)))
 			{
 				if (cancellationToken.IsCancellationRequested)
 					return;
 
-				var transactionManager = _messageQueueContext.ServiceBusOptions.TransactionManagerFactory.Create();
-				var transactionContext =
-					await _messageQueueContext.ServiceBusOptions.TransactionContextFactory(
-						_messageQueueContext.ServiceBusOptions.ServiceProvider,
-						transactionManager).ConfigureAwait(false);
+				var transactionController = CreateTransactionController();
 
 				IQueuedMessage<TMessage>? message = null;
 
 				var loopControl = await TransactionInterceptor.ExecuteAsync(
 					false,
 					traceInfo,
-					transactionContext,
+					transactionController,
 					//$"{nameof(message.QueueName)} == {message?.QueueName} | {nameof(message.SourceExchangeName)} == {message?.SourceExchangeName} | MessageType = {message?.Message?.GetType().FullName}"
-					async (traceInfo, transactionContext, cancellationToken) =>
+					async (traceInfo, transactionController, cancellationToken) =>
 					{
-						var peekResult = await TryPeekAsync(traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+						var peekResult = await TryPeekAsync(traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 						if (peekResult.HasError)
 						{
 							await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(peekResult, null, cancellationToken).ConfigureAwait(false);
-							transactionContext.ScheduleRollback(nameof(TryPeekAsync));
+							transactionController.ScheduleRollback(nameof(TryPeekAsync));
 
 							return LoopControlEnum.Return;
 						}
@@ -366,17 +358,17 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 						{
 							if (message.Processed)
 							{
-								var removeResult = await _queue.TryRemoveAsync(message, traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+								var removeResult = await _queue.TryRemoveAsync(message, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 								if (removeResult.HasError)
 								{
-									transactionContext.ScheduleRollback(nameof(_queue.TryRemoveAsync));
+									transactionController.ScheduleRollback(nameof(_queue.TryRemoveAsync));
 
 									await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(removeResult, null, cancellationToken).ConfigureAwait(false);
 									await PublishQueueEventAsync(message, traceInfo, QueueEventType.OnMessage, removeResult).ConfigureAwait(false);
 								}
 								else
 								{
-									transactionContext.ScheduleCommit();
+									transactionController.ScheduleCommit();
 								}
 
 								return LoopControlEnum.Continue;
@@ -390,15 +382,15 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 									try
 									{
 										var faultContext = _messageQueueContext.ServiceBusOptions.QueueProvider.CreateFaultQueueContext(traceInfo, message);
-										var enqueueResult = await _messageQueueContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync(message.Message, faultContext, transactionContext, cancellationToken).ConfigureAwait(false);
+										var enqueueResult = await _messageQueueContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync(message.Message, faultContext, transactionController, cancellationToken).ConfigureAwait(false);
 
 										if (enqueueResult.HasError)
 										{
-											transactionContext.ScheduleRollback($"{nameof(_messageQueueContext.ServiceBusOptions.ExchangeProvider.FaultQueue)}.{nameof(_messageQueueContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync)}");
+											transactionController.ScheduleRollback($"{nameof(_messageQueueContext.ServiceBusOptions.ExchangeProvider.FaultQueue)}.{nameof(_messageQueueContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync)}");
 										}
 										else
 										{
-											transactionContext.ScheduleCommit();
+											transactionController.ScheduleCommit();
 										}
 									}
 									catch (Exception faultEx)
@@ -419,20 +411,20 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 								return LoopControlEnum.Continue;
 							}
 
-							var handlerResult = await HandleMessageAsync(message, traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+							var handlerResult = await HandleMessageAsync(message, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 							if (handlerResult.Data!.Processed)
 							{
-								var removeResult = await _queue.TryRemoveAsync(message, traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+								var removeResult = await _queue.TryRemoveAsync(message, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 								if (removeResult.HasError)
 								{
-									transactionContext.ScheduleRollback($"{nameof(HandleMessageAsync)} - {nameof(_queue.TryRemoveAsync)}");
+									transactionController.ScheduleRollback($"{nameof(HandleMessageAsync)} - {nameof(_queue.TryRemoveAsync)}");
 
 									await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(removeResult, null, cancellationToken).ConfigureAwait(false);
 									await PublishQueueEventAsync(message, traceInfo, QueueEventType.OnMessage, removeResult).ConfigureAwait(false);
 								}
 								else
 								{
-									transactionContext.ScheduleCommit();
+									transactionController.ScheduleCommit();
 								}
 							}
 						}
@@ -467,7 +459,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 		}
 	}
 
-	private async Task<IResult<IMessageMetadataUpdate>> HandleMessageAsync(IQueuedMessage<TMessage> message, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	private async Task<IResult<IMessageMetadataUpdate>> HandleMessageAsync(IQueuedMessage<TMessage> message, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder<IMessageMetadataUpdate>();
@@ -477,7 +469,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 		var handlerContext = _messageQueueContext.ServiceBusOptions.MessageHandlerContextFactory(_messageQueueContext.ServiceBusOptions.ServiceProvider);
 		handlerContext.ServiceBusOptions = _messageQueueContext.ServiceBusOptions;
 		handlerContext.MessageHandlerResultFactory = _messageQueueContext.ServiceBusOptions.MessageHandlerResultFactory;
-		handlerContext.TransactionContext = transactionContext;
+		handlerContext.TransactionController = transactionController;
 		handlerContext.ServiceProvider = _messageQueueContext.ServiceBusOptions.ServiceProvider;
 		handlerContext.TraceInfo = TraceInfo.Create(traceInfo);
 		handlerContext.HostInfo = _messageQueueContext.ServiceBusOptions.HostInfo;
@@ -573,26 +565,22 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 		if (QueueType == QueueType.Sequential_FIFO && (update.MessageStatus == MessageStatus.Suspended || update.MessageStatus == MessageStatus.Aborted) && QueueStatus != QueueStatus.Terminated)
 			QueueStatus = QueueStatus.Suspended;
 
-		var localTransactionManager = _messageQueueContext.ServiceBusOptions.TransactionManagerFactory.Create();
-		var localTransactionContext =
-			await _messageQueueContext.ServiceBusOptions.TransactionContextFactory(
-				_messageQueueContext.ServiceBusOptions.ServiceProvider,
-				localTransactionManager).ConfigureAwait(false);
+		var localTransactionController = CreateTransactionController();
 
 		var queueStatus = await TransactionInterceptor.ExecuteAsync(
 			false,
 			traceInfo,
-			localTransactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			localTransactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
-				var updateResult = await _queue.UpdateAsync(message, update, traceInfo, transactionContext, cancellationToken).ConfigureAwait(false);
+				var updateResult = await _queue.UpdateAsync(message, update, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (updateResult.HasError)
 				{
-					transactionContext.ScheduleRollback();
+					transactionController.ScheduleRollback();
 				}
 				else
 				{
-					transactionContext.ScheduleCommit();
+					transactionController.ScheduleCommit();
 				}
 
 				return updateResult.Data;
@@ -650,6 +638,11 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 
 	public async ValueTask DisposeAsync()
 	{
+		if (_disposed)
+			return;
+
+		_disposed = true;
+
 		await DisposeAsyncCoreAsync().ConfigureAwait(false);
 
 		Dispose(disposing: false);
@@ -664,15 +657,13 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 
 	protected virtual void Dispose(bool disposing)
 	{
-		if (!disposed)
-		{
-			if (disposing)
-			{
-				_queue.Dispose();
-			}
+		if (_disposed)
+			return;
 
-			disposed = true;
-		}
+		_disposed = true;
+
+		if (disposing)
+			_queue.Dispose();
 	}
 
 	public void Dispose()

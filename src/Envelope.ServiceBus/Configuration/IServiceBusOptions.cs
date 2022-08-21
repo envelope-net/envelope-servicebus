@@ -17,8 +17,6 @@ public interface IServiceBusOptions : IValidable
 	IHostInfo HostInfo { get; }
 	IMessageTypeResolver MessageTypeResolver { get; }
 	IHostLogger HostLogger { get; }
-	ITransactionManagerFactory TransactionManagerFactory { get; }
-	Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; }
 	IExchangeProvider ExchangeProvider { get; }
 	IQueueProvider QueueProvider { get; }
 	Type MessageHandlerContextType { get; }

@@ -55,8 +55,8 @@ public interface IOrchestrationController
 	/// </summary>
 	Task<IResult<bool>> TerminateOrchestrationAsync(Guid idOrchestrationInstance, string lockOwner, ITraceInfo traceInfo);
 
-	internal Task PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionContext transactionContext);
+	internal Task PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionController transactionController);
 }
 
 
-public delegate Task OrchestrationEventHandler(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionContext transactionContext);
+public delegate Task OrchestrationEventHandler(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionController transactionController);

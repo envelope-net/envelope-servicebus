@@ -16,7 +16,7 @@ internal class InMemoryMessageBodyProvider : IMessageBodyProvider
 		_cache = new MemoryCache(new MemoryCacheOptions());
 	}
 
-	public IResult SaveToStorage<TMessage>(List<IMessageMetadata> messagesMetadata, TMessage? message, ITraceInfo traceInfo, ITransactionContext transactionContext)
+	public IResult SaveToStorage<TMessage>(List<IMessageMetadata> messagesMetadata, TMessage? message, ITraceInfo traceInfo, ITransactionController transactionController)
 		where TMessage : class, IMessage
 	{
 		var result = new ResultBuilder();
@@ -33,7 +33,7 @@ internal class InMemoryMessageBodyProvider : IMessageBodyProvider
 		return result.Build();
 	}
 
-	public IResult<Guid> SaveReplyToStorage<TResponse>(Guid messageId, TResponse? response, ITraceInfo traceInfo, ITransactionContext transactionContext)
+	public IResult<Guid> SaveReplyToStorage<TResponse>(Guid messageId, TResponse? response, ITraceInfo traceInfo, ITransactionController transactionController)
 	{
 		var result = new ResultBuilder<Guid>();
 
@@ -45,14 +45,14 @@ internal class InMemoryMessageBodyProvider : IMessageBodyProvider
 		return result.WithData(Guid.NewGuid()).Build();
 	}
 
-	public Task<IResult> SaveToStorageAsync<TMessage>(List<IMessageMetadata> messagesMetadata, TMessage? message, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	public Task<IResult> SaveToStorageAsync<TMessage>(List<IMessageMetadata> messagesMetadata, TMessage? message, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken)
 		where TMessage : class, IMessage
-		=> Task.FromResult(SaveToStorage(messagesMetadata, message, traceInfo, transactionContext));
+		=> Task.FromResult(SaveToStorage(messagesMetadata, message, traceInfo, transactionController));
 
-	public Task<IResult<Guid>> SaveReplyToStorageAsync<TResponse>(Guid messageId, TResponse? response, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
-		=> Task.FromResult(SaveReplyToStorage(messageId, response, traceInfo, transactionContext));
+	public Task<IResult<Guid>> SaveReplyToStorageAsync<TResponse>(Guid messageId, TResponse? response, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken)
+		=> Task.FromResult(SaveReplyToStorage(messageId, response, traceInfo, transactionController));
 
-	public Task<IResult<TMessage?>> LoadFromStorageAsync<TMessage>(IMessageMetadata messageMetadata, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	public Task<IResult<TMessage?>> LoadFromStorageAsync<TMessage>(IMessageMetadata messageMetadata, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken)
 		where TMessage : class, IMessage
 	{
 		var result = new ResultBuilder<TMessage?>();
