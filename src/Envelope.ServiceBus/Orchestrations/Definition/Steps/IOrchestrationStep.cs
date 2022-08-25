@@ -10,25 +10,25 @@ public interface IOrchestrationStep : IValidable
 
 	Type? BodyType { get; }
 
-	string Name { get; internal set; }
+	string Name { get; set; }
 
-	bool IsRootStep { get; internal set; }
+	bool IsRootStep { get; set; }
 
-	IOrchestrationDefinition OrchestrationDefinition { get; internal set; }
+	IOrchestrationDefinition OrchestrationDefinition { get; set; }
 
-	IOrchestrationStep? NextStep { get; internal set; }
+	IOrchestrationStep? NextStep { get; set; }
 
 	IReadOnlyDictionary<object, IOrchestrationStep> Branches { get; }
 
-	IOrchestrationStep? BranchController { get; internal set; }
+	IOrchestrationStep? BranchController { get; set; }
 
-	IOrchestrationStep? StartingStep { get; internal set; }
+	IOrchestrationStep? StartingStep { get; set; }
 
 	bool IsStartingStep { get; }
 
-	IErrorHandlingController? ErrorHandlingController { get; internal set; }
+	IErrorHandlingController? ErrorHandlingController { get; set; }
 
-	TimeSpan? DistributedLockExpiration { get; internal set; }
+	TimeSpan? DistributedLockExpiration { get; set; }
 
 	IStepBody? ConstructBody(IServiceProvider serviceProvider);
 
@@ -38,7 +38,7 @@ public interface IOrchestrationStep : IValidable
 
 	TimeSpan? GetRetryInterval(int retryCount);
 
-	internal AssignParameters? SetInputParameters { get; set; }
+	AssignParameters? SetInputParametersInternal { get; set; }
 
-	internal AssignParameters? SetOutputParameters { get; set; }
+	AssignParameters? SetOutputParametersInternal { get; set; }
 }

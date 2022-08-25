@@ -6,7 +6,7 @@ namespace Envelope.ServiceBus.Orchestrations;
 
 public interface IOrchestrationHost : IOrchestrationController, IHostedService
 {
-	internal IOrchestrationController OrchestrationController { get; }
+	IOrchestrationController OrchestrationControllerInternal { get; }
 
 	IHostInfo HostInfo { get; }
 }

@@ -45,7 +45,7 @@ public interface IMessageHandlerResultFactory
 
 	MessageHandlerResult<TResponse> Deferred<TResponse>(TimeSpan retryInterval);
 
-	internal MessageHandlerResult<TResponse> Delivered<TResponse>();
+	MessageHandlerResult<TResponse> DeliveredInternal<TResponse>();
 
-	internal MessageHandlerResult<TResponse> Aborted<TResponse>(IResult errorResult);
+	MessageHandlerResult<TResponse> AbortedInternal<TResponse>(IResult errorResult);
 }

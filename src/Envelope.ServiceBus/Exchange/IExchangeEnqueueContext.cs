@@ -48,7 +48,7 @@ public interface IExchangeEnqueueContext
 
 	bool CallExchangeOnMessage { get; set; }
 
-	internal IMessageQueue? OnMessageQueue { get; set; }
+	IMessageQueue? OnMessageQueueInternal { get; set; }
 
 	/// <summary>
 	/// The timespan after which the Send request will be cancelled if no response arrives.

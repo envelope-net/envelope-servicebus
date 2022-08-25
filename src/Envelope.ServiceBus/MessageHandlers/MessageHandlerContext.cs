@@ -98,7 +98,7 @@ public abstract class MessageHandlerContext : IMessageHandlerContext, IMessageMe
 		//DelayedToUtc = delayedToUtc;
 	}
 
-	void IMessageMetadata.Update(bool processed, MessageStatus status, int retryCount, DateTime? delayedToUtc)
+	void IMessageMetadata.UpdateInternal(bool processed, MessageStatus status, int retryCount, DateTime? delayedToUtc)
 		=> Update(processed, status, retryCount, delayedToUtc);
 
 	//public MethodLogScope CreateScope(

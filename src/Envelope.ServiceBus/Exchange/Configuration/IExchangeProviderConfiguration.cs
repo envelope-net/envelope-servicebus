@@ -8,7 +8,7 @@ public interface IExchangeProviderConfiguration : IValidable
 {
 	IServiceBusOptions ServiceBusOptions { get; }
 
-	internal Dictionary<string, Func<IServiceProvider, IExchange>> Exchanges { get; }
+	Dictionary<string, Func<IServiceProvider, IExchange>> ExchangesInternal { get; }
 
 	Func<IServiceProvider, IFaultQueue> FaultQueue { get; set; }
 }

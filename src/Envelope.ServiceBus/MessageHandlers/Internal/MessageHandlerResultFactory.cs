@@ -193,7 +193,7 @@ internal class MessageHandlerResultFactory : IMessageHandlerResultFactory
 		};
 	}
 
-	public MessageHandlerResult<TResponse> Delivered<TResponse>()
+	public MessageHandlerResult<TResponse> DeliveredInternal<TResponse>()
 	{
 		return new MessageHandlerResult<TResponse>
 		{
@@ -206,7 +206,7 @@ internal class MessageHandlerResultFactory : IMessageHandlerResultFactory
 		};
 	}
 
-	public MessageHandlerResult<TResponse> Aborted<TResponse>(IResult errorResult)
+	public MessageHandlerResult<TResponse> AbortedInternal<TResponse>(IResult errorResult)
 	{
 		return new MessageHandlerResult<TResponse>
 		{

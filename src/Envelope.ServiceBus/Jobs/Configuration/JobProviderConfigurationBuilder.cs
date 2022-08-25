@@ -69,7 +69,7 @@ public abstract class JobProviderConfigurationBuilderBase<TBuilder, TObject> : I
 		foreach (var job in _jobs.Values)
 			job.JobRegister(serviceProvider, register);
 
-		_jobProviderConfiguration.JobRegister = register;
+		_jobProviderConfiguration.JobRegisterInternal = register;
 
 		return _jobProviderConfiguration;
 	}
@@ -79,8 +79,8 @@ public abstract class JobProviderConfigurationBuilderBase<TBuilder, TObject> : I
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
 
-		if (force || _jobProviderConfiguration.HostInfo == null)
-			_jobProviderConfiguration.HostInfo = hostInfo;
+		if (force || _jobProviderConfiguration.HostInfoInternal == null)
+			_jobProviderConfiguration.HostInfoInternal = hostInfo;
 
 		return _builder;
 	}

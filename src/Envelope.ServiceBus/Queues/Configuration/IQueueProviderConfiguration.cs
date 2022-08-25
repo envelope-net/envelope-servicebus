@@ -7,7 +7,7 @@ public interface IQueueProviderConfiguration : IValidable
 {
 	IServiceBusOptions ServiceBusOptions { get; }
 
-	internal Dictionary<string, Func<IServiceProvider, IMessageQueue>> MessageQueues { get; }
+	Dictionary<string, Func<IServiceProvider, IMessageQueue>> MessageQueuesInternal { get; }
 
 	Func<IServiceProvider, IFaultQueue> FaultQueue { get; set; }
 }

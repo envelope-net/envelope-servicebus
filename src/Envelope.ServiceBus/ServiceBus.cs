@@ -38,7 +38,7 @@ internal class ServiceBus : IServiceBus
 			{
 				try
 				{
-					await queue.OnMessageAsync(traceInfo, cancellationToken).ConfigureAwait(false);
+					await queue.OnMessageInternalAsync(traceInfo, cancellationToken).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
@@ -47,7 +47,7 @@ internal class ServiceBus : IServiceBus
 						_options.HostInfo,
 						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
-						$"{nameof(Initialize)} >> {nameof(queue.OnMessageAsync)}: QUEUE = {queue.QueueName}",
+						$"{nameof(Initialize)} >> {nameof(queue.OnMessageInternalAsync)}: QUEUE = {queue.QueueName}",
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 				}
@@ -62,7 +62,7 @@ internal class ServiceBus : IServiceBus
 			{
 				try
 				{
-					await exchange.OnMessageAsync(traceInfo, cancellationToken).ConfigureAwait(false);
+					await exchange.OnMessageInternalAsync(traceInfo, cancellationToken).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
@@ -71,7 +71,7 @@ internal class ServiceBus : IServiceBus
 						_options.HostInfo,
 						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
-						$"{nameof(Initialize)} >> {nameof(exchange.OnMessageAsync)}: EXCHANGE = {exchange.QueueName}",
+						$"{nameof(Initialize)} >> {nameof(exchange.OnMessageInternalAsync)}: EXCHANGE = {exchange.QueueName}",
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 				}
@@ -86,7 +86,7 @@ internal class ServiceBus : IServiceBus
 			{
 				try
 				{
-					await jobController.StartAllAsync(traceInfo).ConfigureAwait(false);
+					await jobController.StartAllInternalAsync(traceInfo).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
@@ -95,7 +95,7 @@ internal class ServiceBus : IServiceBus
 						_options.HostInfo,
 						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
-						$"{nameof(Initialize)} >> {nameof(jobController.StartAllAsync)}: Jobs",
+						$"{nameof(Initialize)} >> {nameof(jobController.StartAllInternalAsync)}: Jobs",
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 				}
@@ -300,9 +300,9 @@ internal class ServiceBus : IServiceBus
 				try
 				{
 					var ti = TraceInfo.Create(traceInfo);
-					await exchange.OnMessageAsync(ti, cancellationToken).ConfigureAwait(false);
-					if (exchangeContext.OnMessageQueue != null)
-						await exchangeContext.OnMessageQueue.OnMessageAsync(ti, cancellationToken: default).ConfigureAwait(false);
+					await exchange.OnMessageInternalAsync(ti, cancellationToken).ConfigureAwait(false);
+					if (exchangeContext.OnMessageQueueInternal != null)
+						await exchangeContext.OnMessageQueueInternal.OnMessageInternalAsync(ti, cancellationToken: default).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
@@ -311,7 +311,7 @@ internal class ServiceBus : IServiceBus
 						_options.HostInfo,
 						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
-						$"{nameof(DispatchAsync)} >> {nameof(exchange.OnMessageAsync)}",
+						$"{nameof(DispatchAsync)} >> {nameof(exchange.OnMessageInternalAsync)}",
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 				}

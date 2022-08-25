@@ -90,7 +90,7 @@ public static class OrchestrationEventHandler
 
 		foreach (var instance in orchestrationInstances)
 			if (instance.Status == OrchestrationStatus.Running || instance.Status == OrchestrationStatus.Executing)
-				await instance.StartOrchestrationWorkerAsync().ConfigureAwait(false);
+				await instance.StartOrchestrationWorkerInternalAsync().ConfigureAwait(false);
 
 		return context.MessageHandlerResultFactory.FromResult(result.Build(), traceInfo);
 	}

@@ -78,7 +78,7 @@ public class MessageMetadata<TMessage> : IMessageMetadata, ISavedMessage<TMessag
 	/// <inheritdoc/>
 	public TMessage? Message { get; set; }
 
-	public void SetMessage(object message)
+	public void SetMessageInternal(object message)
 	{
 		if (message == null)
 			Message = null;
@@ -97,6 +97,6 @@ public class MessageMetadata<TMessage> : IMessageMetadata, ISavedMessage<TMessag
 		DelayedToUtc = delayedToUtc;
 	}
 
-	void IMessageMetadata.Update(bool processed, MessageStatus status, int retryCount, DateTime? delayedToUtc)
+	void IMessageMetadata.UpdateInternal(bool processed, MessageStatus status, int retryCount, DateTime? delayedToUtc)
 		=> Update(processed, status, retryCount, delayedToUtc);
 }

@@ -11,7 +11,7 @@ public interface IExchange : IQueueInfo, IDisposable, IAsyncDisposable
 {
 	ExchangeType ExchangeType { get; }
 
-	internal Task OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken);
+	Task OnMessageInternalAsync(ITraceInfo traceInfo, CancellationToken cancellationToken);
 }
 
 public interface IExchange<TMessage> : IExchange, IQueueInfo, IDisposable, IAsyncDisposable

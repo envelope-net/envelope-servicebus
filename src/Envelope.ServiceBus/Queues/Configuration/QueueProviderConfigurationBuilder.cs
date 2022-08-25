@@ -115,9 +115,9 @@ public abstract class QueueProviderConfigurationBuilderBase<TBuilder, TObject> :
 			throw new ConfigurationException("The builder was finalized");
 
 		if (force)
-			_queueProviderConfiguration.MessageQueues[queueName] = messageQueue;
+			_queueProviderConfiguration.MessageQueuesInternal[queueName] = messageQueue;
 		else
-			_queueProviderConfiguration.MessageQueues.TryAdd(queueName, messageQueue);
+			_queueProviderConfiguration.MessageQueuesInternal.TryAdd(queueName, messageQueue);
 
 		return _builder;
 	}

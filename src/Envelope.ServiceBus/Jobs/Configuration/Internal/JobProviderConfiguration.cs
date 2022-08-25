@@ -8,10 +8,10 @@ namespace Envelope.ServiceBus.Jobs.Configuration.Internal;
 
 internal class JobProviderConfiguration : IJobProviderConfiguration, IValidable
 {
-	public IHostInfo HostInfo { get; set; }
+	public IHostInfo HostInfoInternal { get; set; }
 
 	internal IJobRegister JobRegister { get; set; }
-	IJobRegister IJobProviderConfiguration.JobRegister
+	IJobRegister IJobProviderConfiguration.JobRegisterInternal
 	{
 		get { return JobRegister; }
 		set { JobRegister = value; }
@@ -26,12 +26,12 @@ internal class JobProviderConfiguration : IJobProviderConfiguration, IValidable
 		List<IValidationMessage>? parentErrorBuffer = null,
 		Dictionary<string, object>? validationContext = null)
 	{
-		if (HostInfo == null)
+		if (HostInfoInternal == null)
 		{
 			if (parentErrorBuffer == null)
 				parentErrorBuffer = new List<IValidationMessage>();
 
-			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HostInfo))} == null"));
+			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HostInfoInternal))} == null"));
 		}
 
 		if (JobRepository == null)

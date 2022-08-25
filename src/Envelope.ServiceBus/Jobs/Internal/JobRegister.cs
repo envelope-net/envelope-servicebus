@@ -8,7 +8,7 @@ internal class JobRegister : IJobRegister
 {
 	private readonly ConcurrentDictionary<string, IJob> _jobs = new();
 
-	ConcurrentDictionary<string, IJob> IJobRegister.Jobs => _jobs;
+	ConcurrentDictionary<string, IJob> IJobRegister.JobsInternal => _jobs;
 
 	private readonly IServiceProvider _serviceProvider;
 	private readonly IJobProviderConfiguration _config;
@@ -28,7 +28,7 @@ internal class JobRegister : IJobRegister
 			job.Name,
 			key =>
 			{
-				job.Initialize(_config, _serviceProvider);
+				job.InitializeInternal(_config, _serviceProvider);
 				return job;
 			},
 			(key, existingJob) => throw new InvalidOperationException($"Job with {nameof(job.Name)} = {job.Name} already registered"));
@@ -43,13 +43,13 @@ internal class JobRegister : IJobRegister
 			job.Name,
 			key =>
 			{
-				job.Initialize(_config, _serviceProvider);
+				job.InitializeInternal(_config, _serviceProvider);
 				return job;
 			},
 			(key, existingJob) => throw new InvalidOperationException($"Job with {nameof(job.Name)} = {job.Name} already registered"));
 
 		if (data != null)
-			return job.SetDataAsync(traceInfo, data);
+			return job.SetDataInternalAsync(traceInfo, data);
 
 		return Task.CompletedTask;
 	}

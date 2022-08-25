@@ -5,5 +5,5 @@ public interface ISavedMessage<out TMessage> : IMessageInfo
 {
 	TMessage? Message { get; }
 
-	internal void SetMessage(object message);
+	void SetMessageInternal(object message);
 }

@@ -42,5 +42,5 @@ internal class ExchangeEnqueueContext : IExchangeEnqueueContext
 
 	public bool CallExchangeOnMessage { get; set; }
 
-	public IMessageQueue? OnMessageQueue { get; set; }
+	public IMessageQueue? OnMessageQueueInternal { get; set; }
 }

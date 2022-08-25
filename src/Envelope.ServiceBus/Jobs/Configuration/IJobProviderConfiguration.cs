@@ -7,9 +7,9 @@ namespace Envelope.ServiceBus.Jobs.Configuration;
 
 public interface IJobProviderConfiguration : IValidable
 {
-	internal IHostInfo HostInfo { get; set; }
+	IHostInfo HostInfoInternal { get; set; }
 
-	internal IJobRegister JobRegister { get; set; }
+	IJobRegister JobRegisterInternal { get; set; }
 
 	Func<IServiceProvider, IJobRepository> JobRepository { get; set;}
 

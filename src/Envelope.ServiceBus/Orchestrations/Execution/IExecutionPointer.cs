@@ -36,5 +36,5 @@ public interface IExecutionPointer
 
 	IOrchestrationStep GetStep();
 
-	internal ExecutionPointer Update(IExecutionPointerUpdate update);
+	ExecutionPointer UpdateInternal(IExecutionPointerUpdate update);
 }

@@ -72,7 +72,7 @@ public abstract class Job : IJob
 				throw new InvalidOperationException($"{nameof(Config)} == null");
 
 			MainServiceProvider = serviceProvider;
-			HostInfo = config.HostInfo ?? throw new InvalidOperationException($"{nameof(HostInfo)} == null");
+			HostInfo = config.HostInfoInternal ?? throw new InvalidOperationException($"{nameof(HostInfo)} == null");
 			Logger = config.JobLogger(serviceProvider) ?? throw new InvalidOperationException($"{nameof(Logger)} == null");
 			JobRepository = config.JobRepository(serviceProvider) ?? throw new InvalidOperationException($"{nameof(JobRepository)} == null"); ;
 
@@ -124,14 +124,14 @@ public abstract class Job : IJob
 	{
 	}
 
-	void IJob.Initialize(IJobProviderConfiguration config, IServiceProvider serviceProvider)
+	void IJob.InitializeInternal(IJobProviderConfiguration config, IServiceProvider serviceProvider)
 		=> Initialize(config, serviceProvider);
 
 	private async Task<bool> OnSequentialAsyncTimerTickAsync(object? state)
 	{
 		Status = JobStatus.InProcess;
-		await using var scoperServiceProvider = MainServiceProvider.CreateAsyncScope();
-		var @continue = await ExecuteAsync(scoperServiceProvider.ServiceProvider).ConfigureAwait(false);
+		await using var scopedServiceProvider = MainServiceProvider.CreateAsyncScope();
+		var @continue = await ExecuteAsync(scopedServiceProvider.ServiceProvider).ConfigureAwait(false);
 
 		if (!@continue)
 			Status = JobStatus.Stopped;
@@ -158,8 +158,8 @@ public abstract class Job : IJob
 
 		try
 		{
-			await using var scoperServiceProvider = MainServiceProvider.CreateAsyncScope();
-			@continue = await ExecuteAsync(scoperServiceProvider.ServiceProvider).ConfigureAwait(false);
+			await using var scopedServiceProvider = MainServiceProvider.CreateAsyncScope();
+			@continue = await ExecuteAsync(scopedServiceProvider.ServiceProvider).ConfigureAwait(false);
 		}
 		catch (Exception ex)
 		{
@@ -181,8 +181,8 @@ public abstract class Job : IJob
 
 		try
 		{
-			await using var scoperServiceProvider = MainServiceProvider.CreateAsyncScope();
-			@continue = await ExecuteAsync(scoperServiceProvider.ServiceProvider).ConfigureAwait(false);
+			await using var scopedServiceProvider = MainServiceProvider.CreateAsyncScope();
+			@continue = await ExecuteAsync(scopedServiceProvider.ServiceProvider).ConfigureAwait(false);
 		}
 		catch (Exception ex)
 		{
@@ -364,6 +364,6 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 		Data = data;
 	}
 
-	Task IJob<TData>.SetDataAsync(ITraceInfo traceInfo, TData data)
+	Task IJob<TData>.SetDataInternalAsync(ITraceInfo traceInfo, TData data)
 		=> SetDataAsync(traceInfo, data);
 }

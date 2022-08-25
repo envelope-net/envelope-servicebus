@@ -94,7 +94,7 @@ public class OrchestrationInstance : IOrchestrationInstance
 	public string CreateDistributedLockKey()
 		=> $"{_orchestrationDefinition.IdOrchestrationDefinition}::{_orchestrationDefinition.Version}::{OrchestrationKey}";
 
-	public Task<bool> StartOrchestrationWorkerAsync()
+	public Task<bool> StartOrchestrationWorkerInternalAsync()
 	{
 		nextTimerStart = true;
 		return _timer.StartAsync();

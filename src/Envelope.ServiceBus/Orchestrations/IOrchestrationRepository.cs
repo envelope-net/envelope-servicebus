@@ -16,7 +16,7 @@ public interface IOrchestrationRepository : IOrchestrationEventQueue
 	
 	Task<List<Guid>> GetFinalizedBrancheIdsAsync(Guid idOrchestrationInstance, ITransactionController transactionController, CancellationToken cancellationToken = default);
 
-	//TODO: dorobit (ak treba) internal Task<bool> SaveOrchestrationDataAsync();
+	//TODO: dorobit (ak treba) Task<bool> SaveOrchestrationDataAsync();
 
 	//Task<IEnumerable<Guid>> GetRunnableInstancesAsync(DateTime nowUtc, ITransactionController transactionController, CancellationToken cancellationToken = default);
 

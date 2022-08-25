@@ -95,7 +95,7 @@ internal class InMemoryFIFOQueue<T> : IQueue<T>, IDisposable
 		if (messageMetadata.MessageId != update.MessageId)
 			return Task.FromResult(result.WithInvalidOperationException(traceInfo, $"{nameof(messageMetadata.MessageId)} != {nameof(update)}.{nameof(update.MessageId)} | {messageMetadata.MessageId} != {update.MessageId}"));
 
-		messageMetadata.Update(update.Processed, update.MessageStatus, update.RetryCount, update.DelayedToUtc);
+		messageMetadata.UpdateInternal(update.Processed, update.MessageStatus, update.RetryCount, update.DelayedToUtc);
 
 		return
 			Task.FromResult(

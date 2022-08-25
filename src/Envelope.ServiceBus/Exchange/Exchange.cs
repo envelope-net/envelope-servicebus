@@ -198,7 +198,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 			if (handlerResult.Data?.Processed == false)
 				result.WithError(traceInfo, x => x.InternalMessage(handlerResult.Data.ToString()));
 
-			context.OnMessageQueue = brokerResult.OnMessageQueue;
+			context.OnMessageQueueInternal = brokerResult.OnMessageQueue;
 
 			return
 				await PublishExchangeEventAsync(
@@ -284,7 +284,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 						ExchangeEventType.Peek,
 						result.WithInvalidOperationException(traceInfo, $"ExchangeName = {_exchangeContext.ExchangeName} | {nameof(TryPeekAsync)}: {nameof(exchangeMessage.ExchangeName)} == {exchangeMessage.ExchangeName} | {nameof(exchangeMessage.MessageId)} == {exchangeMessage.MessageId} | {nameof(message)} == null")).ConfigureAwait(false);
 
-				exchangeMessage.SetMessage(message);
+				exchangeMessage.SetMessageInternal(message);
 			}
 			catch (Exception ex)
 			{
@@ -303,7 +303,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 			result.WithData(exchangeMessage).Build()).ConfigureAwait(false);
 	}
 
-	Task IExchange.OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
+	Task IExchange.OnMessageInternalAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
 		=> OnMessageAsync(traceInfo, cancellationToken);
 
 	private readonly AsyncLock _onMessageLock = new();
@@ -457,7 +457,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 					{
 						try
 						{
-							await onMessageQueue.OnMessageAsync(TraceInfo.Create(traceInfo), cancellationToken: default).ConfigureAwait(false);
+							await onMessageQueue.OnMessageInternalAsync(TraceInfo.Create(traceInfo), cancellationToken: default).ConfigureAwait(false);
 						}
 						catch (Exception ex)
 						{

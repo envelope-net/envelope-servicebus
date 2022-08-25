@@ -41,7 +41,7 @@ internal class ExchangeProvider : IExchangeProvider
 
 		var exchange = _cache.GetOrAdd(exchangeName, exchangeName =>
 		{
-			if (_config.Exchanges.TryGetValue(exchangeName, out var exchangeFactory))
+			if (_config.ExchangesInternal.TryGetValue(exchangeName, out var exchangeFactory))
 			{
 				var exchange = exchangeFactory(_serviceProvider);
 				if (exchange == null)

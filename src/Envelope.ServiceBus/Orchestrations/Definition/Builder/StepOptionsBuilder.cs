@@ -71,8 +71,8 @@ public abstract class StepOptionsBuilderBase<TBuilder, TData> : IStepOptionsBuil
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
 
-		if (force || CurrentStep.SetInputParameters == null)
-			CurrentStep.SetInputParameters = (stepBody, data, ctx) => action((TData)data, ctx);
+		if (force || CurrentStep.SetInputParametersInternal == null)
+			CurrentStep.SetInputParametersInternal = (stepBody, data, ctx) => action((TData)data, ctx);
 
 		return _builder;
 	}
@@ -82,8 +82,8 @@ public abstract class StepOptionsBuilderBase<TBuilder, TData> : IStepOptionsBuil
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
 
-		if (force || CurrentStep.SetOutputParameters == null)
-			CurrentStep.SetOutputParameters = (stepBody, data, ctx) => action((TData)data, ctx);
+		if (force || CurrentStep.SetOutputParametersInternal == null)
+			CurrentStep.SetOutputParametersInternal = (stepBody, data, ctx) => action((TData)data, ctx);
 
 		return _builder;
 	}
@@ -147,8 +147,8 @@ public abstract class StepOptionsBuilderBase<TBuilder, TStepBody, TData> : StepO
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
 
-		if (force || CurrentStep.SetInputParameters == null)
-			CurrentStep.SetInputParameters = (stepBody, data, ctx) => action((TStepBody)stepBody, (TData)data, ctx);
+		if (force || CurrentStep.SetInputParametersInternal == null)
+			CurrentStep.SetInputParametersInternal = (stepBody, data, ctx) => action((TStepBody)stepBody, (TData)data, ctx);
 
 		return _builder;
 	}
@@ -158,8 +158,8 @@ public abstract class StepOptionsBuilderBase<TBuilder, TStepBody, TData> : StepO
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
 
-		if (force || CurrentStep.SetOutputParameters == null)
-			CurrentStep.SetOutputParameters = (stepBody, data, ctx) => action((TStepBody)stepBody, (TData)data, ctx);
+		if (force || CurrentStep.SetOutputParametersInternal == null)
+			CurrentStep.SetOutputParametersInternal = (stepBody, data, ctx) => action((TStepBody)stepBody, (TData)data, ctx);
 
 		return _builder;
 	}

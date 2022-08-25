@@ -24,12 +24,12 @@ public interface IJob
 
 	Task StopAsync();
 
-	internal void Initialize(IJobProviderConfiguration config, IServiceProvider serviceProvider);
+	void InitializeInternal(IJobProviderConfiguration config, IServiceProvider serviceProvider);
 }
 
 public interface IJob<TData> : IJob
 {
 	TData? Data { get; }
 
-	internal Task SetDataAsync(ITraceInfo traceInfo, TData data);
+	Task SetDataInternalAsync(ITraceInfo traceInfo, TData data);
 }

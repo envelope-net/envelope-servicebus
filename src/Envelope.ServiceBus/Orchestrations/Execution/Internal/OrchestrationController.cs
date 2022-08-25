@@ -135,7 +135,7 @@ internal class OrchestrationController : IOrchestrationController
 							_serviceProvider,
 							workerIdleTimeout);
 
-					orchestrationInstance = orchestrationDefinition.GetOrSetSingletonInstance(factory, orchestrationKey);
+					orchestrationInstance = orchestrationDefinition.GetOrSetSingletonInstanceInternal(factory, orchestrationKey);
 					if (orchestrationInstance == null)
 					{
 						orchestrationInstance = factory();
@@ -616,6 +616,6 @@ internal class OrchestrationController : IOrchestrationController
 		}
 	}
 
-	Task IOrchestrationController.PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionController transactionController)
+	Task IOrchestrationController.PublishLifeCycleEventInternalAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionController transactionController)
 		=> PublishLifeCycleEventAsync(lifeCycleEvent, traceInfo, transactionController);
 }

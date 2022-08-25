@@ -65,11 +65,11 @@ internal class OrchestrationDefinition : IOrchestrationDefinition, IValidable
 	internal void AddStep(IOrchestrationStep step)
 		=> Steps.Add(step);
 
-	void IOrchestrationDefinition.AddStep(IOrchestrationStep step)
+	void IOrchestrationDefinition.AddStepInternal(IOrchestrationStep step)
 		=> AddStep(step);
 
 	private readonly object _singletonInstanceLock = new();
-	IOrchestrationInstance? IOrchestrationDefinition.GetOrSetSingletonInstance(Func<IOrchestrationInstance> orchestrationInstanceFactory, string orchestrationKey)
+	IOrchestrationInstance? IOrchestrationDefinition.GetOrSetSingletonInstanceInternal(Func<IOrchestrationInstance> orchestrationInstanceFactory, string orchestrationKey)
 	{
 		lock (_singletonInstanceLock)
 		{

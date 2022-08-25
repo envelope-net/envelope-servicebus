@@ -23,7 +23,7 @@ public interface IMessageQueue : IQueueInfo, IDisposable, IAsyncDisposable
 	/// </summary>
 	TimeSpan FetchInterval { get; set; }
 
-	internal Task OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken);
+	Task OnMessageInternalAsync(ITraceInfo traceInfo, CancellationToken cancellationToken);
 }
 
 public interface IMessageQueue<TMessage> : IMessageQueue, IQueueInfo, IDisposable, IAsyncDisposable

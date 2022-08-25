@@ -44,7 +44,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		_logger = options.OrchestrationLogger(_serviceProvider);
 		_pointerFactory = options.ExecutionPointerFactory(_serviceProvider);
 		_orchestrationRepository = options.OrchestrationRepositoryFactory(_serviceProvider, _registry);
-		_orchestrationController = new(() => _serviceProvider.GetRequiredService<IOrchestrationHost>().OrchestrationController);
+		_orchestrationController = new(() => _serviceProvider.GetRequiredService<IOrchestrationHost>().OrchestrationControllerInternal);
 		_orchestrationHost = new(() => _serviceProvider.GetRequiredService<IOrchestrationHost>());
 	}
 
@@ -90,7 +90,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				cancellationToken: default).ConfigureAwait(false);
 		}
 
-		await orchestrationInstance.StartOrchestrationWorkerAsync().ConfigureAwait(false);
+		await orchestrationInstance.StartOrchestrationWorkerInternalAsync().ConfigureAwait(false);
 	}
 
 	public Task ExecuteAsync(
@@ -183,7 +183,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 						&& (orchestrationInstance.Status == OrchestrationStatus.Running
 							|| orchestrationInstance.Status == OrchestrationStatus.Executing))
 					{
-						await orchestrationInstance.StartOrchestrationWorkerAsync().ConfigureAwait(false);
+						await orchestrationInstance.StartOrchestrationWorkerInternalAsync().ConfigureAwait(false);
 					}
 
 					using (await _executeLock.LockAsync().ConfigureAwait(false))
@@ -425,7 +425,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 
 			if (orchestrationInstance.Status == OrchestrationStatus.Running
 				|| orchestrationInstance.Status == OrchestrationStatus.Executing)
-				await orchestrationInstance.StartOrchestrationWorkerAsync().ConfigureAwait(false);
+				await orchestrationInstance.StartOrchestrationWorkerInternalAsync().ConfigureAwait(false);
 		}
 	}
 
@@ -549,7 +549,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				cancellationToken: default).ConfigureAwait(false);
 
 			await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionController).ConfigureAwait(false);
-			await _orchestrationController.Value.PublishLifeCycleEventAsync(new StepStarted(orchestrationInstance, pointer), traceInfo, transactionController).ConfigureAwait(false);
+			await _orchestrationController.Value.PublishLifeCycleEventInternalAsync(new StepStarted(orchestrationInstance, pointer), traceInfo, transactionController).ConfigureAwait(false);
 		}
 	}
 
@@ -589,7 +589,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 			cancellationToken).ConfigureAwait(false);
 
 		var stepBody = step.ConstructBody(scope.ServiceProvider);
-		step.SetInputParameters?.Invoke(stepBody!, orchestrationInstance.Data, context);
+		step.SetInputParametersInternal?.Invoke(stepBody!, orchestrationInstance.Data, context);
 
 		if (stepBody == null)
 		{
@@ -636,8 +636,8 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 
 		await ProcessExecutionResultAsync(orchestrationInstance, pointer, result, traceInfo, transactionController).ConfigureAwait(false);
 
-		if (pointer.Status == PointerStatus.Completed && step.SetOutputParameters != null)
-			step.SetOutputParameters(stepBody, orchestrationInstance.Data, context);
+		if (pointer.Status == PointerStatus.Completed && step.SetOutputParametersInternal != null)
+			step.SetOutputParametersInternal(stepBody, orchestrationInstance.Data, context);
 	}
 
 	private async Task ProcessExecutionResultAsync(
@@ -704,7 +704,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					cancellationToken: default).ConfigureAwait(false);
 
 				await _orchestrationRepository.UpdateExecutionPointerAsync(pointer, update, transactionController).ConfigureAwait(false);
-				await _orchestrationController.Value.PublishLifeCycleEventAsync(new StepCompleted(orchestrationInstance, pointer), traceInfo, transactionController).ConfigureAwait(false);
+				await _orchestrationController.Value.PublishLifeCycleEventInternalAsync(new StepCompleted(orchestrationInstance, pointer), traceInfo, transactionController).ConfigureAwait(false);
 			}
 
 			if (result.NestedSteps != null)
@@ -847,7 +847,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		var utcNow = DateTime.UtcNow;
 		await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Completed, utcNow, transactionController).ConfigureAwait(false);
 		orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Completed, utcNow);
-		await _orchestrationController.Value.PublishLifeCycleEventAsync(new OrchestrationCompleted(orchestrationInstance), traceInfo, transactionController).ConfigureAwait(false);
+		await _orchestrationController.Value.PublishLifeCycleEventInternalAsync(new OrchestrationCompleted(orchestrationInstance), traceInfo, transactionController).ConfigureAwait(false);
 	}
 
 	private async Task RetryAsync(
@@ -896,7 +896,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 							null,
 							cancellationToken: default).ConfigureAwait(false);
 
-					await _orchestrationController.Value.PublishLifeCycleEventAsync(
+					await _orchestrationController.Value.PublishLifeCycleEventInternalAsync(
 						new OrchestrationError(orchestrationInstance, pointer, errorMessage), traceInfo, transactionController).ConfigureAwait(false);
 				}
 			}
@@ -959,7 +959,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 		await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Suspended, utcNow, transactionController).ConfigureAwait(false);
 		orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Suspended, utcNow);
 
-		await _orchestrationController.Value.PublishLifeCycleEventAsync(new StepSuspended(orchestrationInstance, pointer), traceInfo, transactionController).ConfigureAwait(false);
-		await _orchestrationController.Value.PublishLifeCycleEventAsync(new OrchestrationSuspended(orchestrationInstance, SuspendSource.ByExecutor), traceInfo, transactionController).ConfigureAwait(false);
+		await _orchestrationController.Value.PublishLifeCycleEventInternalAsync(new StepSuspended(orchestrationInstance, pointer), traceInfo, transactionController).ConfigureAwait(false);
+		await _orchestrationController.Value.PublishLifeCycleEventInternalAsync(new OrchestrationSuspended(orchestrationInstance, SuspendSource.ByExecutor), traceInfo, transactionController).ConfigureAwait(false);
 	}
 }

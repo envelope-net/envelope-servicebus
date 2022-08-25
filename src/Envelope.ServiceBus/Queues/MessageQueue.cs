@@ -197,7 +197,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 			}
 
 			if (!result.HasError())
-				context.OnMessageQueue = this;
+				context.OnMessageQueueInternal = this;
 		}
 
 		return await PublishQueueEventAsync(queuedMessage, traceInfo, QueueEventType.Enqueue, result.Build()).ConfigureAwait(false);
@@ -292,7 +292,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 							traceInfo,
 							$"QueueName = {_messageQueueContext.QueueName} | {nameof(TryPeekAsync)}: {nameof(queuedMessage.QueueName)} == {queuedMessage.QueueName} | {nameof(queuedMessage.MessageId)} == {queuedMessage.MessageId} | {nameof(message)} == null")).ConfigureAwait(false);
 
-				queuedMessage.SetMessage(message);
+				queuedMessage.SetMessageInternal(message);
 			}
 			catch (Exception ex)
 			{
@@ -311,7 +311,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 			result.WithData(queuedMessage).Build()).ConfigureAwait(false);
 	}
 
-	Task IMessageQueue.OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
+	Task IMessageQueue.OnMessageInternalAsync(ITraceInfo traceInfo, CancellationToken cancellationToken)
 		=> OnMessageAsync(traceInfo, cancellationToken);
 
 	private readonly AsyncLock _onMessageLock = new();

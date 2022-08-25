@@ -37,7 +37,7 @@ internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 			}
 			else
 			{
-				return messageHandlerResultFactory.DeliveredInternal(context.OnMessageQueue);
+				return messageHandlerResultFactory.DeliveredInternal(context.OnMessageQueueInternal);
 			}
 		}
 		catch (Exception ex)
