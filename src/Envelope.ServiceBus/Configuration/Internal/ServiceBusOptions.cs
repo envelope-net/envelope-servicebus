@@ -19,8 +19,6 @@ internal class ServiceBusOptions : IServiceBusOptions, IValidable
 	public IHostInfo HostInfo { get; set; }
 	public IMessageTypeResolver MessageTypeResolver { get; set; }
 	public IHostLogger HostLogger { get; set; }
-	public ITransactionManagerFactory TransactionManagerFactory { get; set; }
-	public Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; set; }
 	public IExchangeProvider ExchangeProvider { get; set; }
 	public IQueueProvider QueueProvider { get; set; }
 	public Type MessageHandlerContextType { get; set; }
@@ -69,22 +67,6 @@ internal class ServiceBusOptions : IServiceBusOptions, IValidable
 				parentErrorBuffer = new List<IValidationMessage>();
 
 			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(HostLogger))} == null"));
-		}
-
-		if (TransactionManagerFactory == null)
-		{
-			if (parentErrorBuffer == null)
-				parentErrorBuffer = new List<IValidationMessage>();
-
-			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionManagerFactory))} == null"));
-		}
-
-		if (TransactionContextFactory == null)
-		{
-			if (parentErrorBuffer == null)
-				parentErrorBuffer = new List<IValidationMessage>();
-
-			parentErrorBuffer.Add(ValidationMessageFactory.Error($"{StringHelper.ConcatIfNotNullOrEmpty(propertyPrefix, ".", nameof(TransactionContextFactory))} == null"));
 		}
 
 		if (ExchangeProvider == null)

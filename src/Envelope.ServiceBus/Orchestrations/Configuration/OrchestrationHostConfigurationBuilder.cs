@@ -24,10 +24,6 @@ public interface IOrchestrationHostConfigurationBuilder<TBuilder, TObject>
 
 	TBuilder RegisterAsHostedService(bool asHostedService);
 
-	TBuilder TransactionManagerFactory(ITransactionManagerFactory transactionManagerFactory, bool force = true);
-
-	TBuilder TransactionContextFactory(Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> transactionContextFactory, bool force = true);
-
 	TBuilder OrchestrationRegistry(Func<IServiceProvider, IOrchestrationRegistry> orchestrationRegistry, bool force = true);
 
 	TBuilder ExecutionPointerFactory(Func<IServiceProvider, IExecutionPointerFactory> executionPointerFactory, bool force = true);
@@ -83,28 +79,6 @@ public abstract class OrchestrationHostConfigurationBuilderBase<TBuilder, TObjec
 			throw new ConfigurationException("The builder was finalized");
 
 		_orchestrationHostConfiguration.RegisterAsHostedService = asHostedService;
-		return _builder;
-	}
-
-	public TBuilder TransactionManagerFactory(ITransactionManagerFactory transactionManagerFactory, bool force = true)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || _orchestrationHostConfiguration.TransactionManagerFactory == null)
-			_orchestrationHostConfiguration.TransactionManagerFactory = transactionManagerFactory;
-
-		return _builder;
-	}
-
-	public TBuilder TransactionContextFactory(Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> transactionContextFactory, bool force = true)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || _orchestrationHostConfiguration.TransactionContextFactory == null)
-			_orchestrationHostConfiguration.TransactionContextFactory = transactionContextFactory;
-
 		return _builder;
 	}
 
@@ -217,8 +191,6 @@ public class OrchestrationHostConfigurationBuilder : OrchestrationHostConfigurat
 	internal static OrchestrationHostConfigurationBuilder GetDefaultBuilder()
 		=> new OrchestrationHostConfigurationBuilder()
 			//.RegisterAsHostedService(false)
-			.TransactionManagerFactory(new TransactionManagerFactory())
-			.TransactionContextFactory((sp, manager) => Task.FromResult((ITransactionContext)new InMemoryTransactionContext(manager)))
 			.OrchestrationRegistry(sp => new OrchestrationRegistry())
 			.ExecutionPointerFactory(sp => new ExecutionPointerFactory())
 			.OrchestrationRepositoryFactory((sp, registry) => new InMemoryOrchestrationRepository())

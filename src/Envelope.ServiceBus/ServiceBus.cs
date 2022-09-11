@@ -7,6 +7,7 @@ using Envelope.ServiceBus.Messages.Options;
 using Envelope.Services;
 using Envelope.Services.Transactions;
 using Envelope.Trace;
+using Envelope.Transactions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Runtime.CompilerServices;
 
@@ -37,7 +38,7 @@ internal class ServiceBus : IServiceBus
 			{
 				try
 				{
-					await queue.OnMessageAsync(traceInfo, cancellationToken).ConfigureAwait(false);
+					await queue.OnMessageInternalAsync(traceInfo, cancellationToken).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
@@ -46,7 +47,7 @@ internal class ServiceBus : IServiceBus
 						_options.HostInfo,
 						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
-						$"{nameof(Initialize)} >> {nameof(queue.OnMessageAsync)}: QUEUE = {queue.QueueName}",
+						$"{nameof(Initialize)} >> {nameof(queue.OnMessageInternalAsync)}: QUEUE = {queue.QueueName}",
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 				}
@@ -61,7 +62,7 @@ internal class ServiceBus : IServiceBus
 			{
 				try
 				{
-					await exchange.OnMessageAsync(traceInfo, cancellationToken).ConfigureAwait(false);
+					await exchange.OnMessageInternalAsync(traceInfo, cancellationToken).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
@@ -70,7 +71,7 @@ internal class ServiceBus : IServiceBus
 						_options.HostInfo,
 						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
-						$"{nameof(Initialize)} >> {nameof(exchange.OnMessageAsync)}: EXCHANGE = {exchange.QueueName}",
+						$"{nameof(Initialize)} >> {nameof(exchange.OnMessageInternalAsync)}: EXCHANGE = {exchange.QueueName}",
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 				}
@@ -85,7 +86,7 @@ internal class ServiceBus : IServiceBus
 			{
 				try
 				{
-					await jobController.StartAllAsync(traceInfo).ConfigureAwait(false);
+					await jobController.StartAllInternalAsync(traceInfo).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
@@ -94,7 +95,7 @@ internal class ServiceBus : IServiceBus
 						_options.HostInfo,
 						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
-						$"{nameof(Initialize)} >> {nameof(jobController.StartAllAsync)}: Jobs",
+						$"{nameof(Initialize)} >> {nameof(jobController.StartAllInternalAsync)}: Jobs",
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 				}
@@ -197,20 +198,22 @@ internal class ServiceBus : IServiceBus
 		}
 	}
 
+	protected virtual ITransactionController CreateTransactionController()
+		=> _options.ServiceProvider.GetRequiredService<ITransactionCoordinator>().TransactionController;
+
 	private async Task<IResult<List<Guid>>> DispatchAsync<TMessage>(ITraceInfo traceInfo, TMessage? message, IMessageOptions options, CancellationToken cancellationToken)
 		where TMessage : class, IMessage
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder<List<Guid>>();
 
-		var isLocalTransactionManager = false;
+		var isLocalTransactionCoordinator = false;
 
-		var transactionContext = options.TransactionContext;
-		if (transactionContext == null)
+		var transactionController = options.TransactionController;
+		if (transactionController == null)
 		{
-			var transactionManager =  _options.TransactionManagerFactory.Create();
-			transactionContext = await _options.TransactionContextFactory(_options.ServiceProvider, transactionManager).ConfigureAwait(false);
-			isLocalTransactionManager = true;
+			transactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
 		}
 
 		IExchange<TMessage>? exchange = null;
@@ -220,8 +223,8 @@ internal class ServiceBus : IServiceBus
 			await ServiceTransactionInterceptor.ExecuteActionAsync(
 				false,
 				traceInfo,
-				transactionContext,
-				async (traceInfo, transactionContext, cancellationToken) =>
+				transactionController,
+				async (traceInfo, transactionController, cancellationToken) =>
 				{
 					exchange = _options.ExchangeProvider.GetExchange<TMessage>(options.ExchangeName);
 					if (exchange == null)
@@ -248,17 +251,17 @@ internal class ServiceBus : IServiceBus
 
 					exchangeContext = contextResult.Data!;
 
-					var exchangeEnqueueResult = await exchange.EnqueueAsync(message, exchangeContext, transactionContext, cancellationToken).ConfigureAwait(false);
+					var exchangeEnqueueResult = await exchange.EnqueueAsync(message, exchangeContext, transactionController, cancellationToken).ConfigureAwait(false);
 					result.MergeHasError(exchangeEnqueueResult);
 
 					if (exchangeEnqueueResult.HasError)
 					{
-						transactionContext.ScheduleRollback();
+						transactionController.ScheduleRollback();
 					}
 					else
 					{
-						if (isLocalTransactionManager)
-							transactionContext.ScheduleCommit();
+						if (isLocalTransactionCoordinator)
+							transactionController.ScheduleCommit();
 					}
 
 					if (result.HasError())
@@ -284,7 +287,7 @@ internal class ServiceBus : IServiceBus
 					return errorMessage;
 				},
 				null,
-				isLocalTransactionManager,
+				isLocalTransactionCoordinator,
 				cancellationToken).ConfigureAwait(false);
 
 		if (result.MergeHasError(executeResult))
@@ -297,9 +300,9 @@ internal class ServiceBus : IServiceBus
 				try
 				{
 					var ti = TraceInfo.Create(traceInfo);
-					await exchange.OnMessageAsync(ti, cancellationToken).ConfigureAwait(false);
-					if (exchangeContext.OnMessageQueue != null)
-						await exchangeContext.OnMessageQueue.OnMessageAsync(ti, cancellationToken: default).ConfigureAwait(false);
+					await exchange.OnMessageInternalAsync(ti, cancellationToken).ConfigureAwait(false);
+					if (exchangeContext.OnMessageQueueInternal != null)
+						await exchangeContext.OnMessageQueueInternal.OnMessageInternalAsync(ti, cancellationToken: default).ConfigureAwait(false);
 				}
 				catch (Exception ex)
 				{
@@ -308,7 +311,7 @@ internal class ServiceBus : IServiceBus
 						_options.HostInfo,
 						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
-						$"{nameof(DispatchAsync)} >> {nameof(exchange.OnMessageAsync)}",
+						$"{nameof(DispatchAsync)} >> {nameof(exchange.OnMessageInternalAsync)}",
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 				}
@@ -326,26 +329,25 @@ internal class ServiceBus : IServiceBus
 		{
 			traceInfo = TraceInfo.Create(traceInfo);
 			var result = new ResultBuilder();
-			var transactionManager = _options.TransactionManagerFactory.Create();
-			var transactionContext = await _options.TransactionContextFactory(_options.ServiceProvider, transactionManager).ConfigureAwait(false);
+			var transactionController = CreateTransactionController();
 
 			await ServiceTransactionInterceptor.ExecuteActionAsync(
 				false,
 				traceInfo,
-				transactionContext,
-				async (traceInfo, transactionContext, cancellationToken) =>
+				transactionController,
+				async (traceInfo, transactionController, cancellationToken) =>
 				{
 					var context = _options.ExchangeProvider.CreateFaultQueueContext(traceInfo, options);
-					var enqueueResult = await _options.ExchangeProvider.FaultQueue.EnqueueAsync(message, context, transactionContext, cancellationToken).ConfigureAwait(false);
+					var enqueueResult = await _options.ExchangeProvider.FaultQueue.EnqueueAsync(message, context, transactionController, cancellationToken).ConfigureAwait(false);
 					result.MergeAllHasError(enqueueResult);
 
 					if (enqueueResult.HasError)
 					{
-						transactionContext.ScheduleRollback();
+						transactionController.ScheduleRollback();
 					}
 					else
 					{
-						transactionContext.ScheduleCommit();
+						transactionController.ScheduleCommit();
 					}
 
 					return result.Build();

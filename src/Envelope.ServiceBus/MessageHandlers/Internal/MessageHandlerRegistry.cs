@@ -480,7 +480,7 @@ internal class MessageHandlerRegistry : IMessageRegistry, IMessageHandlerRegistr
 		var messageType =
 			new MessageType
 			(
-				type.FullName ?? type.Name,
+				type.FullName ?? type.ToFriendlyFullName() ?? type.Name,
 				resolvedTypeString,
 				messageMetaType
 			);
@@ -532,7 +532,7 @@ internal class MessageHandlerRegistry : IMessageRegistry, IMessageHandlerRegistr
 			var responseMessageType =
 				new MessageType
 				(
-					responseType.FullName ?? responseType.Name,
+					responseType.FullName ?? responseType.ToFriendlyFullName() ?? responseType.Name,
 					resolvedTypeString,
 					responseMessageMetaType
 				);

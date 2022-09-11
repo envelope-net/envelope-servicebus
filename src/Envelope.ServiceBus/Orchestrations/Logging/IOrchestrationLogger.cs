@@ -13,7 +13,7 @@ public interface IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task<ILogMessage?> LogDebugAsync(
@@ -23,7 +23,7 @@ public interface IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task<ILogMessage?> LogInformationAsync(
@@ -33,7 +33,7 @@ public interface IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task<ILogMessage?> LogWarningAsync(
@@ -43,7 +43,7 @@ public interface IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task<IErrorMessage> LogErrorAsync(
@@ -53,7 +53,7 @@ public interface IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task<IErrorMessage> LogCriticalAsync(
@@ -63,6 +63,6 @@ public interface IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 }

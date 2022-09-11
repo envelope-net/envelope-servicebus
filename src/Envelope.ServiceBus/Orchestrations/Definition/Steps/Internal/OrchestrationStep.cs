@@ -37,9 +37,9 @@ internal abstract class OrchestrationStep : IOrchestrationStep, IValidable
 
 	public bool IsStartingStep => StartingStep == this;
 
-	public AssignParameters? SetInputParameters { get; set; }
+	public AssignParameters? SetInputParametersInternal { get; set; }
 
-	public AssignParameters? SetOutputParameters { get; set; }
+	public AssignParameters? SetOutputParametersInternal { get; set; }
 	public virtual IErrorHandlingController? ErrorHandlingController { get; set; }
 
 	public TimeSpan? DistributedLockExpiration { get; set; }

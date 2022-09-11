@@ -28,9 +28,9 @@ internal class DroppingFaultQueue : IFaultQueue, IQueueInfo
 		QueueId = GuidConverter.ToGuid(QueueName);
 	}
 
-	public Task<IResult> EnqueueAsync(IMessage? message, IFaultQueueContext context, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	public Task<IResult> EnqueueAsync(IMessage? message, IFaultQueueContext context, ITransactionController transactionController, CancellationToken cancellationToken)
 		=> Task.FromResult((IResult)new ResultBuilder().Build());
 
-	public Task<int> GetCountAsync(ITraceInfo traceInfo, ITransactionManagerFactory transactionManagerFactory, CancellationToken cancellationToken = default)
+	public Task<int> GetCountAsync(ITraceInfo traceInfo, CancellationToken cancellationToken = default)
 		=> Task.FromResult(0);
 }

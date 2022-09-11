@@ -67,5 +67,5 @@ public interface IMessageMetadata : IMessageInfo
 
 	DateTime? DelayedToUtc { get; }
 
-	internal void Update(bool processed, MessageStatus status, int retryCount, DateTime? delayedToUtc);
+	void UpdateInternal(bool processed, MessageStatus status, int retryCount, DateTime? delayedToUtc);
 }

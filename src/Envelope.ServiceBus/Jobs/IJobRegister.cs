@@ -5,7 +5,7 @@ namespace Envelope.ServiceBus.Jobs;
 
 public interface IJobRegister
 {
-	internal ConcurrentDictionary<string, IJob> Jobs { get; }
+	ConcurrentDictionary<string, IJob> JobsInternal { get; }
 
 	void RegisterJob(IJob job);
 

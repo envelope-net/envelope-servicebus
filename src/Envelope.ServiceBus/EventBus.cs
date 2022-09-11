@@ -104,21 +104,20 @@ public partial class EventBus : IEventBus
 		optionsBuilder?.Invoke(builder);
 		var options = builder.Build(true);
 
-		var isLocalTransactionManager = false;
-		if (options.TransactionContext == null)
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
 		{
-			var transactionManager = await CreateTransactionManagerAsync(cancellationToken).ConfigureAwait(false);
-			options.TransactionContext = transactionManager.CreateTransactionContext();
-			isLocalTransactionManager = true;
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
 		}
 
-		return await PublishAsync(@event, options, isLocalTransactionManager, traceInfo, cancellationToken).ConfigureAwait(false);
+		return await PublishAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 	}
 
 	protected async Task<IResult<Guid>> PublishAsync(
 		IEvent @event,
 		IMessageOptions options,
-		bool isLocalTransactionManager,
+		bool isLocalTransactionCoordinator,
 		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 	{
@@ -138,13 +137,13 @@ public partial class EventBus : IEventBus
 
 		traceInfo = TraceInfo.Create(traceInfo);
 
-		var transactionContext = options.TransactionContext;
+		var transactionController = options.TransactionController;
 
 		return await ServiceTransactionInterceptor.ExecuteActionAsync(
 			false,
 			traceInfo,
-			transactionContext,
-			async (traceInfo, transactionContext, cancellationToken) =>
+			transactionController,
+			async (traceInfo, transactionController, cancellationToken) =>
 			{
 				var eventType = @event.GetType();
 
@@ -176,7 +175,7 @@ public partial class EventBus : IEventBus
 				}
 
 				handlerContext.MessageHandlerResultFactory = EventBusOptions.MessageHandlerResultFactory;
-				handlerContext.TransactionContext = transactionContext;
+				handlerContext.TransactionController = transactionController;
 				handlerContext.ServiceProvider = ServiceProvider;
 				handlerContext.TraceInfo = traceInfo;
 				handlerContext.HostInfo = EventBusOptions.HostInfo;
@@ -224,12 +223,12 @@ public partial class EventBus : IEventBus
 
 				if (result.HasError())
 				{
-					transactionContext.ScheduleRollback();
+					transactionController.ScheduleRollback();
 				}
 				else
 				{
-					if (isLocalTransactionManager)
-						transactionContext.ScheduleCommit();
+					if (isLocalTransactionCoordinator)
+						transactionController.ScheduleCommit();
 				}
 
 				return result.WithData(savedEvent.MessageId).Build();
@@ -250,12 +249,12 @@ public partial class EventBus : IEventBus
 				return errorMessage;
 			},
 			null,
-			isLocalTransactionManager,
+			isLocalTransactionCoordinator,
 			cancellationToken).ConfigureAwait(false);
 	}
 
-	protected virtual Task<ITransactionManager> CreateTransactionManagerAsync(CancellationToken cancellationToken = default)
-		=> Task.FromResult(ServiceProvider.GetService<ITransactionManagerFactory>()?.Create() ?? TransactionManagerFactory.CreateTransactionManager());
+	protected virtual ITransactionController CreateTransactionController()
+		=> ServiceProvider.GetRequiredService<ITransactionCoordinator>().TransactionController;
 
 	protected virtual async Task<IResult<ISavedMessage<TEvent>>> SaveEventAsync<TEvent>(
 		TEvent @event,
@@ -295,7 +294,7 @@ public partial class EventBus : IEventBus
 		if (EventBusOptions.EventBodyProvider != null
 			&& EventBusOptions.EventBodyProvider.AllowMessagePersistence(options.DisabledMessagePersistence, metadata))
 		{
-			var saveResult = await EventBusOptions.EventBodyProvider.SaveToStorageAsync(new List<IMessageMetadata> { metadata }, @event, traceInfo, options.TransactionContext, cancellationToken).ConfigureAwait(false);
+			var saveResult = await EventBusOptions.EventBodyProvider.SaveToStorageAsync(new List<IMessageMetadata> { metadata }, @event, traceInfo, options.TransactionController, cancellationToken).ConfigureAwait(false);
 			if (result.MergeHasError(saveResult))
 				return result.Build();
 		}
@@ -312,7 +311,7 @@ public partial class EventBus : IEventBus
 		string sourceFilePath,
 		int sourceLineNumber)
 	{
-		var traceInfo = TraceInfo.Create(null, EventBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber);
+		var traceInfo = TraceInfo.Create(ServiceProvider.GetRequiredService<IApplicationContext>(), null, memberName, sourceFilePath, sourceLineNumber);
 
 		var result = new ResultBuilder<List<Guid>>();
 
@@ -322,15 +321,14 @@ public partial class EventBus : IEventBus
 		var builder = MessageOptionsBuilder.GetDefaultBuilder(@event.GetType());
 		var options = builder.Build(true);
 
-		var isLocalTransactionManager = false;
-		if (options.TransactionContext == null)
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
 		{
-			var transactionManager = await CreateTransactionManagerAsync(cancellationToken).ConfigureAwait(false);
-			options.TransactionContext = transactionManager.CreateTransactionContext();
-			isLocalTransactionManager = true;
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
 		}
 
-		var publishResult = await PublishAsync(@event, options, isLocalTransactionManager, traceInfo, cancellationToken).ConfigureAwait(false);
+		var publishResult = await PublishAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 		if (result.MergeAllHasError(publishResult))
 			return result.Build();
 
@@ -345,7 +343,7 @@ public partial class EventBus : IEventBus
 		string sourceFilePath,
 		int sourceLineNumber)
 	{
-		var traceInfo = TraceInfo.Create(null, EventBusOptions.HostInfo.HostName, null, memberName, sourceFilePath, sourceLineNumber);
+		var traceInfo = TraceInfo.Create(ServiceProvider.GetRequiredService<IApplicationContext>(), null, memberName, sourceFilePath, sourceLineNumber);
 
 		var result = new ResultBuilder<List<Guid>>();
 
@@ -356,15 +354,14 @@ public partial class EventBus : IEventBus
 		optionsBuilder?.Invoke(builder);
 		var options = builder.Build(true);
 
-		var isLocalTransactionManager = false;
-		if (options.TransactionContext == null)
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
 		{
-			var transactionManager = await CreateTransactionManagerAsync(cancellationToken).ConfigureAwait(false);
-			options.TransactionContext = transactionManager.CreateTransactionContext();
-			isLocalTransactionManager = true;
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
 		}
 
-		var publishResult = await PublishAsync(@event, options, isLocalTransactionManager, traceInfo, cancellationToken).ConfigureAwait(false);
+		var publishResult = await PublishAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 		if (result.MergeAllHasError(publishResult))
 			return result.Build();
 
@@ -384,15 +381,14 @@ public partial class EventBus : IEventBus
 		var builder = MessageOptionsBuilder.GetDefaultBuilder(@event.GetType());
 		var options = builder.Build(true);
 
-		var isLocalTransactionManager = false;
-		if (options.TransactionContext == null)
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
 		{
-			var transactionManager = await CreateTransactionManagerAsync(cancellationToken).ConfigureAwait(false);
-			options.TransactionContext = transactionManager.CreateTransactionContext();
-			isLocalTransactionManager = true;
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
 		}
 
-		var publishResult = await PublishAsync(@event, options, isLocalTransactionManager, traceInfo, cancellationToken).ConfigureAwait(false);
+		var publishResult = await PublishAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 		if (result.MergeAllHasError(publishResult))
 			return result.Build();
 
@@ -414,15 +410,14 @@ public partial class EventBus : IEventBus
 		optionsBuilder?.Invoke(builder);
 		var options = builder.Build(true);
 
-		var isLocalTransactionManager = false;
-		if (options.TransactionContext == null)
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
 		{
-			var transactionManager = await CreateTransactionManagerAsync(cancellationToken).ConfigureAwait(false);
-			options.TransactionContext = transactionManager.CreateTransactionContext();
-			isLocalTransactionManager = true;
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
 		}
 
-		var publishResult = await PublishAsync(@event, options, isLocalTransactionManager, traceInfo, cancellationToken).ConfigureAwait(false);
+		var publishResult = await PublishAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 		if (result.MergeAllHasError(publishResult))
 			return result.Build();
 

@@ -23,7 +23,7 @@ public interface IMessageQueue : IQueueInfo, IDisposable, IAsyncDisposable
 	/// </summary>
 	TimeSpan FetchInterval { get; set; }
 
-	internal Task OnMessageAsync(ITraceInfo traceInfo, CancellationToken cancellationToken);
+	Task OnMessageInternalAsync(ITraceInfo traceInfo, CancellationToken cancellationToken);
 }
 
 public interface IMessageQueue<TMessage> : IMessageQueue, IQueueInfo, IDisposable, IAsyncDisposable
@@ -34,17 +34,17 @@ public interface IMessageQueue<TMessage> : IMessageQueue, IQueueInfo, IDisposabl
 	/// <summary>
 	/// Enqueue the new message
 	/// </summary>
-	Task<IResult> EnqueueAsync(TMessage? message, IQueueEnqueueContext context, ITransactionContext transactionContext, CancellationToken cancellationToken);
+	Task<IResult> EnqueueAsync(TMessage? message, IQueueEnqueueContext context, ITransactionController transactionController, CancellationToken cancellationToken);
 
 	/// <summary>
 	/// If the queue is pull queue than the subscriber call this method to try to return an message from
 	/// the beginning of the queue without removing it.
 	/// </summary>
-	Task<IResult<IQueuedMessage<TMessage>?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken);
+	Task<IResult<IQueuedMessage<TMessage>?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken);
 
 	/// <summary>
 	/// If the queue is pull queue than the subscriber call this method to try to remove and return the message
 	/// at the beginning of the queue.
 	/// </summary>
-	Task<IResult> TryRemoveAsync(IQueuedMessage<TMessage> message, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken);
+	Task<IResult> TryRemoveAsync(IQueuedMessage<TMessage> message, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken);
 }

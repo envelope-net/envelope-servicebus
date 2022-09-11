@@ -7,12 +7,12 @@ public interface IJobRepository
 {
 	Task<TData?> LoadDataAsync<TData>(
 		string jobName,
-		ITransactionContext transactionContext,
+		ITransactionController transactionController,
 		CancellationToken cancellationToken = default);
 
 	Task SaveDataAsync<TData>(
 		string jobName,
 		TData data,
-		ITransactionContext transactionContext,
+		ITransactionController transactionController,
 		CancellationToken cancellationToken = default);
 }

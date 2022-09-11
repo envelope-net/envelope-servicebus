@@ -117,9 +117,9 @@ public abstract class ExchangeProviderConfigurationBuilderBase<TBuilder, TObject
 			throw new ConfigurationException("The builder was finalized");
 
 		if (force)
-			_exchangeProviderConfiguration.Exchanges[exchangeName] = exchange;
+			_exchangeProviderConfiguration.ExchangesInternal[exchangeName] = exchange;
 		else
-			_exchangeProviderConfiguration.Exchanges.TryAdd(exchangeName, exchange);
+			_exchangeProviderConfiguration.ExchangesInternal.TryAdd(exchangeName, exchange);
 
 		return _builder;
 	}

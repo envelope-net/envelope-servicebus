@@ -9,7 +9,7 @@ public class QueueProviderConfiguration : IQueueProviderConfiguration, IValidabl
 	public IServiceBusOptions ServiceBusOptions { get; }
 
 	internal Dictionary<string, Func<IServiceProvider, IMessageQueue>> MessageQueues { get; }
-	Dictionary<string, Func<IServiceProvider, IMessageQueue>> IQueueProviderConfiguration.MessageQueues => MessageQueues;
+	Dictionary<string, Func<IServiceProvider, IMessageQueue>> IQueueProviderConfiguration.MessageQueuesInternal => MessageQueues;
 
 	public Func<IServiceProvider, IFaultQueue> FaultQueue { get; set; }
 

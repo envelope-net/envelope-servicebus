@@ -59,7 +59,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
 		var msg = _logger.LogTraceMessage(traceInfo, messageBuilder, true);
@@ -71,7 +71,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
 		var msg = _logger.LogDebugMessage(traceInfo, messageBuilder, true);
@@ -83,7 +83,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
 		var msg = _logger.LogInformationMessage(traceInfo, messageBuilder, true);
@@ -95,7 +95,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
 		var msg = _logger.LogWarningMessage(traceInfo, messageBuilder, true);
@@ -107,7 +107,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
 		var msg = _logger.LogErrorMessage(traceInfo, messageBuilder, true);
@@ -119,7 +119,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null)
+		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
 		var msg = _logger.LogCriticalMessage(traceInfo, messageBuilder, true);
@@ -131,7 +131,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
@@ -144,7 +144,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
@@ -157,7 +157,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
@@ -170,7 +170,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
@@ -183,7 +183,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
@@ -196,7 +196,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionManager? transactionManager = null,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);

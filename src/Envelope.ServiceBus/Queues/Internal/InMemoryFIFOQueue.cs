@@ -11,7 +11,7 @@ internal class InMemoryFIFOQueue<T> : IQueue<T>, IDisposable
 {
 	private readonly ConcurrentQueue<T> _messages;
 
-	private bool disposed;
+	private bool _disposed;
 
 	/// <inheritdoc/>
 	public int? MaxSize { get; set; }
@@ -22,12 +22,12 @@ internal class InMemoryFIFOQueue<T> : IQueue<T>, IDisposable
 		MaxSize = maxSize;
 	}
 
-	public Task<IResult<int>> GetCountAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task<IResult<int>> GetCountAsync(ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken = default)
 		=> Task.FromResult(new ResultBuilder<int>().WithData(_messages.Count).Build());
 
 	private readonly object _enqueueLock = new();
 	/// <inheritdoc/>
-	public Task<IResult> EnqueueAsync(List<T> messagesMetadata, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task<IResult> EnqueueAsync(List<T> messagesMetadata, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder();
@@ -58,7 +58,7 @@ internal class InMemoryFIFOQueue<T> : IQueue<T>, IDisposable
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult> TryRemoveAsync(T messageMetadata, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task<IResult> TryRemoveAsync(T messageMetadata, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var result = new ResultBuilder();
@@ -82,7 +82,7 @@ internal class InMemoryFIFOQueue<T> : IQueue<T>, IDisposable
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult<QueueStatus>> UpdateAsync(T messageMetadata, IMessageMetadataUpdate update, ITraceInfo traceInfo, ITransactionContext localTransactionContext, CancellationToken cancellationToken = default)
+	public Task<IResult<QueueStatus>> UpdateAsync(T messageMetadata, IMessageMetadataUpdate update, ITraceInfo traceInfo, ITransactionController localTransactionController, CancellationToken cancellationToken = default)
 	{
 		var result = new ResultBuilder<QueueStatus>();
 
@@ -95,7 +95,7 @@ internal class InMemoryFIFOQueue<T> : IQueue<T>, IDisposable
 		if (messageMetadata.MessageId != update.MessageId)
 			return Task.FromResult(result.WithInvalidOperationException(traceInfo, $"{nameof(messageMetadata.MessageId)} != {nameof(update)}.{nameof(update.MessageId)} | {messageMetadata.MessageId} != {update.MessageId}"));
 
-		messageMetadata.Update(update.Processed, update.MessageStatus, update.RetryCount, update.DelayedToUtc);
+		messageMetadata.UpdateInternal(update.Processed, update.MessageStatus, update.RetryCount, update.DelayedToUtc);
 
 		return
 			Task.FromResult(
@@ -107,7 +107,7 @@ internal class InMemoryFIFOQueue<T> : IQueue<T>, IDisposable
 	}
 
 	/// <inheritdoc/>
-	public Task<IResult<T?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task<IResult<T?>> TryPeekAsync(ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	{
 		var result = new ResultBuilder<T?>();
 		_messages.TryPeek(out var messageMetadata);
@@ -119,15 +119,13 @@ internal class InMemoryFIFOQueue<T> : IQueue<T>, IDisposable
 
 	protected virtual void Dispose(bool disposing)
 	{
-		if (!disposed)
-		{
-			if (disposing)
-			{
-				Clear();
-			}
+		if (_disposed)
+			return;
 
-			disposed = true;
-		}
+		_disposed = true;
+
+		if (disposing)
+			Clear();
 	}
 
 	public void Dispose()

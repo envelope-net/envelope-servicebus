@@ -10,7 +10,7 @@ public class MessageOptions : IMessageOptions, IValidable
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	/// <inheritdoc/>
-	public ITransactionContext TransactionContext { get; set; }
+	public ITransactionController TransactionController { get; set; }
 
 	/// <inheritdoc/>
 	public string ExchangeName { get; set; }

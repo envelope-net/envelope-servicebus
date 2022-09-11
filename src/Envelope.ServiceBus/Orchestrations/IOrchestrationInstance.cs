@@ -14,7 +14,7 @@ public interface IOrchestrationInstance : IDistributedLockKeyFactory, IDisposabl
 
 	bool IsSingleton { get; }
 
-	OrchestrationStatus Status { get; internal set; }
+	OrchestrationStatus Status { get; set; }
 
 	int Version { get; }
 
@@ -30,7 +30,7 @@ public interface IOrchestrationInstance : IDistributedLockKeyFactory, IDisposabl
 
 	void UpdateOrchestrationStatus(OrchestrationStatus status, DateTime? completeTimeUtc = null);
 
-	internal Task<bool> StartOrchestrationWorkerAsync();
+	Task<bool> StartOrchestrationWorkerInternalAsync();
 
 	IOrchestrationExecutor GetExecutor();
 }

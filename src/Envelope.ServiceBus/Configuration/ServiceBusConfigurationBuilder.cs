@@ -33,10 +33,6 @@ public interface IServiceBusConfigurationBuilder<TBuilder, TObject>
 
 	TBuilder HostLogger(Func<IServiceProvider, IHostLogger> hostLogger, bool force = true);
 
-	TBuilder TransactionManagerFactory(Func<IServiceProvider, ITransactionManagerFactory> transactionManagerFactory, bool force = true);
-
-	TBuilder TransactionContextFactory(Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> transactionContextFactory, bool force = true);
-
 	TBuilder ExchangeProviderConfiguration(Action<ExchangeProviderConfigurationBuilder> exchangeProviderConfiguration, bool force = true);
 
 	TBuilder QueueProviderConfiguration(Action<QueueProviderConfigurationBuilder> queueProviderConfiguration, bool force = true);
@@ -145,28 +141,6 @@ public abstract class ServiceBusConfigurationBuilderBase<TBuilder, TObject> : IS
 
 		if (force || _serviceBusConfiguration.HostLogger == null)
 			_serviceBusConfiguration.HostLogger = hostLogger;
-
-		return _builder;
-	}
-
-	public TBuilder TransactionManagerFactory(Func<IServiceProvider, ITransactionManagerFactory> transactionManagerFactory, bool force = true)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || _serviceBusConfiguration.TransactionManagerFactory == null)
-			_serviceBusConfiguration.TransactionManagerFactory = transactionManagerFactory;
-
-		return _builder;
-	}
-
-	public TBuilder TransactionContextFactory(Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> transactionContextFactory, bool force = true)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || _serviceBusConfiguration.TransactionContextFactory == null)
-			_serviceBusConfiguration.TransactionContextFactory = transactionContextFactory;
 
 		return _builder;
 	}
@@ -309,8 +283,6 @@ public class ServiceBusConfigurationBuilder : ServiceBusConfigurationBuilderBase
 			.ServiceBusMode(Envelope.ServiceBus.ServiceBusMode.PublishSubscribe)
 			//.HostInfo(null)
 			//.ServiceBusName(null)
-			.TransactionManagerFactory(sp => new TransactionManagerFactory())
-			.TransactionContextFactory((sp, manager) => Task.FromResult((ITransactionContext)new InMemoryTransactionContext(manager)))
 			//.MessageHandlerContextFactory(null)
 			//.ExchangeProviderConfiguration(null)
 			//.QueueProviderConfiguration(null)

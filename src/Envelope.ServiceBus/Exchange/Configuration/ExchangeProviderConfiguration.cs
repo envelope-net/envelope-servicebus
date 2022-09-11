@@ -10,7 +10,7 @@ public class ExchangeProviderConfiguration : IExchangeProviderConfiguration, IVa
 	public IServiceBusOptions ServiceBusOptions { get; }
 
 	internal Dictionary<string, Func<IServiceProvider, IExchange>> Exchanges { get; }
-	Dictionary<string, Func<IServiceProvider, IExchange>> IExchangeProviderConfiguration.Exchanges => Exchanges;
+	Dictionary<string, Func<IServiceProvider, IExchange>> IExchangeProviderConfiguration.ExchangesInternal => Exchanges;
 
 	public Func<IServiceProvider, IFaultQueue> FaultQueue { get; set; }
 

@@ -36,7 +36,7 @@ internal class QueueProvider : IQueueProvider
 
 		var queue = _cache.GetOrAdd(queueName, queueName =>
 		{
-			if (_config.MessageQueues.TryGetValue(queueName, out var queueFactory))
+			if (_config.MessageQueuesInternal.TryGetValue(queueName, out var queueFactory))
 			{
 				var queue = queueFactory(_serviceProvider);
 				if (queue == null)

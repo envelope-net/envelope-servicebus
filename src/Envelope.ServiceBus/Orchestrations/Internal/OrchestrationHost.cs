@@ -15,7 +15,7 @@ internal class OrchestrationHost : BackgroundService, IOrchestrationHost, IDispo
 {
 	private readonly IOrchestrationController _orchestrationController;
 
-	public IOrchestrationController OrchestrationController => _orchestrationController;
+	public IOrchestrationController OrchestrationControllerInternal => _orchestrationController;
 
 	public IHostInfo HostInfo { get; }
 
@@ -112,6 +112,6 @@ internal class OrchestrationHost : BackgroundService, IOrchestrationHost, IDispo
 	public Task<IResult<bool>> TerminateOrchestrationAsync(Guid orchestrationId, string lockOwner, ITraceInfo traceInfo)
 		=> _orchestrationController.TerminateOrchestrationAsync(orchestrationId, lockOwner, traceInfo);
 
-	Task IOrchestrationController.PublishLifeCycleEventAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionContext transactionContext)
-		=> _orchestrationController.PublishLifeCycleEventAsync(lifeCycleEvent, traceInfo, transactionContext);
+	Task IOrchestrationController.PublishLifeCycleEventInternalAsync(LifeCycleEvent lifeCycleEvent, ITraceInfo traceInfo, ITransactionController transactionController)
+		=> _orchestrationController.PublishLifeCycleEventInternalAsync(lifeCycleEvent, traceInfo, transactionController);
 }

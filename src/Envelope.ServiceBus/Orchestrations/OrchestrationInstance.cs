@@ -11,11 +11,11 @@ public class OrchestrationInstance : IOrchestrationInstance
 	private readonly SequentialAsyncTimer _timer;
 
 	private readonly IOrchestrationExecutor _executor;
-	private readonly IHostInfo _hostInfo;
+	private readonly IServiceProvider _serviceProvider;
 	private readonly IOrchestrationDefinition _orchestrationDefinition;
 
 	private bool nextTimerStart;
-	private bool disposed;
+	private bool _disposed;
 
 	public Guid IdOrchestrationInstance { get; }
 
@@ -60,7 +60,7 @@ public class OrchestrationInstance : IOrchestrationInstance
 		string orchestrationKey,
 		object data,
 		IOrchestrationExecutor executor,
-		IHostInfo hostInfo,
+		IServiceProvider serviceProvider,
 		TimeSpan? workerIdleTimeout)
 	{
 		IdOrchestrationInstance = idOrchestrationInstance;
@@ -79,7 +79,7 @@ public class OrchestrationInstance : IOrchestrationInstance
 			: throw new ArgumentNullException(nameof(orchestrationKey));
 		Data = data ?? throw new ArgumentNullException(nameof(data));
 		_executor = executor ?? throw new ArgumentNullException(nameof(executor));
-		_hostInfo = hostInfo ?? throw new ArgumentNullException(nameof(hostInfo));
+		_serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 		nextTimerStart = false;
 		_workerIdleTimeout = workerIdleTimeout ?? _orchestrationDefinition.WorkerIdleTimeout;
 		_timer = new SequentialAsyncTimer(null, _workerIdleTimeout, _workerIdleTimeout, OnTimerAsync, OnTimerExceptionAsync);
@@ -94,7 +94,7 @@ public class OrchestrationInstance : IOrchestrationInstance
 	public string CreateDistributedLockKey()
 		=> $"{_orchestrationDefinition.IdOrchestrationDefinition}::{_orchestrationDefinition.Version}::{OrchestrationKey}";
 
-	public Task<bool> StartOrchestrationWorkerAsync()
+	public Task<bool> StartOrchestrationWorkerInternalAsync()
 	{
 		nextTimerStart = true;
 		return _timer.StartAsync();
@@ -103,7 +103,7 @@ public class OrchestrationInstance : IOrchestrationInstance
 	private async Task<bool> OnTimerAsync(object? state)
 	{
 		nextTimerStart = false;
-		var traceInfo = TraceInfo.Create(_hostInfo.HostName);
+		var traceInfo = TraceInfo.Create(_serviceProvider);
 		await _executor.ExecuteAsync(this, traceInfo).ConfigureAwait(false);
 		return nextTimerStart;
 	}
@@ -111,7 +111,7 @@ public class OrchestrationInstance : IOrchestrationInstance
 	private async Task<bool> OnTimerExceptionAsync(object? state, Exception exception)
 	{
 		await _executor.OrchestrationLogger.LogErrorAsync(
-			TraceInfo.Create(_executor.OrchestrationHostOptions.HostName),
+			TraceInfo.Create(_serviceProvider),
 			IdOrchestrationInstance,
 			null,
 			null,
@@ -131,6 +131,11 @@ public class OrchestrationInstance : IOrchestrationInstance
 
 	public async ValueTask DisposeAsync()
 	{
+		if (_disposed)
+			return;
+
+		_disposed = true;
+
 		await DisposeAsyncCoreAsync().ConfigureAwait(false);
 
 		Dispose(disposing: false);
@@ -142,13 +147,13 @@ public class OrchestrationInstance : IOrchestrationInstance
 
 	protected virtual void Dispose(bool disposing)
 	{
-		if (!disposed)
-		{
-			if (disposing)
-				_timer.Dispose();
+		if (_disposed)
+			return;
 
-			disposed = true;
-		}
+		_disposed = true;
+
+		if (disposing)
+			_timer.Dispose();
 	}
 
 	public void Dispose()

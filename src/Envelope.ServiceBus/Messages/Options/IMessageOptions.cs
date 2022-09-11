@@ -7,7 +7,7 @@ namespace Envelope.ServiceBus.Messages.Options;
 
 public interface IMessageOptions : IValidable
 {
-	ITransactionContext TransactionContext { get; set; }
+	ITransactionController TransactionController { get; set; }
 
 	string ExchangeName { get; set; }
 

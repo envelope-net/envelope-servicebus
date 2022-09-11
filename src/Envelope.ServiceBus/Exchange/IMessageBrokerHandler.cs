@@ -11,6 +11,6 @@ public interface IMessageBrokerHandler<TMessage>
 	Task<MessageHandlerResult> HandleAsync(
 		IExchangeMessage<TMessage> message,
 		ExchangeContext<TMessage> _exchangeContext,
-		ITransactionContext transactionContext,
+		ITransactionController transactionController,
 		CancellationToken cancellationToken);
 }

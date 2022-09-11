@@ -1,4 +1,5 @@
 ﻿using Envelope.Logging;
+using Envelope.Services;
 using Envelope.Trace;
 using Envelope.Transactions;
 
@@ -11,7 +12,7 @@ public interface IJobLogger
 		string jobName,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task<ILogMessage?> LogDebugAsync(
@@ -19,7 +20,7 @@ public interface IJobLogger
 		string jobName,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task<ILogMessage?> LogInformationAsync(
@@ -27,7 +28,7 @@ public interface IJobLogger
 		string jobName,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task<ILogMessage?> LogWarningAsync(
@@ -35,7 +36,7 @@ public interface IJobLogger
 		string jobName,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task<IErrorMessage> LogErrorAsync(
@@ -43,7 +44,7 @@ public interface IJobLogger
 		string jobName,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task<IErrorMessage> LogCriticalAsync(
@@ -51,6 +52,18 @@ public interface IJobLogger
 		string jobName,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
-		ITransactionContext? transactionContext = null,
+		ITransactionController? transactionController = null,
+		CancellationToken cancellationToken = default);
+
+	Task LogResultErrorMessagesAsync(
+		string jobName,
+		IResult result,
+		ITransactionCoordinator? transactionCoordinator = null,
+		CancellationToken cancellationToken = default);
+
+	Task LogResultAllMessagesAsync(
+		string jobName,
+		IResult result,
+		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 }

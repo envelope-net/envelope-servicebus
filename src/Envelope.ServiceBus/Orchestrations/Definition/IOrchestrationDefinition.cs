@@ -11,9 +11,9 @@ public interface IOrchestrationDefinition : IValidable
 
 	int Version { get; }
 
-	string? Description { get; internal set; }
+	string? Description { get; set; }
 
-	bool IsSingleton { get; internal set; }
+	bool IsSingleton { get; set; }
 
 	bool AwaitForHandleLifeCycleEvents { get; }
 
@@ -27,9 +27,9 @@ public interface IOrchestrationDefinition : IValidable
 
 	TimeSpan WorkerIdleTimeout { get; }
 
-	internal void AddStep(IOrchestrationStep step);
+	void AddStepInternal(IOrchestrationStep step);
 
-	internal IOrchestrationInstance? GetOrSetSingletonInstance(Func<IOrchestrationInstance> orchestrationInstanceFactory, string orchestrationKey);
+	IOrchestrationInstance? GetOrSetSingletonInstanceInternal(Func<IOrchestrationInstance> orchestrationInstanceFactory, string orchestrationKey);
 
 	IOrchestrationGraph ToGraph();
 }

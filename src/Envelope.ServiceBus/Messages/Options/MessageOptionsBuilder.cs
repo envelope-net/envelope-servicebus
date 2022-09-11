@@ -13,7 +13,7 @@ public interface IMessageOptionsBuilder<TBuilder, TObject>
 
 	TObject Build(bool finalize = false);
 
-	TBuilder TransactionContext(ITransactionContext transactionContext, bool force = true);
+	TBuilder TransactionController(ITransactionController transactionController, bool force = true);
 
 	TBuilder ExchangeQueueName(string exchangeQueueName, bool force = true);
 
@@ -80,13 +80,13 @@ public abstract class MessageOptionsBuilderBase<TBuilder, TObject> : IMessageOpt
 		return _messageOptions;
 	}
 
-	public TBuilder TransactionContext(ITransactionContext transactionContext, bool force = true)
+	public TBuilder TransactionController(ITransactionController transactionController, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
 
-		if (force || _messageOptions.TransactionContext == null)
-			_messageOptions.TransactionContext = transactionContext;
+		if (force || _messageOptions.TransactionController == null)
+			_messageOptions.TransactionController = transactionController;
 
 		return _builder;
 	}
@@ -285,7 +285,7 @@ public class MessageOptionsBuilder : MessageOptionsBuilderBase<MessageOptionsBui
 			.RoutingKey(messageType.FullName!)
 			.IsAsynchronousInvocation(true)
 			//.ContentEncoding(null)
-			//.TransactionContext(null)
+			//.TransactionController(null)
 			//.IdSession(null)
 			//.ErrorHandling(null)
 			//.Headers(null)

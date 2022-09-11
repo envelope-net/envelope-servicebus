@@ -13,7 +13,7 @@ internal class JobController : IJobController
 	{
 		_serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 		_config = config ?? throw new ArgumentNullException(nameof(config));
-		_jobRegister = config.JobRegister ?? throw new InvalidOperationException($"{nameof(config.JobRegister)} == null");
+		_jobRegister = config.JobRegisterInternal ?? throw new InvalidOperationException($"{nameof(config.JobRegisterInternal)} == null");
 	}
 
 	public Task StartJobAsync(ITraceInfo traceInfo, string name)
@@ -21,7 +21,7 @@ internal class JobController : IJobController
 		if (string.IsNullOrWhiteSpace(name))
 			throw new ArgumentNullException(nameof(name));
 
-		if (!_jobRegister.Jobs.TryGetValue(name, out var job))
+		if (!_jobRegister.JobsInternal.TryGetValue(name, out var job))
 			throw new InvalidOperationException($"No job with name {name} found");
 
 		return job.StartAsync(traceInfo);
@@ -32,15 +32,15 @@ internal class JobController : IJobController
 		if (string.IsNullOrWhiteSpace(name))
 			throw new ArgumentNullException(nameof(name));
 
-		if (!_jobRegister.Jobs.TryGetValue(name, out var job))
+		if (!_jobRegister.JobsInternal.TryGetValue(name, out var job))
 			throw new InvalidOperationException($"No job with name {name} found");
 
 		return job.StopAsync();
 	}
 
-	async Task IJobController.StartAllAsync(ITraceInfo traceInfo)
+	async Task IJobController.StartAllInternalAsync(ITraceInfo traceInfo)
 	{
-		foreach (var job in _jobRegister.Jobs.Values.Where(x => x.Status != JobStatus.Disabled))
+		foreach (var job in _jobRegister.JobsInternal.Values.Where(x => x.Status != JobStatus.Disabled))
 		{
 			try
 			{
@@ -48,7 +48,7 @@ internal class JobController : IJobController
 			}
 			catch (Exception ex)
 			{
-				var detail = nameof(IJobController.StartAllAsync);
+				var detail = nameof(IJobController.StartAllInternalAsync);
 				await 
 					_config
 						.JobLogger(_serviceProvider)
@@ -63,9 +63,9 @@ internal class JobController : IJobController
 		}
 	}
 
-	async Task IJobController.StopAllAsync(ITraceInfo traceInfo)
+	async Task IJobController.StopAllInternalAsync(ITraceInfo traceInfo)
 	{
-		foreach (var job in _jobRegister.Jobs.Values.Where(x => x.Status != JobStatus.Disabled))
+		foreach (var job in _jobRegister.JobsInternal.Values.Where(x => x.Status != JobStatus.Disabled))
 		{
 			try
 			{
@@ -73,7 +73,7 @@ internal class JobController : IJobController
 			}
 			catch (Exception ex)
 			{
-				var detail = nameof(IJobController.StopAllAsync);
+				var detail = nameof(IJobController.StopAllInternalAsync);
 				await
 					_config
 						.JobLogger(_serviceProvider)

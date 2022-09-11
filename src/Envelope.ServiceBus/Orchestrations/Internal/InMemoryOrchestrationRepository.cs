@@ -20,7 +20,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 	private static readonly ConcurrentDictionary<Guid, List<ExecutionPointer>> _executionPointers = new();  //ConcurrentDictionary<IdOrchestrationInstance, List<ExecutionPointer>>
 	private static readonly ConcurrentDictionary<Guid, List<IOrchestrationStep>> _finalizedBranches = new();  //ConcurrentDictionary<IdOrchestrationInstance, List<IOrchestrationStep>>
 
-	public Task CreateNewOrchestrationAsync(IOrchestrationInstance orchestration, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task CreateNewOrchestrationAsync(IOrchestrationInstance orchestration, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	{
 		if (orchestration == null)
 			throw new ArgumentNullException(nameof(orchestration));
@@ -40,7 +40,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.CompletedTask;
 	}
 
-	//public Task<IEnumerable<Guid>> GetRunnableInstancesAsync(DateTime nowUtc, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	//public Task<IEnumerable<Guid>> GetRunnableInstancesAsync(DateTime nowUtc, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	//{
 	//	var now = nowUtc.Ticks;
 	//	return Task.FromResult((IEnumerable<Guid>)_instances
@@ -54,7 +54,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		Guid idOrchestrationInstance,
 		IServiceProvider serviceProvider,
 		IHostInfo hostInfo,
-		ITransactionContext transactionContext,
+		ITransactionController transactionController,
 		CancellationToken cancellationToken = default)
 	{
 		_instances.TryGetValue(idOrchestrationInstance, out var orchestrationInstance);
@@ -65,7 +65,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		string orchestrationKey,
 		IServiceProvider serviceProvider,
 		IHostInfo hostInfo,
-		ITransactionContext transactionContext,
+		ITransactionController transactionController,
 		CancellationToken cancellationToken = default)
 	{
 		_instancesByKey.TryGetValue(orchestrationKey, out var orchestrationInstances);
@@ -76,7 +76,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		Guid idOrchestrationDefinition,
 		IServiceProvider serviceProvider,
 		IHostInfo hostInfo,
-		ITransactionContext transactionContext,
+		ITransactionController transactionController,
 		CancellationToken cancellationToken = default)
 	{
 		return Task.FromResult(_instances.Values.Where(x =>
@@ -84,7 +84,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 			&& (x.Status == OrchestrationStatus.Running || x.Status == OrchestrationStatus.Executing)).ToList());
 	}
 
-	public Task<bool?> IsCompletedOrchestrationAsync(Guid idOrchestrationInstance, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task<bool?> IsCompletedOrchestrationAsync(Guid idOrchestrationInstance, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	{
 		if (_instances.TryGetValue(idOrchestrationInstance, out var orchestrationInstance))
 		{
@@ -99,7 +99,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.FromResult((bool?)null);
 	}
 
-	public Task AddExecutionPointerAsync(ExecutionPointer executionPointer, ITransactionContext transactionContext)
+	public Task AddExecutionPointerAsync(ExecutionPointer executionPointer, ITransactionController transactionController)
 	{
 		if (executionPointer == null)
 			throw new ArgumentNullException(nameof(executionPointer));
@@ -116,7 +116,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.CompletedTask;
 	}
 
-	public Task AddNestedExecutionPointerAsync(ExecutionPointer executionPointer, ExecutionPointer parentExecutionPointer, ITransactionContext transactionContext)
+	public Task AddNestedExecutionPointerAsync(ExecutionPointer executionPointer, ExecutionPointer parentExecutionPointer, ITransactionController transactionController)
 	{
 		if (executionPointer == null)
 			throw new ArgumentNullException(nameof(executionPointer));
@@ -133,7 +133,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.CompletedTask;
 	}
 
-	public Task<List<ExecutionPointer>> GetOrchestrationExecutionPointersAsync(Guid idOrchestrationInstance, ITransactionContext transactionContext)
+	public Task<List<ExecutionPointer>> GetOrchestrationExecutionPointersAsync(Guid idOrchestrationInstance, ITransactionController transactionController)
 	{
 		if (!_executionPointers.TryGetValue(idOrchestrationInstance, out var pointers))
 			throw new InvalidOperationException($"No orchestration with {nameof(idOrchestrationInstance)} = {idOrchestrationInstance} found");
@@ -141,7 +141,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.FromResult(pointers);
 	}
 
-	public Task<ExecutionPointer?> GetStepExecutionPointerAsync(Guid idOrchestrationInstance, Guid idStep, ITransactionContext transactionContext)
+	public Task<ExecutionPointer?> GetStepExecutionPointerAsync(Guid idOrchestrationInstance, Guid idStep, ITransactionController transactionController)
 	{
 		if (!_executionPointers.TryGetValue(idOrchestrationInstance, out var pointers))
 			throw new InvalidOperationException($"No orchestration with {nameof(idOrchestrationInstance)} = {idOrchestrationInstance} found");
@@ -150,7 +150,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.FromResult(pointer);
 	}
 
-	public Task UpdateExecutionPointerAsync(ExecutionPointer executionPointer, IExecutionPointerUpdate update, ITransactionContext transactionContext)
+	public Task UpdateExecutionPointerAsync(ExecutionPointer executionPointer, IExecutionPointerUpdate update, ITransactionController transactionController)
 	{
 		if (executionPointer == null)
 			throw new ArgumentNullException(nameof(executionPointer));
@@ -166,10 +166,10 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.CompletedTask;
 	}
 
-	public Task UpdateOrchestrationStatusAsync(Guid idOrchestrationInstance, OrchestrationStatus status, DateTime? completeTimeUtc, ITransactionContext transactionContext)
+	public Task UpdateOrchestrationStatusAsync(Guid idOrchestrationInstance, OrchestrationStatus status, DateTime? completeTimeUtc, ITransactionController transactionController)
 		=> Task.CompletedTask;
 
-	public Task AddFinalizedBranchAsync(Guid idOrchestrationInstance, IOrchestrationStep finalizedBranch, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task AddFinalizedBranchAsync(Guid idOrchestrationInstance, IOrchestrationStep finalizedBranch, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	{
 		_finalizedBranches.AddOrUpdate(
 			idOrchestrationInstance,
@@ -183,7 +183,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.CompletedTask;
 	}
 
-	public Task<List<Guid>> GetFinalizedBrancheIdsAsync(Guid idOrchestrationInstance, ITransactionContext transactionContext, CancellationToken cancellationToken = default)
+	public Task<List<Guid>> GetFinalizedBrancheIdsAsync(Guid idOrchestrationInstance, ITransactionController transactionController, CancellationToken cancellationToken = default)
 	{
 		_finalizedBranches.TryGetValue(idOrchestrationInstance, out var finalizedBranches);
 		return Task.FromResult(finalizedBranches?.Select(x => x.IdStep).ToList() ?? new List<Guid>());
@@ -199,7 +199,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 
 
 
-	public Task<IResult> SaveNewEventAsync(OrchestrationEvent @event, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	public Task<IResult> SaveNewEventAsync(OrchestrationEvent @event, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken)
 	{
 		var result = new ResultBuilder();
 
@@ -212,7 +212,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.FromResult((IResult)result.Build());
 	}
 
-	public Task<IResult<List<OrchestrationEvent>?>> GetUnprocessedEventsAsync(string orchestrationKey, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	public Task<IResult<List<OrchestrationEvent>?>> GetUnprocessedEventsAsync(string orchestrationKey, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken)
 	{
 		var result = new ResultBuilder<List<OrchestrationEvent>?>();
 
@@ -225,7 +225,7 @@ internal class InMemoryOrchestrationRepository : IOrchestrationRepository, IOrch
 		return Task.FromResult(result.Build());
 	}
 
-	public Task<IResult> SetProcessedUtcAsync(OrchestrationEvent @event, ITraceInfo traceInfo, ITransactionContext transactionContext, CancellationToken cancellationToken)
+	public Task<IResult> SetProcessedUtcAsync(OrchestrationEvent @event, ITraceInfo traceInfo, ITransactionController transactionController, CancellationToken cancellationToken)
 	{
 		var result = new ResultBuilder();
 

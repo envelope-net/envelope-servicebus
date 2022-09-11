@@ -54,7 +54,8 @@ public static class OrchestrationEventHandler
 
 		if (message.Message == null)
 			return context.MessageHandlerResultFactory.FromResult(
-				result.WithInvalidOperationException(traceInfo, $"{nameof(message)}.{nameof(message.Message)} == null"));
+				result.WithInvalidOperationException(traceInfo, $"{nameof(message)}.{nameof(message.Message)} == null"),
+				traceInfo);
 
 		var @event = message.Message;
 		@event.Id = message.MessageId;
@@ -62,15 +63,17 @@ public static class OrchestrationEventHandler
 		var orchestrationRepository = context.ServiceProvider?.GetRequiredService<IOrchestrationRepository>();
 		if (orchestrationRepository == null)
 			return context.MessageHandlerResultFactory.FromResult(
-				result.WithInvalidOperationException(traceInfo, $"{nameof(orchestrationRepository)} == null"));
+				result.WithInvalidOperationException(traceInfo, $"{nameof(orchestrationRepository)} == null"),
+				traceInfo);
 
-		var saveResult = await orchestrationRepository.SaveNewEventAsync(@event, traceInfo, context.TransactionContext, cancellationToken).ConfigureAwait(false);
+		var saveResult = await orchestrationRepository.SaveNewEventAsync(@event, traceInfo, context.TransactionController, cancellationToken).ConfigureAwait(false);
 		result.MergeHasError(saveResult);
 
 		//var executionPointerFactory = context.ServiceProvider?.GetRequiredService<IExecutionPointerFactory>();
 		//if (executionPointerFactory == null)
 		//	return context.MessageHandlerResultFactory.FromResult(
-		//		result.WithInvalidOperationException(traceInfo, $"{nameof(executionPointerFactory)} == null"));
+		//		result.WithInvalidOperationException(traceInfo, $"{nameof(executionPointerFactory)} == null"),
+		//		traceInfo);
 
 		//var executionPointer = executionPointerFactory.BuildNextPointer(
 		//	orchestrationInstance.OrchestrationDefinition,
@@ -81,14 +84,14 @@ public static class OrchestrationEventHandler
 		//	await _orchestrationRepository.AddExecutionPointerAsync(orchestrationInstance.IdOrchestrationInstance, executionPointer).ConfigureAwait(false);
 
 
-		var orchestrationInstances = await orchestrationRepository.GetOrchestrationInstancesAsync(@event.OrchestrationKey, context.ServiceProvider!, context.ServiceBusOptions.HostInfo, context.TransactionContext, default).ConfigureAwait(false);
+		var orchestrationInstances = await orchestrationRepository.GetOrchestrationInstancesAsync(@event.OrchestrationKey, context.ServiceProvider!, context.ServiceBusOptions!.HostInfo, context.TransactionController, default).ConfigureAwait(false);
 		if (orchestrationInstances == null)
-			return context.MessageHandlerResultFactory.FromResult(result.Build());
+			return context.MessageHandlerResultFactory.FromResult(result.Build(), traceInfo);
 
 		foreach (var instance in orchestrationInstances)
 			if (instance.Status == OrchestrationStatus.Running || instance.Status == OrchestrationStatus.Executing)
-				await instance.StartOrchestrationWorkerAsync().ConfigureAwait(false);
+				await instance.StartOrchestrationWorkerInternalAsync().ConfigureAwait(false);
 
-		return context.MessageHandlerResultFactory.FromResult(result.Build());
+		return context.MessageHandlerResultFactory.FromResult(result.Build(), traceInfo);
 	}
 }

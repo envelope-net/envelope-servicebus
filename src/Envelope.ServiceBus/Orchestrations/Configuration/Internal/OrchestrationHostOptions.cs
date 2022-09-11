@@ -14,8 +14,6 @@ internal class OrchestrationHostOptions : IOrchestrationHostOptions, IValidable
 {
 	public IHostInfo HostInfo { get; }
 	public string HostName { get; }
-	public ITransactionManagerFactory TransactionManagerFactory { get; }
-	public Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; }
 	public IOrchestrationRegistry OrchestrationRegistry { get; set; }
 	public IDistributedLockProvider DistributedLockProvider { get; }
 	public IErrorHandlingController ErrorHandlingController { get; }
@@ -38,8 +36,6 @@ internal class OrchestrationHostOptions : IOrchestrationHostOptions, IValidable
 
 		HostInfo = hostInfo ?? throw new ArgumentNullException(nameof(hostInfo));
 		HostName = hostInfo.HostName;
-		TransactionManagerFactory = config.TransactionManagerFactory;
-		TransactionContextFactory = config.TransactionContextFactory;
 		OrchestrationRegistry = config.OrchestrationRegistry(serviceProvider);
 		ExecutionPointerFactory = config.ExecutionPointerFactory;
 		OrchestrationRepositoryFactory = config.OrchestrationRepositoryFactory;

@@ -31,7 +31,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 		long callEndTicks;
 		decimal methodCallElapsedMilliseconds = -1;
 		Type? messageType = message?.GetType();
-		var traceInfo = new TraceInfoBuilder(handlerContext.HostInfo.HostName, TraceFrame.Create(), handlerContext.TraceInfo).Build();
+		var traceInfo = new TraceInfoBuilder(handlerContext.ServiceProvider!, TraceFrame.Create(), handlerContext.TraceInfo).Build();
 		using var scope = Logger.BeginMethodCallScope(traceInfo);
 
 		Logger.LogTraceMessage(
@@ -70,8 +70,8 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 						Logger.LogErrorMessage(errMsg, false);
 					}
 
-					if (handlerContext.TransactionContext != null)
-						handlerContext.TransactionContext.ScheduleRollback(result.ToException()!.ToStringTrace());
+					if (handlerContext.TransactionController != null)
+						handlerContext.TransactionController.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 				else
 				{
@@ -86,8 +86,8 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 				callEndTicks = StaticWatch.CurrentTicks;
 				methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
-				if (handlerContext.TransactionContext != null)
-					handlerContext.TransactionContext.ScheduleRollback(executeEx.ToStringTrace());
+				if (handlerContext.TransactionController != null)
+					handlerContext.TransactionController.ScheduleRollback(executeEx.ToStringTrace());
 
 				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 

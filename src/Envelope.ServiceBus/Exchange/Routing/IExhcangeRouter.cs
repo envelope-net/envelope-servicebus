@@ -21,7 +21,7 @@ public interface IExhcangeRouter : IValidable
 	/// <summary>
 	/// For <see cref="ExchangeType.Headers"/> exchange type
 	/// </summary>
-	Dictionary<string, object>? Headers { get; internal set; } //Dictionary<Key, Value>
+	Dictionary<string, object>? Headers { get; set; } //Dictionary<Key, Value>
 
 	bool MatcheHeaders(IEnumerable<KeyValuePair<string, object>>? headers);
 }

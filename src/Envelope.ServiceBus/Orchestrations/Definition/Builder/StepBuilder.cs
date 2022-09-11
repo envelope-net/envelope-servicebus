@@ -320,7 +320,7 @@ public class StepBuilder<TStepBody, TData> : IStepBuilder<TStepBody, TData>
 		var name = "if";
 		var ifStep = new SyncOrchestrationStep<IfStepBody>(name)
 		{
-			SetInputParameters = (stepBody, data, context) => ((IfStepBody)stepBody).Condition = condition
+			SetInputParametersInternal = (stepBody, data, context) => ((IfStepBody)stepBody).Condition = condition
 		};
 
 		if (options != null)
@@ -382,7 +382,7 @@ public class StepBuilder<TStepBody, TData> : IStepBuilder<TStepBody, TData>
 		var name = "if-else";
 		var ifElseStep = new SyncOrchestrationStep<IfElseStepBody>(name)
 		{
-			SetInputParameters = (stepBody, data, context) => ((IfElseStepBody)stepBody).Condition = condition
+			SetInputParametersInternal = (stepBody, data, context) => ((IfElseStepBody)stepBody).Condition = condition
 		};
 
 		if (options != null)
@@ -480,7 +480,7 @@ public class StepBuilder<TStepBody, TData> : IStepBuilder<TStepBody, TData>
 		var name = "switch";
 		var switchStep = new SyncOrchestrationStep<SwitchStepBody>(name)
 		{
-			SetInputParameters = (stepBody, data, context) => ((SwitchStepBody)stepBody).Case = @case
+			SetInputParametersInternal = (stepBody, data, context) => ((SwitchStepBody)stepBody).Case = @case
 		};
 
 		if (options != null)
@@ -548,7 +548,7 @@ public class StepBuilder<TStepBody, TData> : IStepBuilder<TStepBody, TData>
 		var name = "while";
 		var whileStep = new SyncOrchestrationStep<WhileStepBody>(name)
 		{
-			SetInputParameters = (stepBody, data, context) => ((WhileStepBody)stepBody).Condition = condition
+			SetInputParametersInternal = (stepBody, data, context) => ((WhileStepBody)stepBody).Condition = condition
 		};
 
 		if (options != null)
@@ -680,7 +680,7 @@ public class StepBuilder<TStepBody, TData> : IStepBuilder<TStepBody, TData>
 		var name = $"wait for '{eventName}'";
 		var waitForEventStep = new SyncOrchestrationStep<WaitForEventStepBody>(name)
 		{
-			SetInputParameters = (stepBody, data, context) =>
+			SetInputParametersInternal = (stepBody, data, context) =>
 			{
 				var waitForEventStepBody = (WaitForEventStepBody)stepBody;
 				waitForEventStepBody.EventName = eventName;
@@ -715,7 +715,7 @@ public class StepBuilder<TStepBody, TData> : IStepBuilder<TStepBody, TData>
 
 		var delayStep = new SyncOrchestrationStep<DelayStepBody>(name)
 		{
-			SetInputParameters = (stepBody, data, context) => ((DelayStepBody)stepBody).DelayInterval = delayInterval
+			SetInputParametersInternal = (stepBody, data, context) => ((DelayStepBody)stepBody).DelayInterval = delayInterval
 		};
 
 		if (options != null)
@@ -739,7 +739,7 @@ public class StepBuilder<TStepBody, TData> : IStepBuilder<TStepBody, TData>
 
 		if (inputAction != null)
 		{
-			newOrchestrationStep.SetInputParameters = (stepBody, data, context) =>
+			newOrchestrationStep.SetInputParametersInternal = (stepBody, data, context) =>
 			{
 				inputAction.Invoke((TData)data, context);
 			};

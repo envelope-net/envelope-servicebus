@@ -4,9 +4,9 @@ namespace Envelope.ServiceBus.Jobs;
 
 public interface IJobController
 {
-	internal Task StartAllAsync(ITraceInfo traceInfo);
+	Task StartAllInternalAsync(ITraceInfo traceInfo);
 
-	internal Task StopAllAsync(ITraceInfo traceInfo);
+	Task StopAllInternalAsync(ITraceInfo traceInfo);
 
 	Task StartJobAsync(ITraceInfo traceInfo, string name);
 

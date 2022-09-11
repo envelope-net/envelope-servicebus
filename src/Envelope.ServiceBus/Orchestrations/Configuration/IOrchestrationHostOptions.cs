@@ -12,8 +12,6 @@ public interface IOrchestrationHostOptions : IValidable
 {
 	IHostInfo HostInfo { get; }
 	string HostName { get; }
-	ITransactionManagerFactory TransactionManagerFactory { get; }
-	Func<IServiceProvider, ITransactionManager, Task<ITransactionContext>> TransactionContextFactory { get; }
 	IOrchestrationRegistry OrchestrationRegistry { get; } //OrchestrationController, OrchestrationExecutor
 	IDistributedLockProvider DistributedLockProvider { get; } //OrchestrationController, OrchestrationExecutor
 	IErrorHandlingController ErrorHandlingController { get; }

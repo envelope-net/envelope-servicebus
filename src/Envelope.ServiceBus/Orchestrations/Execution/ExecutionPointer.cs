@@ -101,7 +101,7 @@ public class ExecutionPointer : IExecutionPointer
 		return this;
 	}
 
-	ExecutionPointer IExecutionPointer.Update(IExecutionPointerUpdate update)
+	ExecutionPointer IExecutionPointer.UpdateInternal(IExecutionPointerUpdate update)
 		=> Update(update);
 
 	public IOrchestrationStep GetStep()
