@@ -268,7 +268,7 @@ internal class EventHandlerRegistry : IEventRegistry, IEventHandlerRegistry
 		var messageType =
 			new MessageType
 			(
-				eventType.FullName ?? eventType.Name,
+				eventType.FullName ?? eventType.ToFriendlyFullName() ?? eventType.Name,
 				resolvedTypeString,
 				messageMetaType
 			);
