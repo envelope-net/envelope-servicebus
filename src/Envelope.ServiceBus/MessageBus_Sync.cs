@@ -1,19 +1,13 @@
-﻿using Envelope.Exceptions;
-using Envelope.ServiceBus.Configuration;
-using Envelope.ServiceBus.Configuration.Internal;
-using Envelope.ServiceBus.Hosts;
+﻿using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Internals;
 using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Processors;
 using Envelope.ServiceBus.Messages;
-using Envelope.ServiceBus.Messages.Internal;
 using Envelope.ServiceBus.Messages.Options;
 using Envelope.Services;
 using Envelope.Services.Transactions;
 using Envelope.Trace;
-using Envelope.Transactions;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
 namespace Envelope.ServiceBus;
@@ -71,10 +65,10 @@ public partial class MessageBus : IMessageBus
 			isLocalTransactionCoordinator = true;
 		}
 
-		return Send(message, options, isLocalTransactionCoordinator, traceInfo);
+		return SendInternal(message, options, isLocalTransactionCoordinator, traceInfo);
 	}
 
-	protected IResult<Guid> Send(
+	protected IResult<Guid> SendInternal(
 		IRequestMessage message,
 		IMessageOptions options,
 		bool isLocalTransactionCoordinator,
@@ -97,12 +91,14 @@ public partial class MessageBus : IMessageBus
 		traceInfo = TraceInfo.Create(traceInfo);
 
 		var transactionController = options.TransactionController;
+		VoidMessageHandlerProcessor? handlerProcessor = null;
+		MessageHandlerContext? handlerContext = null;
 
 		return ServiceTransactionInterceptor.ExecuteAction(
 			false,
 			traceInfo,
 			transactionController,
-			(traceInfo, transactionController) =>
+			(traceInfo, transactionController, unhandledExceptionDetail) =>
 			{
 				var requestMessageType = message.GetType();
 
@@ -117,7 +113,7 @@ public partial class MessageBus : IMessageBus
 				if (savedMessage.Message == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(savedMessage)}.{nameof(savedMessage.Message)} == null | {nameof(requestMessageType)} = {requestMessageType.FullName}");
 
-				var handlerContext = MessageHandlerRegistry.CreateMessageHandlerContext(requestMessageType, ServiceProvider);
+				handlerContext = MessageHandlerRegistry.CreateMessageHandlerContext(requestMessageType, ServiceProvider);
 
 				if (handlerContext == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(handlerContext)} == null| {nameof(requestMessageType)} = {requestMessageType.FullName}");
@@ -148,7 +144,7 @@ public partial class MessageBus : IMessageBus
 
 				handlerContext.Initialize(MessageStatus.Created, null);
 
-				var handlerProcessor = (VoidMessageHandlerProcessor)_asyncVoidMessageHandlerProcessors.GetOrAdd(
+				handlerProcessor = (VoidMessageHandlerProcessor)_asyncVoidMessageHandlerProcessors.GetOrAdd(
 					requestMessageType,
 					requestMessageType =>
 					{
@@ -166,7 +162,7 @@ public partial class MessageBus : IMessageBus
 				if (handlerProcessor == null)
 					return result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {requestMessageType}");
 
-				var handlerResult = handlerProcessor.Handle(savedMessage.Message, handlerContext, ServiceProvider);
+				var handlerResult = handlerProcessor.Handle(savedMessage.Message, handlerContext, ServiceProvider, unhandledExceptionDetail);
 				result.MergeAllHasError(handlerResult);
 
 				if (result.HasError())
@@ -193,20 +189,29 @@ public partial class MessageBus : IMessageBus
 						detail,
 						null);
 
+				if (handlerProcessor != null)
+				{
+					try
+					{
+						handlerProcessor.OnError(traceInfo, exception, null, detail, message, handlerContext, ServiceProvider);
+					}
+					catch { }
+				}
+
 				return errorMessage;
 			},
 			null,
 			isLocalTransactionCoordinator);
 	}
 
-	public IResult<ISendResponse<TResponse>> Send<TResponse>(
+	public IResult<TResponse> Send<TResponse>(
 		IRequestMessage<TResponse> message,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
 		=> Send(message, null!, memberName, sourceFilePath, sourceLineNumber);
 
-	public IResult<ISendResponse<TResponse>> Send<TResponse>(
+	public IResult<TResponse> Send<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		[CallerMemberName] string memberName = "",
@@ -223,12 +228,70 @@ public partial class MessageBus : IMessageBus
 				sourceFilePath,
 				sourceLineNumber));
 
-	public IResult<ISendResponse<TResponse>> Send<TResponse>(
+	public IResult<TResponse> Send<TResponse>(
 		IRequestMessage<TResponse> message,
 		ITraceInfo traceInfo)
 		=> Send(message, null, traceInfo);
 
-	public IResult<ISendResponse<TResponse>> Send<TResponse>(
+	public IResult<TResponse> Send<TResponse>(
+		IRequestMessage<TResponse> message,
+		Action<MessageOptionsBuilder>? optionsBuilder,
+		ITraceInfo traceInfo)
+	{
+		var result = new ResultBuilder<TResponse>();
+		if (message == null)
+			return result.WithArgumentNullException(traceInfo, nameof(message));
+
+		var builder = MessageOptionsBuilder.GetDefaultBuilder(message.GetType());
+		optionsBuilder?.Invoke(builder);
+		var options = builder.Build(true);
+
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
+		{
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
+		}
+
+		var sendResult = SendInternal(message, options, isLocalTransactionCoordinator, traceInfo);
+		result.MergeAllHasError(sendResult);
+
+		if (sendResult.Data != null)
+			result.WithData(sendResult.Data.Response);
+
+		return result.Build();
+	}
+
+	public IResult<ISendResponse<TResponse>> SendWithMessageId<TResponse>(
+		IRequestMessage<TResponse> message,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0)
+		=> SendWithMessageId(message, null!, memberName, sourceFilePath, sourceLineNumber);
+
+	public IResult<ISendResponse<TResponse>> SendWithMessageId<TResponse>(
+		IRequestMessage<TResponse> message,
+		Action<MessageOptionsBuilder> optionsBuilder,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0)
+		=> SendWithMessageId(
+			message,
+			optionsBuilder,
+			TraceInfo.Create(
+				ServiceProvider.GetRequiredService<IApplicationContext>().TraceInfo,
+				null, //MessageBusOptions.HostInfo.HostName,
+				null,
+				memberName,
+				sourceFilePath,
+				sourceLineNumber));
+
+	public IResult<ISendResponse<TResponse>> SendWithMessageId<TResponse>(
+		IRequestMessage<TResponse> message,
+		ITraceInfo traceInfo)
+		=> SendWithMessageId(message, null, traceInfo);
+
+	public IResult<ISendResponse<TResponse>> SendWithMessageId<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
 		ITraceInfo traceInfo)
@@ -250,10 +313,10 @@ public partial class MessageBus : IMessageBus
 			isLocalTransactionCoordinator = true;
 		}
 
-		return Send(message, options, isLocalTransactionCoordinator, traceInfo);
+		return SendInternal(message, options, isLocalTransactionCoordinator, traceInfo);
 	}
 
-	protected IResult<ISendResponse<TResponse>> Send<TResponse>(
+	protected IResult<ISendResponse<TResponse>> SendInternal<TResponse>(
 		IRequestMessage<TResponse> message,
 		IMessageOptions options,
 		bool isLocalTransactionCoordinator,
@@ -276,12 +339,14 @@ public partial class MessageBus : IMessageBus
 		traceInfo = TraceInfo.Create(traceInfo);
 
 		var transactionController = options.TransactionController;
+		MessageHandlerProcessor<TResponse>? handlerProcessor = null;
+		MessageHandlerContext? handlerContext = null;
 
 		return ServiceTransactionInterceptor.ExecuteAction(
 			false,
 			traceInfo,
 			transactionController,
-			(traceInfo, transactionController) =>
+			(traceInfo, transactionController, unhandledExceptionDetail) =>
 			{
 				var requestMessageType = message.GetType();
 
@@ -296,7 +361,7 @@ public partial class MessageBus : IMessageBus
 				if (savedMessage.Message == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(savedMessage)}.{nameof(savedMessage.Message)} == null | {nameof(requestMessageType)} = {requestMessageType.FullName}");
 
-				var handlerContext = MessageHandlerRegistry.CreateMessageHandlerContext(requestMessageType, ServiceProvider);
+				handlerContext = MessageHandlerRegistry.CreateMessageHandlerContext(requestMessageType, ServiceProvider);
 
 				if (handlerContext == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(handlerContext)} == null| {nameof(requestMessageType)} = {requestMessageType.FullName}");
@@ -310,7 +375,7 @@ public partial class MessageBus : IMessageBus
 				handlerContext.DisabledMessagePersistence = options.DisabledMessagePersistence;
 				handlerContext.ThrowNoHandlerException = true;
 
-				var handlerProcessor = (MessageHandlerProcessor<TResponse>)_asyncVoidMessageHandlerProcessors.GetOrAdd(
+				handlerProcessor = (MessageHandlerProcessor<TResponse>)_asyncVoidMessageHandlerProcessors.GetOrAdd(
 					requestMessageType,
 					requestMessageType =>
 					{
@@ -328,7 +393,7 @@ public partial class MessageBus : IMessageBus
 				if (handlerProcessor == null)
 					return result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {requestMessageType}");
 
-				var handlerResult = handlerProcessor.Handle(savedMessage.Message, handlerContext, ServiceProvider, traceInfo, SaveResponseMessage);
+				var handlerResult = handlerProcessor.Handle(savedMessage.Message, handlerContext, ServiceProvider, traceInfo, SaveResponseMessage, unhandledExceptionDetail);
 				result.MergeAllWithData(handlerResult);
 
 				if (result.HasError())
@@ -354,6 +419,15 @@ public partial class MessageBus : IMessageBus
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						null);
+
+				if (handlerProcessor != null)
+				{
+					try
+					{
+						handlerProcessor.OnError(traceInfo, exception, null, detail, message, handlerContext, ServiceProvider);
+					}
+					catch { }
+				}
 
 				return errorMessage;
 			},

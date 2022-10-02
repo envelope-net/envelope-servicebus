@@ -6,7 +6,6 @@ using Envelope.ServiceBus.Internals;
 using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Processors;
 using Envelope.ServiceBus.Messages;
-using Envelope.ServiceBus.Messages.Internal;
 using Envelope.ServiceBus.Messages.Options;
 using Envelope.Services;
 using Envelope.Services.Transactions;
@@ -86,7 +85,7 @@ public partial class MessageBus : IMessageBus
 		CancellationToken cancellationToken = default)
 		=> SendAsync(message, (Action<MessageOptionsBuilder>?)null, traceInfo, cancellationToken);
 
-	public async Task<IResult<Guid>> SendAsync(
+	public Task<IResult<Guid>> SendAsync(
 		IRequestMessage message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
 		ITraceInfo traceInfo,
@@ -95,7 +94,7 @@ public partial class MessageBus : IMessageBus
 		if (message == null)
 		{
 			var result = new ResultBuilder<Guid>();
-			return result.WithArgumentNullException(traceInfo, nameof(message));
+			return Task.FromResult(result.WithArgumentNullException(traceInfo, nameof(message)));
 		}
 
 		var builder = MessageOptionsBuilder.GetDefaultBuilder(message.GetType());
@@ -109,10 +108,10 @@ public partial class MessageBus : IMessageBus
 			isLocalTransactionCoordinator = true;
 		}
 
-		return await SendAsync(message, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
+		return SendInternalAsync(message, options, isLocalTransactionCoordinator, traceInfo, cancellationToken);
 	}
 
-	protected async Task<IResult<Guid>> SendAsync(
+	protected async Task<IResult<Guid>> SendInternalAsync(
 		IRequestMessage message,
 		IMessageOptions options,
 		bool isLocalTransactionCoordinator,
@@ -136,12 +135,14 @@ public partial class MessageBus : IMessageBus
 		traceInfo = TraceInfo.Create(traceInfo);
 
 		var transactionController = options.TransactionController;
+		AsyncVoidMessageHandlerProcessor? handlerProcessor = null;
+		MessageHandlerContext? handlerContext = null;
 
 		return await ServiceTransactionInterceptor.ExecuteActionAsync(
 			false,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var requestMessageType = message.GetType();
 
@@ -156,7 +157,7 @@ public partial class MessageBus : IMessageBus
 				if (savedMessage.Message == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(savedMessage)}.{nameof(savedMessage.Message)} == null | {nameof(requestMessageType)} = {requestMessageType.FullName}");
 
-				var handlerContext = MessageHandlerRegistry.CreateMessageHandlerContext(requestMessageType, ServiceProvider);
+				handlerContext = MessageHandlerRegistry.CreateMessageHandlerContext(requestMessageType, ServiceProvider);
 
 				if (handlerContext == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(handlerContext)} == null| {nameof(requestMessageType)} = {requestMessageType.FullName}");
@@ -187,7 +188,7 @@ public partial class MessageBus : IMessageBus
 
 				handlerContext.Initialize(MessageStatus.Created, null);
 
-				var handlerProcessor = (AsyncVoidMessageHandlerProcessor)_asyncVoidMessageHandlerProcessors.GetOrAdd(
+				handlerProcessor = (AsyncVoidMessageHandlerProcessor)_asyncVoidMessageHandlerProcessors.GetOrAdd(
 					requestMessageType,
 					requestMessageType =>
 					{
@@ -205,7 +206,7 @@ public partial class MessageBus : IMessageBus
 				if (handlerProcessor == null)
 					return result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {requestMessageType}");
 
-				var handlerResult = await handlerProcessor.HandleAsync(savedMessage.Message, handlerContext, ServiceProvider, cancellationToken).ConfigureAwait(false);
+				var handlerResult = await handlerProcessor.HandleAsync(savedMessage.Message, handlerContext, ServiceProvider, unhandledExceptionDetail, cancellationToken).ConfigureAwait(false);
 				result.MergeAllHasError(handlerResult);
 
 				if (result.HasError())
@@ -233,6 +234,15 @@ public partial class MessageBus : IMessageBus
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 
+				if (handlerProcessor != null)
+				{
+					try
+					{
+						await handlerProcessor.OnErrorAsync(traceInfo, exception, null, detail, message, handlerContext, ServiceProvider, cancellationToken);
+					}
+					catch { }
+				}
+
 				return errorMessage;
 			},
 			null,
@@ -240,7 +250,7 @@ public partial class MessageBus : IMessageBus
 			cancellationToken).ConfigureAwait(false);
 	}
 
-	public Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	public Task<IResult<TResponse>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
@@ -248,7 +258,7 @@ public partial class MessageBus : IMessageBus
 		[CallerLineNumber] int sourceLineNumber = 0)
 		=> SendAsync(message, null!, cancellationToken, memberName, sourceFilePath, sourceLineNumber);
 
-	public Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	public Task<IResult<TResponse>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		CancellationToken cancellationToken = default,
@@ -267,13 +277,77 @@ public partial class MessageBus : IMessageBus
 				sourceLineNumber),
 			cancellationToken);
 
-	public Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	public Task<IResult<TResponse>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 		=> SendAsync(message, null, traceInfo, cancellationToken);
 
-	public async Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	public async Task<IResult<TResponse>> SendAsync<TResponse>(
+		IRequestMessage<TResponse> message,
+		Action<MessageOptionsBuilder>? optionsBuilder,
+		ITraceInfo traceInfo,
+		CancellationToken cancellationToken = default)
+	{
+		var result = new ResultBuilder<TResponse>();
+
+		if (message == null)
+			return result.WithArgumentNullException(traceInfo, nameof(message));
+
+		var builder = MessageOptionsBuilder.GetDefaultBuilder(message.GetType());
+		optionsBuilder?.Invoke(builder);
+		var options = builder.Build(true);
+
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
+		{
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
+		}
+
+		var sendResult = await SendInternalAsync(message, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
+		result.MergeAllHasError(sendResult);
+
+		if (sendResult.Data != null)
+			result.WithData(sendResult.Data.Response);
+
+		return result.Build();
+	}
+
+	public Task<IResult<ISendResponse<TResponse>>> SendWithMessageIdAsync<TResponse>(
+		IRequestMessage<TResponse> message,
+		CancellationToken cancellationToken = default,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0)
+		=> SendWithMessageIdAsync(message, null!, cancellationToken, memberName, sourceFilePath, sourceLineNumber);
+
+	public Task<IResult<ISendResponse<TResponse>>> SendWithMessageIdAsync<TResponse>(
+		IRequestMessage<TResponse> message,
+		Action<MessageOptionsBuilder> optionsBuilder,
+		CancellationToken cancellationToken = default,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0)
+		=> SendWithMessageIdAsync(
+			message,
+			optionsBuilder,
+			TraceInfo.Create(
+				ServiceProvider.GetRequiredService<IApplicationContext>().TraceInfo,
+				null, //MessageBusOptions.HostInfo.HostName,
+				null,
+				memberName,
+				sourceFilePath,
+				sourceLineNumber),
+			cancellationToken);
+
+	public Task<IResult<ISendResponse<TResponse>>> SendWithMessageIdAsync<TResponse>(
+		IRequestMessage<TResponse> message,
+		ITraceInfo traceInfo,
+		CancellationToken cancellationToken = default)
+		=> SendWithMessageIdAsync(message, null, traceInfo, cancellationToken);
+
+	public Task<IResult<ISendResponse<TResponse>>> SendWithMessageIdAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
 		ITraceInfo traceInfo,
@@ -282,7 +356,7 @@ public partial class MessageBus : IMessageBus
 		if (message == null)
 		{
 			var result = new ResultBuilder<ISendResponse<TResponse>>();
-			return result.WithArgumentNullException(traceInfo, nameof(message));
+			return Task.FromResult(result.WithArgumentNullException(traceInfo, nameof(message)));
 		}
 
 		var builder = MessageOptionsBuilder.GetDefaultBuilder(message.GetType());
@@ -296,10 +370,10 @@ public partial class MessageBus : IMessageBus
 			isLocalTransactionCoordinator = true;
 		}
 
-		return await SendAsync(message, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
+		return SendInternalAsync(message, options, isLocalTransactionCoordinator, traceInfo, cancellationToken);
 	}
 
-	protected async Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	protected async Task<IResult<ISendResponse<TResponse>>> SendInternalAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		IMessageOptions options,
 		bool isLocalTransactionCoordinator,
@@ -323,12 +397,14 @@ public partial class MessageBus : IMessageBus
 		traceInfo = TraceInfo.Create(traceInfo);
 
 		var transactionController = options.TransactionController;
+		AsyncMessageHandlerProcessor<TResponse>? handlerProcessor = null;
+		MessageHandlerContext? handlerContext = null;
 
 		return await ServiceTransactionInterceptor.ExecuteActionAsync(
 			false,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var requestMessageType = message.GetType();
 
@@ -343,7 +419,7 @@ public partial class MessageBus : IMessageBus
 				if (savedMessage.Message == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(savedMessage)}.{nameof(savedMessage.Message)} == null | {nameof(requestMessageType)} = {requestMessageType.FullName}");
 
-				var handlerContext = MessageHandlerRegistry.CreateMessageHandlerContext(requestMessageType, ServiceProvider);
+				handlerContext = MessageHandlerRegistry.CreateMessageHandlerContext(requestMessageType, ServiceProvider);
 
 				if (handlerContext == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(handlerContext)} == null| {nameof(requestMessageType)} = {requestMessageType.FullName}");
@@ -357,7 +433,7 @@ public partial class MessageBus : IMessageBus
 				handlerContext.DisabledMessagePersistence = options.DisabledMessagePersistence;
 				handlerContext.ThrowNoHandlerException = true;
 
-				var handlerProcessor = (AsyncMessageHandlerProcessor<TResponse>)_asyncVoidMessageHandlerProcessors.GetOrAdd(
+				handlerProcessor = (AsyncMessageHandlerProcessor<TResponse>)_asyncVoidMessageHandlerProcessors.GetOrAdd(
 					requestMessageType,
 					requestMessageType =>
 					{
@@ -375,7 +451,7 @@ public partial class MessageBus : IMessageBus
 				if (handlerProcessor == null)
 					return result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {requestMessageType}");
 
-				var handlerResult = await handlerProcessor.HandleAsync(savedMessage.Message, handlerContext, ServiceProvider, traceInfo, SaveResponseMessageAsync, cancellationToken).ConfigureAwait(false);
+				var handlerResult = await handlerProcessor.HandleAsync(savedMessage.Message, handlerContext, ServiceProvider, traceInfo, SaveResponseMessageAsync, unhandledExceptionDetail, cancellationToken).ConfigureAwait(false);
 				result.MergeAllWithData(handlerResult);
 
 				if (result.HasError())
@@ -402,6 +478,15 @@ public partial class MessageBus : IMessageBus
 						detail,
 						null,
 						cancellationToken: default).ConfigureAwait(false);
+
+				if (handlerProcessor != null)
+				{
+					try
+					{
+						await handlerProcessor.OnErrorAsync(traceInfo, exception, null, detail, message, handlerContext, ServiceProvider, cancellationToken);
+					}
+					catch { }
+				}
 
 				return errorMessage;
 			},

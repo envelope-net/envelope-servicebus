@@ -12,6 +12,17 @@ internal abstract class AsyncEventHandlerProcessor : EventHandlerProcessorBase
 		IEvent @event,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
+		string? unhandledExceptionDetail,
+		CancellationToken cancellationToken = default);
+
+	public abstract Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		IEvent? @event,
+		IMessageHandlerContext? handlerContext,
+		IServiceProvider serviceProvider,
 		CancellationToken cancellationToken = default);
 }
 
@@ -32,13 +43,15 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 		IEvent @event,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
+		string? unhandledExceptionDetail,
 		CancellationToken cancellationToken = default)
-		=> HandleAsync((TEvent)@event, (TContext)handlerContext, serviceProvider, cancellationToken);
+		=> HandleAsync((TEvent)@event, (TContext)handlerContext, serviceProvider, unhandledExceptionDetail, cancellationToken);
 
 	public async Task<IResult> HandleAsync(
 		TEvent @event,
 		TContext handlerContext,
 		IServiceProvider serviceProvider,
+		string? unhandledExceptionDetail,
 		CancellationToken cancellationToken = default)
 	{
 		List<IAsyncEventHandler<TEvent, TContext>>? handlers = null;
@@ -73,14 +86,106 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 				}
 
 				resultBuilder.Merge(result);
+
+				if (resultBuilder.HasError())
+				{
+					var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
+					try
+					{
+						await handler.OnErrorAsync(traceInfo, null, resultBuilder.Build(), unhandledExceptionDetail, @event, handlerContext, cancellationToken).ConfigureAwait(false);
+					}
+					catch (Exception onErrorEx)
+					{
+						try
+						{
+							await handlerContext.LogErrorAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
+						}
+						catch { }
+					}
+				}
 			}
 			catch (Exception exHandler)
 			{
-				await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
+				var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
+				try
+				{
+					await handlerContext.LogErrorAsync(traceInfo, null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
+				}
+				catch { }
+
+				if (handler != null)
+				{
+					try
+					{
+						await handler.OnErrorAsync(traceInfo, exHandler, null, unhandledExceptionDetail, @event, handlerContext, cancellationToken).ConfigureAwait(false);
+					}
+					catch (Exception onErrorEx)
+					{
+						try
+						{
+							await handlerContext.LogErrorAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
+						}
+						catch { }
+					}
+				}
+
 				throw;
 			}
 		}
 
 		return resultBuilder.Build();
+	}
+
+	public override Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		IEvent? @event,
+		IMessageHandlerContext? handlerContext,
+		IServiceProvider serviceProvider,
+		CancellationToken cancellationToken = default)
+		=> OnErrorAsync(traceInfo, exception, errorResult, detail, (TEvent?)@event, (TContext?)handlerContext, serviceProvider, cancellationToken);
+
+	public async Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		TEvent? @event,
+		TContext? handlerContext,
+		IServiceProvider serviceProvider,
+		CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			var handlers = CreateHandlers(serviceProvider, true).Select(x => (IAsyncEventHandler<TEvent, TContext>)x).ToList();
+
+			foreach (var handler in handlers)
+			{
+				try
+				{
+					await handler.OnErrorAsync(traceInfo, exception, errorResult, detail, @event, handlerContext, cancellationToken);
+				}
+				catch (Exception handlerOnErrorEx)
+				{
+					try
+					{
+						if (handlerContext != null)
+							handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(handlerOnErrorEx), "OnErrorAsync1: PublishAsync<IEvent> error", null);
+					}
+					catch { }
+				}
+			}
+		}
+		catch (Exception onErrorEx)
+		{
+			try
+			{
+				if (handlerContext != null)
+					await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync2: PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
+			}
+			catch { }
+		}
 	}
 }

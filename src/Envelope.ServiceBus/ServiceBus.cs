@@ -224,7 +224,7 @@ internal class ServiceBus : IServiceBus
 				false,
 				traceInfo,
 				transactionController,
-				async (traceInfo, transactionController, cancellationToken) =>
+				async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 				{
 					exchange = _options.ExchangeProvider.GetExchange<TMessage>(options.ExchangeName);
 					if (exchange == null)
@@ -335,7 +335,7 @@ internal class ServiceBus : IServiceBus
 				false,
 				traceInfo,
 				transactionController,
-				async (traceInfo, transactionController, cancellationToken) =>
+				async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 				{
 					var context = _options.ExchangeProvider.CreateFaultQueueContext(traceInfo, options);
 					var enqueueResult = await _options.ExchangeProvider.FaultQueue.EnqueueAsync(message, context, transactionController, cancellationToken).ConfigureAwait(false);

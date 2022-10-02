@@ -11,6 +11,16 @@ internal abstract class EventHandlerProcessor : EventHandlerProcessorBase
 	public abstract IResult Handle(
 		IEvent @vent,
 		IMessageHandlerContext handlerContext,
+		IServiceProvider serviceProvider,
+		string? unhandledExceptionDetail);
+
+	public abstract void OnError(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		IEvent? @vent,
+		IMessageHandlerContext? handlerContext,
 		IServiceProvider serviceProvider);
 }
 
@@ -30,13 +40,15 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 	public override IResult Handle(
 		IEvent @event,
 		IMessageHandlerContext handlerContext,
-		IServiceProvider serviceProvider)
-		=> Handle((TEvent)@event, (TContext)handlerContext, serviceProvider);
+		IServiceProvider serviceProvider,
+		string? unhandledExceptionDetail)
+		=> Handle((TEvent)@event, (TContext)handlerContext, serviceProvider, unhandledExceptionDetail);
 
 	public IResult Handle(
 		TEvent @event,
 		TContext handlerContext,
-		IServiceProvider serviceProvider)
+		IServiceProvider serviceProvider,
+		string? unhandledExceptionDetail)
 	{
 		List<IEventHandler<TEvent, TContext>>? handlers = null;
 		try
@@ -70,14 +82,104 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 				}
 
 				resultBuilder.Merge(result);
+
+				if (resultBuilder.HasError())
+				{
+					var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
+					try
+					{
+						handler.OnError(traceInfo, null, resultBuilder.Build(), unhandledExceptionDetail, @event, handlerContext);
+					}
+					catch (Exception onErrorEx)
+					{
+						try
+						{
+							handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnError: PublishAsync<IEvent> error", null);
+						}
+						catch { }
+					}
+				}
 			}
 			catch (Exception exHandler)
 			{
-				handlerContext.LogError(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null);
+				var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
+				try
+				{
+					handlerContext.LogError(traceInfo, null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null);
+				}
+				catch { }
+
+				if (handler != null)
+				{
+					try
+					{
+						handler.OnError(traceInfo, exHandler, null, unhandledExceptionDetail, @event, handlerContext);
+					}
+					catch (Exception onErrorEx)
+					{
+						try
+						{
+							handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnError: PublishAsync<IEvent> error", null);
+						}
+						catch { }
+					}
+				}
+
 				throw;
 			}
 		}
 
 		return resultBuilder.Build();
+	}
+
+	public override void OnError(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		IEvent? @event,
+		IMessageHandlerContext? handlerContext,
+		IServiceProvider serviceProvider)
+		=> OnError(traceInfo, exception, errorResult, detail, (TEvent?)@event, (TContext?)handlerContext, serviceProvider);
+
+	public void OnError(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		TEvent? @event,
+		TContext? handlerContext,
+		IServiceProvider serviceProvider)
+	{
+		try
+		{
+			var handlers = CreateHandlers(serviceProvider, true).Select(x => (IEventHandler<TEvent, TContext>)x).ToList();
+
+			foreach (var handler in handlers)
+			{
+				try
+				{
+					handler.OnError(traceInfo, exception, errorResult, detail, @event, handlerContext);
+				}
+				catch (Exception handlerOnErrorEx)
+				{
+					try
+					{
+						if (handlerContext != null)
+							handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(handlerOnErrorEx), "OnErrorAsync1: SendAsync<Messages.IRequestMessage> error", null);
+					}
+					catch { }
+				}
+			}
+		}
+		catch (Exception onErrorEx)
+		{
+			try
+			{
+				if (handlerContext != null)
+					handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync2: SendAsync<Messages.IRequestMessage> error", null);
+			}
+			catch { }
+		}
 	}
 }

@@ -1,6 +1,7 @@
 ﻿using Envelope.ServiceBus.MessageHandlers.Interceptors;
 using Envelope.ServiceBus.Messages;
 using Envelope.Services;
+using Envelope.Trace;
 
 namespace Envelope.ServiceBus.MessageHandlers;
 
@@ -31,6 +32,14 @@ public interface IMessageHandler<TRequestMessage, TResponse, TContext> : IMessag
 	/// </summary>
 	/// <returns>Response from the request message</returns>
 	IResult<TResponse> Handle(TRequestMessage message, TContext handlerContext);
+
+	void OnError(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		TRequestMessage? message,
+		TContext? handlerContext);
 }
 
 /// <summary>
@@ -53,6 +62,15 @@ public interface IAsyncMessageHandler<TRequestMessage, TResponse, TContext> : IM
 	/// </summary>
 	/// <returns>Response from the request message</returns>
 	Task<IResult<TResponse>> HandleAsync(TRequestMessage message, TContext handlerContext, CancellationToken cancellationToken = default);
+
+	Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		TRequestMessage? message,
+		TContext? handlerContext,
+		CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -74,6 +92,14 @@ public interface IMessageHandler<TRequestMessage, TContext> : IMessageHandler
 	/// </summary>
 	/// <returns>Response from the request message</returns>
 	IResult Handle(TRequestMessage message, TContext handlerContext);
+
+	void OnError(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		TRequestMessage? message,
+		TContext? handlerContext);
 }
 
 /// <summary>
@@ -95,5 +121,14 @@ public interface IAsyncMessageHandler<TRequestMessage, TContext> : IMessageHandl
 	/// </summary>
 	/// <returns>Response from the request message</returns>
 	Task<IResult> HandleAsync(TRequestMessage message, TContext handlerContext, CancellationToken cancellationToken = default);
+
+	Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		TRequestMessage? message,
+		TContext? handlerContext,
+		CancellationToken cancellationToken = default);
 }
 

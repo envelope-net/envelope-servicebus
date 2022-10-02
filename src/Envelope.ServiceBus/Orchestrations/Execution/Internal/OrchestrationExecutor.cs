@@ -66,7 +66,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				false,
 				traceInfo,
 				localUpdateTransactionController,
-				async (traceInfo, transactionController, cancellationToken) =>
+				async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 				{
 					await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Running, null, transactionController).ConfigureAwait(false);
 					orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Running, null);
@@ -116,7 +116,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 						false,
 						traceInfo,
 						localTransactionController,
-						async (traceInfo, transactionController, cancellationToken) =>
+						async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 						{
 							await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Terminated, null, transactionController).ConfigureAwait(false);
 							orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Terminated, null);
@@ -175,7 +175,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				false,
 				traceInfo,
 				startTransactionController,
-				async (traceInfo, transactionController, cancellationToken) =>
+				async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 				{
 					exePointers = await GetExecutionPointersAsync(orchestrationInstance, traceInfo, transactionController).ConfigureAwait(false);
 
@@ -239,7 +239,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 							false,
 							traceInfo,
 							localExecuteTransactionController,
-							async (traceInfo, transactionController, cancellationToken) =>
+							async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 							{
 								if (orchestrationInstance.Status != OrchestrationStatus.Running
 									&& orchestrationInstance.Status != OrchestrationStatus.Executing)
@@ -316,7 +316,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					false,
 					traceInfo,
 					localGetTransactionController,
-					async (traceInfo, transactionController, cancellationToken) =>
+					async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 					{
 						exePointers = await GetExecutionPointersAsync(orchestrationInstance, traceInfo, transactionController).ConfigureAwait(false);
 						transactionController.ScheduleCommit();
@@ -345,7 +345,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 				false,
 				traceInfo,
 				localDetermineTransactionController,
-				async (traceInfo, transactionController, cancellationToken) =>
+				async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 				{
 					await DetermineOrchestrationIsCompletedAsync(orchestrationInstance, traceInfo, transactionController).ConfigureAwait(false);
 					transactionController.ScheduleCommit();
@@ -377,7 +377,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 					false,
 					traceInfo,
 					localUpdateTransactionController,
-					async (traceInfo, transactionController, cancellationToken) =>
+					async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 					{
 						await _orchestrationRepository.UpdateOrchestrationStatusAsync(orchestrationInstance.IdOrchestrationInstance, OrchestrationStatus.Running, null, transactionController).ConfigureAwait(false);
 						orchestrationInstance.UpdateOrchestrationStatus(OrchestrationStatus.Running, null);

@@ -1,5 +1,6 @@
 ﻿using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Internals;
+using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Processors;
 using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Options;
@@ -9,6 +10,7 @@ using Envelope.Trace;
 using Envelope.Transactions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Envelope.ServiceBus;
 
@@ -69,10 +71,10 @@ public partial class EventBus : IEventBus
 			isLocalTransactionCoordinator = true;
 		}
 
-		return Publish(@event, options, isLocalTransactionCoordinator, traceInfo);
+		return PublishInternal(@event, options, isLocalTransactionCoordinator, traceInfo);
 	}
 
-	protected IResult<Guid> Publish(
+	protected IResult<Guid> PublishInternal(
 		IEvent @event,
 		IMessageOptions options,
 		bool isLocalTransactionCoordinator,
@@ -95,12 +97,14 @@ public partial class EventBus : IEventBus
 		traceInfo = TraceInfo.Create(traceInfo);
 
 		var transactionController = options.TransactionController;
+		EventHandlerProcessor? handlerProcessor = null;
+		MessageHandlerContext? handlerContext = null;
 
 		return ServiceTransactionInterceptor.ExecuteAction(
 			false,
 			traceInfo,
 			transactionController,
-			(traceInfo, transactionController) =>
+			(traceInfo, transactionController, unhandledExceptionDetail) =>
 			{
 				var eventType = @event.GetType();
 
@@ -115,7 +119,7 @@ public partial class EventBus : IEventBus
 				if (savedEvent.Message == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(savedEvent)}.{nameof(savedEvent.Message)} == null | {nameof(eventType)} = {eventType.FullName}");
 
-				var handlerContext = EventHandlerRegistry.CreateEventHandlerContext(eventType, ServiceProvider);
+				handlerContext = EventHandlerRegistry.CreateEventHandlerContext(eventType, ServiceProvider);
 
 				var throwNoHandlerException = options.ThrowNoHandlerException ?? false;
 
@@ -157,7 +161,7 @@ public partial class EventBus : IEventBus
 
 				handlerContext.Initialize(MessageStatus.Created, null);
 
-				var handlerProcessor = (EventHandlerProcessor)_asyncVoidEventHandlerProcessors.GetOrAdd(
+				handlerProcessor = (EventHandlerProcessor)_asyncVoidEventHandlerProcessors.GetOrAdd(
 					eventType,
 					eventType =>
 					{
@@ -175,7 +179,7 @@ public partial class EventBus : IEventBus
 				if (handlerProcessor == null)
 					return result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {eventType}");
 
-				var handlerResult = handlerProcessor.Handle(savedEvent.Message, handlerContext, ServiceProvider);
+				var handlerResult = handlerProcessor.Handle(savedEvent.Message, handlerContext, ServiceProvider, unhandledExceptionDetail);
 				result.MergeAllHasError(handlerResult);
 
 				if (result.HasError())
@@ -201,6 +205,15 @@ public partial class EventBus : IEventBus
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						null);
+
+				if (handlerProcessor != null)
+				{
+					try
+					{
+						handlerProcessor.OnError(traceInfo, exception, null, detail, @event, handlerContext, ServiceProvider);
+					}
+					catch { }
+				}
 
 				return errorMessage;
 			},

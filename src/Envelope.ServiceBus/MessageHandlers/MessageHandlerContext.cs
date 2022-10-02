@@ -6,7 +6,6 @@ using Envelope.ServiceBus.MessageHandlers.Logging;
 using Envelope.ServiceBus.Messages;
 using Envelope.Trace;
 using Envelope.Transactions;
-using Microsoft.Extensions.Logging;
 using System.Runtime.CompilerServices;
 using System.Text;
 
