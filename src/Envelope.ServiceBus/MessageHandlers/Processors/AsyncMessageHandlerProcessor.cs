@@ -15,6 +15,17 @@ internal abstract class AsyncMessageHandlerProcessor<TResponse> : MessageHandler
 		IServiceProvider serviceProvider,
 		ITraceInfo traceInfo,
 		Func<TResponse, IMessageHandlerContext, ITraceInfo, CancellationToken, Task<IResult<Guid>>> saveResponseMessageAction,
+		string? unhandledExceptionDetail,
+		CancellationToken cancellationToken = default);
+
+	public abstract Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		Messages.IRequestMessage<TResponse>? message,
+		IMessageHandlerContext? handlerContext,
+		IServiceProvider serviceProvider,
 		CancellationToken cancellationToken = default);
 }
 
@@ -37,8 +48,9 @@ internal class AsyncMessageHandlerProcessor<TRequestMessage, TResponse, TContext
 		IServiceProvider serviceProvider,
 		ITraceInfo traceInfo,
 		Func<TResponse, IMessageHandlerContext, ITraceInfo, CancellationToken, Task<IResult<Guid>>> saveResponseMessageAction,
+		string? unhandledExceptionDetail,
 		CancellationToken cancellationToken = default)
-		=> HandleAsync((TRequestMessage)message, (TContext)handlerContext, serviceProvider, traceInfo, saveResponseMessageAction, cancellationToken);
+		=> HandleAsync((TRequestMessage)message, (TContext)handlerContext, serviceProvider, traceInfo, saveResponseMessageAction, unhandledExceptionDetail, cancellationToken);
 
 	public async Task<IResult<ISendResponse<TResponse>>> HandleAsync(
 		TRequestMessage message,
@@ -46,11 +58,14 @@ internal class AsyncMessageHandlerProcessor<TRequestMessage, TResponse, TContext
 		IServiceProvider serviceProvider,
 		ITraceInfo traceInfo,
 		Func<TResponse, IMessageHandlerContext, ITraceInfo, CancellationToken, Task<IResult<Guid>>> saveResponseMessageAction,
+		string? unhandledExceptionDetail,
 		CancellationToken cancellationToken = default)
 	{
+		IAsyncMessageHandler<TRequestMessage, TResponse, TContext>? handler = null;
+
 		try
 		{
-			var handler = (IAsyncMessageHandler<TRequestMessage, TResponse, TContext>)CreateHandler(serviceProvider);
+			handler = (IAsyncMessageHandler<TRequestMessage, TResponse, TContext>)CreateHandler(serviceProvider);
 
 			IResult<TResponse> result;
 			var interceptorType = handler.InterceptorType;
@@ -69,22 +84,101 @@ internal class AsyncMessageHandlerProcessor<TRequestMessage, TResponse, TContext
 
 			var resultBuilder = new ResultBuilder<ISendResponse<TResponse>>();
 			resultBuilder.Merge(result);
+
+			IResult<ISendResponse<TResponse>> newResult;
 			if (result.Data != null)
 			{
 				var response = result.Data;
 				var saveResult = await saveResponseMessageAction(response, handlerContext, traceInfo, cancellationToken).ConfigureAwait(false);
 				resultBuilder.MergeHasError(saveResult);
-				return resultBuilder.WithData(new SendResponse<TResponse>(handlerContext.MessageId, saveResult.Data, result.Data)).Build();
+				newResult = resultBuilder.WithData(new SendResponse<TResponse>(handlerContext.MessageId, saveResult.Data, result.Data)).Build();
 			}
 			else
 			{
-				return resultBuilder.WithData(new SendResponse<TResponse>(handlerContext.MessageId, Guid.Empty, default)).Build();
+				newResult = resultBuilder.WithData(new SendResponse<TResponse>(handlerContext.MessageId, Guid.Empty, default)).Build();
 			}
+
+			if (newResult.HasError)
+			{
+				try
+				{
+					await handler.OnErrorAsync(traceInfo, null, newResult, unhandledExceptionDetail, message, handlerContext, cancellationToken).ConfigureAwait(false);
+				}
+				catch (Exception onErrorEx)
+				{
+					try
+					{
+						await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage<TResponse>> error", null, cancellationToken).ConfigureAwait(false);
+					}
+					catch { }
+				}
+			}
+
+			return newResult;
 		}
 		catch (Exception exHandler)
 		{
-			await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage<TResponse>> error", null, cancellationToken).ConfigureAwait(false);
+			traceInfo = TraceInfo.Create(traceInfo);
+			try
+			{
+				await handlerContext.LogErrorAsync(traceInfo, null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage<TResponse>> error", null, cancellationToken).ConfigureAwait(false);
+			}
+			catch { }
+
+			if (handler != null)
+			{
+				try
+				{
+					await handler.OnErrorAsync(traceInfo, exHandler, null, unhandledExceptionDetail, message, handlerContext, cancellationToken).ConfigureAwait(false);
+				}
+				catch (Exception onErrorEx)
+				{
+					try
+					{
+						await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage<TResponse>> error", null, cancellationToken).ConfigureAwait(false);
+					}
+					catch { }
+				}
+			}
+
 			throw;
+		}
+	}
+
+	public override Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		Messages.IRequestMessage<TResponse>? message,
+		IMessageHandlerContext? handlerContext,
+		IServiceProvider serviceProvider,
+		CancellationToken cancellationToken = default)
+		=> OnErrorAsync(traceInfo, exception, errorResult, detail, (TRequestMessage?)message, (TContext?)handlerContext, serviceProvider, cancellationToken);
+
+	public async Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		TRequestMessage? message,
+		TContext? handlerContext,
+		IServiceProvider serviceProvider,
+		CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			var handler = (IAsyncMessageHandler<TRequestMessage, TResponse, TContext>)CreateHandler(serviceProvider);
+			await handler.OnErrorAsync(traceInfo, exception, errorResult, detail, message, handlerContext, cancellationToken).ConfigureAwait(false);
+		}
+		catch (Exception onErrorEx)
+		{
+			try
+			{
+				if (handlerContext != null)
+					await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
+			}
+			catch { }
 		}
 	}
 }

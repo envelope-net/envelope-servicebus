@@ -69,7 +69,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 			true,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var result = await _queue.GetCountAsync(traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (result.HasError)
@@ -341,7 +341,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 					traceInfo,
 					transactionController,
 					//$"{nameof(message.QueueName)} == {message?.QueueName} | {nameof(message.SourceExchangeName)} == {message?.SourceExchangeName} | MessageType = {message?.Message?.GetType().FullName}"
-					async (traceInfo, transactionController, cancellationToken) =>
+					async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 					{
 						var peekResult = await TryPeekAsync(traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 						if (peekResult.HasError)
@@ -571,7 +571,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 			false,
 			traceInfo,
 			localTransactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var updateResult = await _queue.UpdateAsync(message, update, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (updateResult.HasError)

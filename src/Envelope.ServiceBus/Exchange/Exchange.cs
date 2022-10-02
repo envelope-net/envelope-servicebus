@@ -87,7 +87,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 			true,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var result = await _queue.GetCountAsync(traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (result.HasError)
@@ -334,7 +334,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 					traceInfo,
 					transactionController,
 					//$"{nameof(message.ExchangeName)} == {message?.ExchangeName} | {nameof(message.TargetQueueName)} == {message?.TargetQueueName} | MessageType = {message?.Message?.GetType().FullName}"
-					async (traceInfo, transactionController, cancellationToken) =>
+					async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 					{
 						var peekResult = await TryPeekAsync(traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 						if (peekResult.HasError)
@@ -546,7 +546,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 			false,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var updateResult = await _queue.UpdateAsync(message, update, traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				if (updateResult.HasError)

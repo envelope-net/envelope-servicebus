@@ -3,6 +3,7 @@ using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.Configuration.Internal;
 using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Internals;
+using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Processors;
 using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Options;
@@ -111,10 +112,10 @@ public partial class EventBus : IEventBus
 			isLocalTransactionCoordinator = true;
 		}
 
-		return await PublishAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
+		return await PublishInternalAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 	}
 
-	protected async Task<IResult<Guid>> PublishAsync(
+	protected async Task<IResult<Guid>> PublishInternalAsync(
 		IEvent @event,
 		IMessageOptions options,
 		bool isLocalTransactionCoordinator,
@@ -138,12 +139,14 @@ public partial class EventBus : IEventBus
 		traceInfo = TraceInfo.Create(traceInfo);
 
 		var transactionController = options.TransactionController;
+		AsyncEventHandlerProcessor? handlerProcessor = null;
+		MessageHandlerContext? handlerContext = null;
 
 		return await ServiceTransactionInterceptor.ExecuteActionAsync(
 			false,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var eventType = @event.GetType();
 
@@ -158,7 +161,7 @@ public partial class EventBus : IEventBus
 				if (savedEvent.Message == null)
 					return result.WithInvalidOperationException(traceInfo, $"{nameof(savedEvent)}.{nameof(savedEvent.Message)} == null | {nameof(eventType)} = {eventType.FullName}");
 
-				var handlerContext = EventHandlerRegistry.CreateEventHandlerContext(eventType, ServiceProvider);
+				handlerContext = EventHandlerRegistry.CreateEventHandlerContext(eventType, ServiceProvider);
 
 				var throwNoHandlerException = options.ThrowNoHandlerException ?? false;
 
@@ -200,7 +203,7 @@ public partial class EventBus : IEventBus
 
 				handlerContext.Initialize(MessageStatus.Created, null);
 
-				var handlerProcessor = (AsyncEventHandlerProcessor)_asyncVoidEventHandlerProcessors.GetOrAdd(
+				handlerProcessor = (AsyncEventHandlerProcessor)_asyncVoidEventHandlerProcessors.GetOrAdd(
 					eventType,
 					eventType =>
 					{
@@ -218,7 +221,7 @@ public partial class EventBus : IEventBus
 				if (handlerProcessor == null)
 					return result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {eventType}");
 
-				var handlerResult = await handlerProcessor.HandleAsync(savedEvent.Message, handlerContext, ServiceProvider, cancellationToken).ConfigureAwait(false);
+				var handlerResult = await handlerProcessor.HandleAsync(savedEvent.Message, handlerContext, ServiceProvider, unhandledExceptionDetail, cancellationToken).ConfigureAwait(false);
 				result.MergeAllHasError(handlerResult);
 
 				if (result.HasError())
@@ -245,6 +248,15 @@ public partial class EventBus : IEventBus
 						detail,
 						null,
 						cancellationToken: default).ConfigureAwait(false);
+
+				if (handlerProcessor != null)
+				{
+					try
+					{
+						await handlerProcessor.OnErrorAsync(traceInfo, exception, null, detail, @event, handlerContext, ServiceProvider, cancellationToken);
+					}
+					catch { }
+				}
 
 				return errorMessage;
 			},
@@ -328,7 +340,7 @@ public partial class EventBus : IEventBus
 			isLocalTransactionCoordinator = true;
 		}
 
-		var publishResult = await PublishAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
+		var publishResult = await PublishInternalAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 		if (result.MergeAllHasError(publishResult))
 			return result.Build();
 
@@ -361,7 +373,7 @@ public partial class EventBus : IEventBus
 			isLocalTransactionCoordinator = true;
 		}
 
-		var publishResult = await PublishAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
+		var publishResult = await PublishInternalAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 		if (result.MergeAllHasError(publishResult))
 			return result.Build();
 
@@ -388,7 +400,7 @@ public partial class EventBus : IEventBus
 			isLocalTransactionCoordinator = true;
 		}
 
-		var publishResult = await PublishAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
+		var publishResult = await PublishInternalAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 		if (result.MergeAllHasError(publishResult))
 			return result.Build();
 
@@ -417,7 +429,7 @@ public partial class EventBus : IEventBus
 			isLocalTransactionCoordinator = true;
 		}
 
-		var publishResult = await PublishAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
+		var publishResult = await PublishInternalAsync(@event, options, isLocalTransactionCoordinator, traceInfo, cancellationToken).ConfigureAwait(false);
 		if (result.MergeAllHasError(publishResult))
 			return result.Build();
 

@@ -72,7 +72,7 @@ public interface IMessageBus
 	/// <param name="memberName">Allows you to obtain the method or property name of the caller to the method.</param>
 	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
 	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
-	Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	Task<IResult<TResponse>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
@@ -88,7 +88,7 @@ public interface IMessageBus
 	/// <param name="memberName">Allows you to obtain the method or property name of the caller to the method.</param>
 	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
 	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
-	Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	Task<IResult<TResponse>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		CancellationToken cancellationToken = default,
@@ -102,7 +102,7 @@ public interface IMessageBus
 	/// <param name="message">The request message</param>
 	/// <param name="traceInfo"></param>
 	/// <param name="cancellationToken"></param>
-	Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	Task<IResult<TResponse>> SendAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default);
@@ -114,7 +114,63 @@ public interface IMessageBus
 	/// <param name="optionsBuilder">Configure the message sending options</param>
 	/// <param name="traceInfo"></param>
 	/// <param name="cancellationToken"></param>
-	Task<IResult<ISendResponse<TResponse>>> SendAsync<TResponse>(
+	Task<IResult<TResponse>> SendAsync<TResponse>(
+		IRequestMessage<TResponse> message,
+		Action<MessageOptionsBuilder>? optionsBuilder,
+		ITraceInfo traceInfo,
+		CancellationToken cancellationToken = default);
+
+	/// <summary>
+	/// Sends a request message.
+	/// </summary>
+	/// <param name="message">The request message</param>
+	/// <param name="cancellationToken"></param>
+	/// <param name="memberName">Allows you to obtain the method or property name of the caller to the method.</param>
+	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
+	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
+	Task<IResult<ISendResponse<TResponse>>> SendWithMessageIdAsync<TResponse>(
+		IRequestMessage<TResponse> message,
+		CancellationToken cancellationToken = default,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0);
+
+	/// <summary>
+	/// Sends a request message.
+	/// </summary>
+	/// <param name="message">The request message</param>
+	/// <param name="optionsBuilder">Configure the message sending options</param>
+	/// <param name="cancellationToken"></param>
+	/// <param name="memberName">Allows you to obtain the method or property name of the caller to the method.</param>
+	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
+	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
+	Task<IResult<ISendResponse<TResponse>>> SendWithMessageIdAsync<TResponse>(
+		IRequestMessage<TResponse> message,
+		Action<MessageOptionsBuilder> optionsBuilder,
+		CancellationToken cancellationToken = default,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0);
+
+	/// <summary>
+	/// Sends a request message.
+	/// </summary>
+	/// <param name="message">The request message</param>
+	/// <param name="traceInfo"></param>
+	/// <param name="cancellationToken"></param>
+	Task<IResult<ISendResponse<TResponse>>> SendWithMessageIdAsync<TResponse>(
+		IRequestMessage<TResponse> message,
+		ITraceInfo traceInfo,
+		CancellationToken cancellationToken = default);
+
+	/// <summary>
+	/// Sends a request message.
+	/// </summary>
+	/// <param name="message">The request message</param>
+	/// <param name="optionsBuilder">Configure the message sending options</param>
+	/// <param name="traceInfo"></param>
+	/// <param name="cancellationToken"></param>
+	Task<IResult<ISendResponse<TResponse>>> SendWithMessageIdAsync<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
 		ITraceInfo traceInfo,
@@ -175,7 +231,7 @@ public interface IMessageBus
 	/// <param name="memberName">Allows you to obtain the method or property name of the caller to the method.</param>
 	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
 	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
-	IResult<ISendResponse<TResponse>> Send<TResponse>(
+	IResult<TResponse> Send<TResponse>(
 		IRequestMessage<TResponse> message,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
@@ -189,7 +245,7 @@ public interface IMessageBus
 	/// <param name="memberName">Allows you to obtain the method or property name of the caller to the method.</param>
 	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
 	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
-	IResult<ISendResponse<TResponse>> Send<TResponse>(
+	IResult<TResponse> Send<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		[CallerMemberName] string memberName = "",
@@ -201,7 +257,7 @@ public interface IMessageBus
 	/// </summary>
 	/// <param name="message">The request message</param>
 	/// <param name="traceInfo"></param>
-	IResult<ISendResponse<TResponse>> Send<TResponse>(
+	IResult<TResponse> Send<TResponse>(
 		IRequestMessage<TResponse> message,
 		ITraceInfo traceInfo);
 
@@ -211,7 +267,55 @@ public interface IMessageBus
 	/// <param name="message">The request message</param>
 	/// <param name="optionsBuilder">Configure the message sending options</param>
 	/// <param name="traceInfo"></param>
-	IResult<ISendResponse<TResponse>> Send<TResponse>(
+	IResult<TResponse> Send<TResponse>(
+		IRequestMessage<TResponse> message,
+		Action<MessageOptionsBuilder>? optionsBuilder,
+		ITraceInfo traceInfo);
+
+	/// <summary>
+	/// Sends a request message.
+	/// </summary>
+	/// <param name="message">The request message</param>
+	/// <param name="memberName">Allows you to obtain the method or property name of the caller to the method.</param>
+	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
+	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
+	IResult<ISendResponse<TResponse>> SendWithMessageId<TResponse>(
+		IRequestMessage<TResponse> message,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0);
+
+	/// <summary>
+	/// Sends a request message.
+	/// </summary>
+	/// <param name="message">The request message</param>
+	/// <param name="optionsBuilder">Configure the message sending options</param>
+	/// <param name="memberName">Allows you to obtain the method or property name of the caller to the method.</param>
+	/// <param name="sourceFilePath">Allows you to obtain the full path of the source file that contains the caller. This is the file path at the time of compile.</param>
+	/// <param name="sourceLineNumber">Allows you to obtain the line number in the source file at which the method is called.</param>
+	IResult<ISendResponse<TResponse>> SendWithMessageId<TResponse>(
+		IRequestMessage<TResponse> message,
+		Action<MessageOptionsBuilder> optionsBuilder,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0);
+
+	/// <summary>
+	/// Sends a request message.
+	/// </summary>
+	/// <param name="message">The request message</param>
+	/// <param name="traceInfo"></param>
+	IResult<ISendResponse<TResponse>> SendWithMessageId<TResponse>(
+		IRequestMessage<TResponse> message,
+		ITraceInfo traceInfo);
+
+	/// <summary>
+	/// Sends a request message.
+	/// </summary>
+	/// <param name="message">The request message</param>
+	/// <param name="optionsBuilder">Configure the message sending options</param>
+	/// <param name="traceInfo"></param>
+	IResult<ISendResponse<TResponse>> SendWithMessageId<TResponse>(
 		IRequestMessage<TResponse> message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
 		ITraceInfo traceInfo);

@@ -1,5 +1,4 @@
 ﻿using Envelope.ServiceBus.MessageHandlers.Interceptors;
-using Envelope.ServiceBus.Messages;
 using Envelope.Services;
 using Envelope.Trace;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +10,17 @@ internal abstract class AsyncVoidMessageHandlerProcessor : MessageHandlerProcess
 	public abstract Task<IResult> HandleAsync(
 		Messages.IRequestMessage message,
 		IMessageHandlerContext handlerContext,
+		IServiceProvider serviceProvider,
+		string? unhandledExceptionDetail,
+		CancellationToken cancellationToken = default);
+
+	public abstract Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		Messages.IRequestMessage? message,
+		IMessageHandlerContext? handlerContext,
 		IServiceProvider serviceProvider,
 		CancellationToken cancellationToken = default);
 }
@@ -32,18 +42,22 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 		Messages.IRequestMessage message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
+		string? unhandledExceptionDetail,
 		CancellationToken cancellationToken = default)
-		=> HandleAsync((TRequestMessage)message, (TContext)handlerContext, serviceProvider, cancellationToken);
+		=> HandleAsync((TRequestMessage)message, (TContext)handlerContext, serviceProvider, unhandledExceptionDetail, cancellationToken);
 
 	public async Task<IResult> HandleAsync(
 		TRequestMessage message,
 		TContext handlerContext,
 		IServiceProvider serviceProvider,
+		string? unhandledExceptionDetail,
 		CancellationToken cancellationToken = default)
 	{
+		IAsyncMessageHandler<TRequestMessage, TContext>? handler = null;
+
 		try
 		{
-			var handler = (IAsyncMessageHandler<TRequestMessage, TContext>)CreateHandler(serviceProvider);
+			handler = (IAsyncMessageHandler<TRequestMessage, TContext>)CreateHandler(serviceProvider);
 
 			IResult result;
 			var interceptorType = handler.InterceptorType;
@@ -60,12 +74,88 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 				result = await interceptor.InterceptHandleAsync(message, handlerContext, handler.HandleAsync, cancellationToken).ConfigureAwait(false);
 			}
 
+			if (result.HasError)
+			{
+				var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
+				try
+				{
+					await handler.OnErrorAsync(traceInfo, null, result, unhandledExceptionDetail, message, handlerContext, cancellationToken).ConfigureAwait(false);
+				}
+				catch (Exception onErrorEx)
+				{
+					try
+					{
+						await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
+					}
+					catch { }
+				}
+			}
+
 			return result;
 		}
 		catch (Exception exHandler)
 		{
-			await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
+			var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
+			try
+			{
+				await handlerContext.LogErrorAsync(traceInfo, null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
+			}
+			catch { }
+
+			if (handler != null)
+			{
+				try
+				{
+					await handler.OnErrorAsync(traceInfo, exHandler, null, unhandledExceptionDetail, message, handlerContext, cancellationToken).ConfigureAwait(false);
+				}
+				catch (Exception onErrorEx)
+				{
+					try
+					{
+						await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
+					}
+					catch { }
+				}
+			}
+
 			throw;
+		}
+	}
+
+	public override Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		Messages.IRequestMessage? message,
+		IMessageHandlerContext? handlerContext,
+		IServiceProvider serviceProvider,
+		CancellationToken cancellationToken = default)
+		=> OnErrorAsync(traceInfo, exception, errorResult, detail, (TRequestMessage?)message, (TContext?)handlerContext, serviceProvider, cancellationToken);
+
+	public async Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		TRequestMessage? message,
+		TContext? handlerContext,
+		IServiceProvider serviceProvider,
+		CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			var handler = (IAsyncMessageHandler<TRequestMessage, TContext>)CreateHandler(serviceProvider);
+			await handler.OnErrorAsync(traceInfo, exception, errorResult, detail, message, handlerContext, cancellationToken).ConfigureAwait(false);
+		}
+		catch (Exception onErrorEx)
+		{
+			try
+			{
+				if (handlerContext != null)
+					await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
+			}
+			catch { }
 		}
 	}
 }

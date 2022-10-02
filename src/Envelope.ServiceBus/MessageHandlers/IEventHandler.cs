@@ -1,6 +1,7 @@
-﻿using Envelope.Services;
-using Envelope.ServiceBus.MessageHandlers.Interceptors;
+﻿using Envelope.ServiceBus.MessageHandlers.Interceptors;
 using Envelope.ServiceBus.Messages;
+using Envelope.Services;
+using Envelope.Trace;
 
 namespace Envelope.ServiceBus.MessageHandlers;
 
@@ -30,6 +31,14 @@ public interface IEventHandler<TEvent, TContext> : IEventHandler
 	/// </summary>
 	/// <returns>Response from the event</returns>
 	IResult Handle(TEvent @event, TContext handlerContext);
+
+	void OnError(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		TEvent? @event,
+		TContext? handlerContext);
 }
 
 /// <summary>
@@ -51,4 +60,13 @@ public interface IAsyncEventHandler<TEvent, TContext> : IEventHandler
 	/// </summary>
 	/// <returns>Response from the event</returns>
 	Task<IResult> HandleAsync(TEvent @event, TContext handlerContext, CancellationToken cancellationToken = default);
+
+	Task OnErrorAsync(
+		ITraceInfo traceInfo,
+		Exception? exception,
+		IResult? errorResult,
+		string? detail,
+		TEvent? @event,
+		TContext? handlerContext,
+		CancellationToken cancellationToken = default);
 }

@@ -296,7 +296,7 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 				false,
 				traceInfo,
 				transactionController,
-				async (traceInfo, tc, cancellationToken) =>
+				async (traceInfo, tc, unhandledExceptionDetail, cancellationToken) =>
 				{
 					Data = await JobRepository.LoadDataAsync<TData>(Name, tc, cancellationToken).ConfigureAwait(false);
 					return result.Build();
@@ -335,7 +335,7 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 				false,
 				traceInfo,
 				transactionController,
-				async (traceInfo, tc, cancellationToken) =>
+				async (traceInfo, tc, unhandledExceptionDetail, cancellationToken) =>
 				{
 					await JobRepository.SaveDataAsync(Name, data, tc, cancellationToken).ConfigureAwait(false);
 					return result.Build();

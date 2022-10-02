@@ -112,7 +112,7 @@ internal class OrchestrationController : IOrchestrationController
 				false,
 				traceInfo,
 				transactionController,
-				async (traceInfo, transactionController, cancellationToken) =>
+				async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 				{
 					if (data == null)
 						return result.WithArgumentNullException(traceInfo, nameof(data));
@@ -203,7 +203,7 @@ internal class OrchestrationController : IOrchestrationController
 			true,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionController, cancellationToken).ConfigureAwait(false);
 				return result;
@@ -235,7 +235,7 @@ internal class OrchestrationController : IOrchestrationController
 			true,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetAllUnfinishedOrchestrationInstancesAsync(
 					idOrchestrationDefinition,
@@ -272,7 +272,7 @@ internal class OrchestrationController : IOrchestrationController
 			true,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).IsCompletedOrchestrationAsync(idOrchestrationInstance, transactionController, cancellationToken).ConfigureAwait(false);
 
@@ -308,7 +308,7 @@ internal class OrchestrationController : IOrchestrationController
 			true,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var result = await _options.OrchestrationRepositoryFactory(_serviceProvider, _registry).GetOrchestrationExecutionPointersAsync(idOrchestrationInstance, transactionController).ConfigureAwait(false);
 				return result;
@@ -344,7 +344,7 @@ internal class OrchestrationController : IOrchestrationController
 			false,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var orchestrationRepository = _options.OrchestrationRepositoryFactory(_serviceProvider, _registry);
 				orchestrationInstance = await orchestrationRepository.GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionController, cancellationToken).ConfigureAwait(false);
@@ -428,7 +428,7 @@ internal class OrchestrationController : IOrchestrationController
 			false,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var orchestrationRepository = _options.OrchestrationRepositoryFactory(_serviceProvider, _registry);
 				orchestrationInstance = await orchestrationRepository.GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionController, cancellationToken).ConfigureAwait(false);
@@ -510,7 +510,7 @@ internal class OrchestrationController : IOrchestrationController
 			false,
 			traceInfo,
 			transactionController,
-			async (traceInfo, transactionController, cancellationToken) =>
+			async (traceInfo, transactionController, unhandledExceptionDetail, cancellationToken) =>
 			{
 				var orchestrationRepository = _options.OrchestrationRepositoryFactory(_serviceProvider, _registry);
 				orchestrationInstance = await orchestrationRepository.GetOrchestrationInstanceAsync(idOrchestrationInstance, _serviceProvider, _options.HostInfo, transactionController, cancellationToken).ConfigureAwait(false);
