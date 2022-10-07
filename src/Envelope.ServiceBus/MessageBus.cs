@@ -52,7 +52,13 @@ public partial class MessageBus : IMessageBus
 			throw new ConfigurationException(error);
 	}
 
-	public Task<IResult<Guid>> SendAsync(
+
+
+
+
+
+
+	public Task<IResult> SendAsync(
 		IRequestMessage message,
 		CancellationToken cancellationToken = default,
 		[CallerMemberName] string memberName = "",
@@ -60,7 +66,7 @@ public partial class MessageBus : IMessageBus
 		[CallerLineNumber] int sourceLineNumber = 0)
 		=> SendAsync(message, null!, cancellationToken, memberName, sourceFilePath, sourceLineNumber);
 
-	public Task<IResult<Guid>> SendAsync(
+	public Task<IResult> SendAsync(
 		IRequestMessage message,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		CancellationToken cancellationToken = default,
@@ -79,13 +85,72 @@ public partial class MessageBus : IMessageBus
 				sourceLineNumber),
 			cancellationToken);
 
-	public Task<IResult<Guid>> SendAsync(
+	public Task<IResult> SendAsync(
 		IRequestMessage message,
 		ITraceInfo traceInfo,
 		CancellationToken cancellationToken = default)
 		=> SendAsync(message, (Action<MessageOptionsBuilder>?)null, traceInfo, cancellationToken);
 
-	public Task<IResult<Guid>> SendAsync(
+	public async Task<IResult> SendAsync(
+		IRequestMessage message,
+		Action<MessageOptionsBuilder>? optionsBuilder,
+		ITraceInfo traceInfo,
+		CancellationToken cancellationToken = default)
+	{
+		var result = new ResultBuilder();
+
+		if (message == null)
+			return result.WithArgumentNullException(traceInfo, nameof(message));
+
+		var builder = MessageOptionsBuilder.GetDefaultBuilder(message.GetType());
+		optionsBuilder?.Invoke(builder);
+		var options = builder.Build(true);
+
+		var isLocalTransactionCoordinator = false;
+		if (options.TransactionController == null)
+		{
+			options.TransactionController = CreateTransactionController();
+			isLocalTransactionCoordinator = true;
+		}
+
+		var sendResult = await SendInternalAsync(message, options, isLocalTransactionCoordinator, traceInfo, cancellationToken);
+		return sendResult;
+	}
+
+	public Task<IResult<Guid>> SendWithMessageIdAsync(
+		IRequestMessage message,
+		CancellationToken cancellationToken = default,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0)
+		=> SendWithMessageIdAsync(message, null!, cancellationToken, memberName, sourceFilePath, sourceLineNumber);
+
+	public Task<IResult<Guid>> SendWithMessageIdAsync(
+		IRequestMessage message,
+		Action<MessageOptionsBuilder> optionsBuilder,
+		CancellationToken cancellationToken = default,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0)
+		=> SendWithMessageIdAsync(
+			message,
+			optionsBuilder,
+			TraceInfo.Create(
+				ServiceProvider.GetRequiredService<IApplicationContext>().TraceInfo,
+				null, //MessageBusOptions.HostInfo.HostName,
+				null,
+				memberName,
+				sourceFilePath,
+				sourceLineNumber),
+			cancellationToken);
+
+	public Task<IResult<Guid>> SendWithMessageIdAsync(
+		IRequestMessage message,
+		ITraceInfo traceInfo,
+		CancellationToken cancellationToken = default)
+		=> SendWithMessageIdAsync(message, (Action<MessageOptionsBuilder>?)null, traceInfo, cancellationToken);
+
+	public Task<IResult<Guid>> SendWithMessageIdAsync(
 		IRequestMessage message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
 		ITraceInfo traceInfo,
