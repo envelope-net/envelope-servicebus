@@ -52,12 +52,6 @@ public partial class MessageBus : IMessageBus
 			throw new ConfigurationException(error);
 	}
 
-
-
-
-
-
-
 	public Task<IResult> SendAsync(
 		IRequestMessage message,
 		CancellationToken cancellationToken = default,
