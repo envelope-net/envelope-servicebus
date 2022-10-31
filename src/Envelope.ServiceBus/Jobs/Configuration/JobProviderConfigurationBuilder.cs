@@ -1,10 +1,9 @@
 ﻿using Envelope.Exceptions;
 using Envelope.ServiceBus.Hosts;
-using Envelope.ServiceBus.Internals;
 using Envelope.ServiceBus.Jobs.Configuration.Internal;
 using Envelope.ServiceBus.Jobs.Internal;
 using Envelope.ServiceBus.Jobs.Logging;
-using Envelope.Transactions;
+using Envelope.Trace;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -67,7 +66,7 @@ public abstract class JobProviderConfigurationBuilderBase<TBuilder, TObject> : I
 
 		var register = new JobRegister(serviceProvider, _jobProviderConfiguration);
 		foreach (var job in _jobs.Values)
-			job.JobRegister(serviceProvider, register);
+			job.RegisterJob(serviceProvider, register);
 
 		_jobProviderConfiguration.JobRegisterInternal = register;
 
@@ -141,11 +140,6 @@ public abstract class JobProviderConfigurationBuilderBase<TBuilder, TObject> : I
 
 		return _builder;
 	}
-
-	//public TBuilder RegisterJob<TData>(IJob<TData> job, TData? data, ITraceInfo traceInfo)
-	//{
-
-	//}
 }
 
 public class JobProviderConfigurationBuilder : JobProviderConfigurationBuilderBase<JobProviderConfigurationBuilder, IJobProviderConfiguration>

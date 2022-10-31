@@ -273,6 +273,9 @@ public abstract class Job : IJob
 		await Logger.LogErrorAsync(traceInfo, Name, x => x.ExceptionInfo(exception).Detail(detail), detail, null, cancellationToken: default).ConfigureAwait(false);
 		return true;
 	}
+
+	public virtual T? GetData<T>()
+		=> default;
 }
 
 public abstract class Job<TData> : Job, IJob<TData>, IJob
@@ -323,7 +326,7 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 			throw result.Build().ToException()!;
 	}
 
-	internal protected async Task SetDataAsync(ITraceInfo traceInfo, TData data)
+	protected async Task SaveDataAsync(ITraceInfo traceInfo, TData? data)
 	{
 		var result = new ResultBuilder();
 		traceInfo = TraceInfo.Create(traceInfo);
@@ -338,6 +341,9 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 				async (traceInfo, tc, unhandledExceptionDetail, cancellationToken) =>
 				{
 					await JobRepository.SaveDataAsync(Name, data, tc, cancellationToken).ConfigureAwait(false);
+
+					tc.ScheduleCommit();
+
 					return result.Build();
 				},
 				$"{nameof(Job)}<{typeof(TData).FullName}> - {nameof(BeforeStartInternalAsync)}> Global exception",
@@ -364,6 +370,14 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 		Data = data;
 	}
 
-	Task IJob<TData>.SetDataInternalAsync(ITraceInfo traceInfo, TData data)
-		=> SetDataAsync(traceInfo, data);
+	Task IJob<TData>.SaveDataInternalAsync(ITraceInfo traceInfo, TData? data)
+		=> SaveDataAsync(traceInfo, data);
+
+	public override T GetData<T>()
+	{
+		if (Data is T t)
+			return t;
+
+		return default!;
+	}
 }

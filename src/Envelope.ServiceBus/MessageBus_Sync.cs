@@ -14,20 +14,20 @@ namespace Envelope.ServiceBus;
 
 public partial class MessageBus : IMessageBus
 {
-	public IResult<Guid> Send(
+	public IResult Send(
 		IRequestMessage message,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
-		=> Send(message, null!, memberName, sourceFilePath, sourceLineNumber);
+		=> SendWithMessageId(message, null!, memberName, sourceFilePath, sourceLineNumber);
 
-	public IResult<Guid> Send(
+	public IResult Send(
 		IRequestMessage message,
 		Action<MessageOptionsBuilder> optionsBuilder,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
-		=> Send(
+		=> SendWithMessageId(
 			message,
 			optionsBuilder,
 			TraceInfo.Create(
@@ -38,12 +38,47 @@ public partial class MessageBus : IMessageBus
 				sourceFilePath,
 				sourceLineNumber));
 
-	public IResult<Guid> Send(
+	public IResult Send(
 		IRequestMessage message,
 		ITraceInfo traceInfo)
-		=> Send(message, (Action<MessageOptionsBuilder>?)null, traceInfo);
+		=> SendWithMessageId(message, (Action<MessageOptionsBuilder>?)null, traceInfo);
 
-	public IResult<Guid> Send(
+	public IResult Send(
+		IRequestMessage message,
+		Action<MessageOptionsBuilder>? optionsBuilder,
+		ITraceInfo traceInfo)
+		=> SendWithMessageId(message, optionsBuilder, traceInfo);
+
+	public IResult<Guid> SendWithMessageId(
+		IRequestMessage message,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0)
+		=> SendWithMessageId(message, null!, memberName, sourceFilePath, sourceLineNumber);
+
+	public IResult<Guid> SendWithMessageId(
+		IRequestMessage message,
+		Action<MessageOptionsBuilder> optionsBuilder,
+		[CallerMemberName] string memberName = "",
+		[CallerFilePath] string sourceFilePath = "",
+		[CallerLineNumber] int sourceLineNumber = 0)
+		=> SendWithMessageId(
+			message,
+			optionsBuilder,
+			TraceInfo.Create(
+				ServiceProvider.GetRequiredService<IApplicationContext>().TraceInfo,
+				null, //MessageBusOptions.HostInfo.HostName,
+				null,
+				memberName,
+				sourceFilePath,
+				sourceLineNumber));
+
+	public IResult<Guid> SendWithMessageId(
+		IRequestMessage message,
+		ITraceInfo traceInfo)
+		=> SendWithMessageId(message, (Action<MessageOptionsBuilder>?)null, traceInfo);
+
+	public IResult<Guid> SendWithMessageId(
 		IRequestMessage message,
 		Action<MessageOptionsBuilder>? optionsBuilder,
 		ITraceInfo traceInfo)

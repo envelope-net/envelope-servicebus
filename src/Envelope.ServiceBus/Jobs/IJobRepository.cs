@@ -1,5 +1,4 @@
-﻿using Envelope.ServiceBus.Orchestrations.EventHandlers;
-using Envelope.Transactions;
+﻿using Envelope.Transactions;
 
 namespace Envelope.ServiceBus.Jobs;
 
@@ -12,7 +11,7 @@ public interface IJobRepository
 
 	Task SaveDataAsync<TData>(
 		string jobName,
-		TData data,
+		TData? data,
 		ITransactionController transactionController,
 		CancellationToken cancellationToken = default);
 }
