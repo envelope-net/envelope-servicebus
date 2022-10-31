@@ -1,5 +1,4 @@
 ﻿using Envelope.ServiceBus.Jobs.Configuration;
-using Envelope.Trace;
 using System.Collections.Concurrent;
 
 namespace Envelope.ServiceBus.Jobs.Internal;
@@ -32,25 +31,5 @@ internal class JobRegister : IJobRegister
 				return job;
 			},
 			(key, existingJob) => throw new InvalidOperationException($"Job with {nameof(job.Name)} = {job.Name} already registered"));
-	}
-
-	public Task RegisterJobAsync<TData>(IJob<TData> job, TData? data, ITraceInfo traceInfo)
-	{
-		if (job == null)
-			throw new ArgumentNullException(nameof(job));
-
-		_jobs.AddOrUpdate(
-			job.Name,
-			key =>
-			{
-				job.InitializeInternal(_config, _serviceProvider);
-				return job;
-			},
-			(key, existingJob) => throw new InvalidOperationException($"Job with {nameof(job.Name)} = {job.Name} already registered"));
-
-		if (data != null)
-			return job.SetDataInternalAsync(traceInfo, data);
-
-		return Task.CompletedTask;
 	}
 }

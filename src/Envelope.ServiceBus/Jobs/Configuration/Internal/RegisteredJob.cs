@@ -1,4 +1,6 @@
-﻿namespace Envelope.ServiceBus.Jobs.Configuration.Internal;
+﻿using System.Xml.Linq;
+
+namespace Envelope.ServiceBus.Jobs.Configuration.Internal;
 
 internal class RegisteredJob
 {
@@ -9,6 +11,13 @@ internal class RegisteredJob
 	private IJob ToJob(IServiceProvider serviceProvider)
 		=> Job ?? JobFactory?.Invoke(serviceProvider) ?? throw new InvalidOperationException("Job == null");
 
-	public void JobRegister(IServiceProvider serviceProvider, IJobRegister register)
+	public void RegisterJob(IServiceProvider serviceProvider, IJobRegister register)
 		=> register.RegisterJob(ToJob(serviceProvider));
+}
+
+internal class RegisteredJob<TData> : RegisteredJob
+{
+	public new IJob<TData> Job { get; set; }
+
+	public new Func<IServiceProvider, IJob<TData>> JobFactory { get; set; }
 }
