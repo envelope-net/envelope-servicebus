@@ -8,6 +8,7 @@ using Envelope.Timers;
 using Envelope.Trace;
 using Envelope.Transactions;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading;
 
 namespace Envelope.ServiceBus.Jobs;
 
@@ -230,10 +231,17 @@ public abstract class Job : IJob
 		{
 			_cronAsyncTimerIsStopped = false;
 
-			while (await _cronAsyncTimer!.WaitForNextTickAsync().ConfigureAwait(false))
+			_ = Task.Run(async () =>
 			{
-				await OnNextCronTimerTickAsync().ConfigureAwait(false);
-			}
+				while (await _cronAsyncTimer!.WaitForNextTickAsync().ConfigureAwait(false))
+				{
+					await OnNextCronTimerTickAsync().ConfigureAwait(false);
+
+					if (_cronAsyncTimerIsStopped)
+						return;
+				}
+			},
+			cancellationToken: default);
 		}
 	}
 
