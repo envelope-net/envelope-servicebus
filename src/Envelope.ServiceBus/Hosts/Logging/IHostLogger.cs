@@ -29,6 +29,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	ILogMessage? LogWarning(
@@ -37,6 +38,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	IErrorMessage LogError(
@@ -87,6 +89,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 
@@ -96,6 +99,7 @@ public interface IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 

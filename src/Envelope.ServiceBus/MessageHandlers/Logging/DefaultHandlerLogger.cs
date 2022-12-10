@@ -83,6 +83,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
@@ -95,6 +96,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, messageMetadata, detail);
@@ -157,6 +159,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
@@ -170,6 +173,7 @@ public class DefaultHandlerLogger : IHandlerLogger
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{

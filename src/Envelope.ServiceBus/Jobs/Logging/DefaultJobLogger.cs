@@ -77,6 +77,7 @@ public class DefaultJobLogger : IJobLogger
 		string jobName,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
@@ -90,6 +91,7 @@ public class DefaultJobLogger : IJobLogger
 		string jobName,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{

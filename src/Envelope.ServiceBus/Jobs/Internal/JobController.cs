@@ -27,7 +27,7 @@ internal class JobController : IJobController
 		return job.StartAsync(traceInfo);
 	}
 
-	public Task StopJobAsync(string name)
+	public Task StopJobAsync(ITraceInfo traceInfo, string name)
 	{
 		if (string.IsNullOrWhiteSpace(name))
 			throw new ArgumentNullException(nameof(name));
@@ -35,7 +35,7 @@ internal class JobController : IJobController
 		if (!_jobRegister.JobsInternal.TryGetValue(name, out var job))
 			throw new InvalidOperationException($"No job with name {name} found");
 
-		return job.StopAsync();
+		return job.StopAsync(traceInfo);
 	}
 
 	async Task IJobController.StartAllInternalAsync(ITraceInfo traceInfo)
@@ -69,7 +69,7 @@ internal class JobController : IJobController
 		{
 			try
 			{
-				await job.StopAsync().ConfigureAwait(false);
+				await job.StopAsync(traceInfo).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{

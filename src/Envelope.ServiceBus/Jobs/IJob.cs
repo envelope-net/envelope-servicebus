@@ -22,7 +22,7 @@ public interface IJob
 
 	Task StartAsync(ITraceInfo traceInfo);
 
-	Task StopAsync();
+	Task StopAsync(ITraceInfo traceInfo);
 
 	void InitializeInternal(IJobProviderConfiguration config, IServiceProvider serviceProvider);
 

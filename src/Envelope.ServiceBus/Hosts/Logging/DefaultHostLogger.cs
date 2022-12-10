@@ -84,6 +84,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
@@ -97,6 +98,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null)
 	{
 		AppendToBuilder(messageBuilder, hostInfo, hostStatus, detail);
@@ -174,6 +176,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
@@ -188,6 +191,7 @@ public class DefaultHostLogger : IHostLogger
 		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{

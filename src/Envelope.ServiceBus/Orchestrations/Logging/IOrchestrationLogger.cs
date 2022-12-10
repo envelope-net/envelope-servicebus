@@ -33,6 +33,7 @@ public interface IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
@@ -43,6 +44,7 @@ public interface IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 

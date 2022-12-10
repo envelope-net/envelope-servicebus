@@ -98,6 +98,7 @@ public class DefaultOrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{
@@ -113,6 +114,7 @@ public class DefaultOrchestrationLogger : IOrchestrationLogger
 		Guid? idExecutionPointer,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
 	{

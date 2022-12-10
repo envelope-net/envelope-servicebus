@@ -64,7 +64,7 @@ internal class OrchestrationController : IOrchestrationController
 			}
 			catch (Exception ex)
 			{
-				var detail = "";
+				var detail = nameof(GetAllUnfinishedOrchestrationInstancesAsync);
 				await _logger.LogErrorAsync(
 					traceInfo,
 					null,
@@ -155,6 +155,7 @@ internal class OrchestrationController : IOrchestrationController
 							null,
 							x => x.InternalMessage($"Started orchestration definition = {idOrchestrationDefinition} as instance = {orchestrationInstance.IdOrchestrationInstance}"),
 							null,
+							true,
 							null,
 							cancellationToken: default).ConfigureAwait(false);
 
@@ -382,6 +383,7 @@ internal class OrchestrationController : IOrchestrationController
 						null,
 						x => x.InternalMessage($"Suspended orchestration {nameof(idOrchestrationInstance)} = {idOrchestrationInstance}"),
 						null,
+						true,
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 
@@ -464,6 +466,7 @@ internal class OrchestrationController : IOrchestrationController
 						null,
 						x => x.InternalMessage($"Resumed orchestration {nameof(idOrchestrationInstance)} = {idOrchestrationInstance}"),
 						null,
+						true,
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 
@@ -547,6 +550,7 @@ internal class OrchestrationController : IOrchestrationController
 						null,
 						x => x.InternalMessage($"Terminated orchestration {nameof(idOrchestrationInstance)} =  {idOrchestrationInstance}"),
 						null,
+						true,
 						null,
 						cancellationToken: default).ConfigureAwait(false);
 
