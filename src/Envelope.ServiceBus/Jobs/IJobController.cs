@@ -10,5 +10,5 @@ public interface IJobController
 
 	Task StartJobAsync(ITraceInfo traceInfo, string name);
 
-	Task StopJobAsync(string name);
+	Task StopJobAsync(ITraceInfo traceInfo, string name);
 }

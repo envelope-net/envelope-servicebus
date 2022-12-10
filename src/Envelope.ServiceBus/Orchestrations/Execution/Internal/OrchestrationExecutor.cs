@@ -841,6 +841,7 @@ internal class OrchestrationExecutor : IOrchestrationExecutor
 			null,
 			x => x.InternalMessage($"Orchestration completed {nameof(orchestrationInstance.IdOrchestrationInstance)} = {orchestrationInstance.IdOrchestrationInstance}"),
 			null,
+			true,
 			null,
 			cancellationToken: default).ConfigureAwait(false);
 

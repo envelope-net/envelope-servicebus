@@ -8,6 +8,7 @@ using Envelope.Timers;
 using Envelope.Trace;
 using Envelope.Transactions;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading;
 
 namespace Envelope.ServiceBus.Jobs;
 
@@ -167,7 +168,10 @@ public abstract class Job : IJob
 		}
 
 		if (!@continue)
-			await StopAsync().ConfigureAwait(false);
+		{
+			await using var scopedServiceProvider = MainServiceProvider.CreateAsyncScope();
+			await StopAsync(TraceInfo.Create(scopedServiceProvider.ServiceProvider)).ConfigureAwait(false);
+		}
 	}
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
 #pragma warning restore VSTHRD100 // Avoid async void methods
@@ -192,12 +196,15 @@ public abstract class Job : IJob
 		if (!@continue)
 		{
 			_cronAsyncTimerIsStopped = true;
-			await StopAsync().ConfigureAwait(false);
+			await using var scopedServiceProvider = MainServiceProvider.CreateAsyncScope();
+			await StopAsync(TraceInfo.Create(scopedServiceProvider.ServiceProvider)).ConfigureAwait(false);
 		}
 	}
 
 	public async Task StartAsync(ITraceInfo traceInfo)
 	{
+		await Logger.LogInformationAsync(traceInfo, Name, x => x.Detail("Starting"), "Starting", true, null, cancellationToken: default);
+
 		if (!Initialized)
 			throw new InvalidOperationException("Not initialized");
 
@@ -230,15 +237,26 @@ public abstract class Job : IJob
 		{
 			_cronAsyncTimerIsStopped = false;
 
-			while (await _cronAsyncTimer!.WaitForNextTickAsync().ConfigureAwait(false))
+			_ = Task.Run(async () =>
 			{
-				await OnNextCronTimerTickAsync().ConfigureAwait(false);
-			}
+				while (await _cronAsyncTimer!.WaitForNextTickAsync().ConfigureAwait(false))
+				{
+					await OnNextCronTimerTickAsync().ConfigureAwait(false);
+
+					if (_cronAsyncTimerIsStopped)
+						return;
+				}
+			},
+			cancellationToken: default);
 		}
+
+		await Logger.LogInformationAsync(traceInfo, Name, x => x.Detail("Started"), "Started", true, null, cancellationToken: default);
 	}
 
-	public async Task StopAsync()
+	public async Task StopAsync(ITraceInfo traceInfo)
 	{
+		await Logger.LogInformationAsync(traceInfo, Name, x => x.Detail("Stopping"), "Stopping", true, null, cancellationToken: default);
+
 		if (!Initialized)
 			throw new InvalidOperationException("Not initialized");
 
@@ -262,6 +280,8 @@ public abstract class Job : IJob
 		{
 			_cronAsyncTimerIsStopped = true;
 		}
+
+		await Logger.LogInformationAsync(traceInfo, Name, x => x.Detail("Stopped"), "Stopped", true, null, cancellationToken: default);
 	}
 
 	public abstract Task<bool> ExecuteAsync(IServiceProvider scopedServiceProvider);

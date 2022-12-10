@@ -49,6 +49,7 @@ public interface IMessageHandlerContext : IMessageMetadata
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	ILogMessage? LogWarning(
@@ -56,6 +57,7 @@ public interface IMessageHandlerContext : IMessageMetadata
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	IErrorMessage? LogError(
@@ -93,6 +95,7 @@ public interface IMessageHandlerContext : IMessageMetadata
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 
@@ -101,6 +104,7 @@ public interface IMessageHandlerContext : IMessageMetadata
 		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
+		bool force = false,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 
