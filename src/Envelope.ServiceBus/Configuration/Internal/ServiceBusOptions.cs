@@ -7,7 +7,6 @@ using Envelope.ServiceBus.MessageHandlers.Logging;
 using Envelope.ServiceBus.Messages.Resolvers;
 using Envelope.ServiceBus.Queues;
 using Envelope.Text;
-using Envelope.Transactions;
 using Envelope.Validation;
 
 namespace Envelope.ServiceBus.Configuration.Internal;
@@ -119,4 +118,7 @@ internal class ServiceBusOptions : IServiceBusOptions, IValidable
 
 		return parentErrorBuffer;
 	}
+
+	public void LogEnvironmentInfo()
+		=> HostLogger.LogEnvironmentInfo(HostInfo?.EnvironmentInfo ?? throw new InvalidOperationException($"{nameof(HostInfo)}?.{nameof(HostInfo.EnvironmentInfo)} == null"));
 }

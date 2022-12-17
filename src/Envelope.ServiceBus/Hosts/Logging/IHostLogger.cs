@@ -1,4 +1,5 @@
-﻿using Envelope.Logging;
+﻿using Envelope.Infrastructure;
+using Envelope.Logging;
 using Envelope.Services;
 using Envelope.Trace;
 using Envelope.Transactions;
@@ -130,4 +131,6 @@ public interface IHostLogger
 		IResult result,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
+
+	void LogEnvironmentInfo(EnvironmentInfo environmentInfo);
 }

@@ -21,6 +21,6 @@ public class HostInfo : IHostInfo
 
 		HostId = GuidConverter.ToGuid(HostName);
 		InstanceId = Guid.NewGuid();
-		EnvironmentInfo = EnvironmentInfoProvider.GetEnvironmentInfo();
+		EnvironmentInfo = EnvironmentInfoProvider.GetEnvironmentInfo(HostName);
 	}
 }

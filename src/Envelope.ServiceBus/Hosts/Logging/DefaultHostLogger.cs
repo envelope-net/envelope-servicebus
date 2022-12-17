@@ -1,4 +1,5 @@
-﻿using Envelope.Logging;
+﻿using Envelope.Infrastructure;
+using Envelope.Logging;
 using Envelope.Logging.Extensions;
 using Envelope.Services;
 using Envelope.Trace;
@@ -244,5 +245,9 @@ public class DefaultHostLogger : IHostLogger
 	{
 		_logger.LogResultAllMessages(result, true);
 		return Task.CompletedTask;
+	}
+
+	public void LogEnvironmentInfo(EnvironmentInfo environmentInfo)
+	{
 	}
 }
