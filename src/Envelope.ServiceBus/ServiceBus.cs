@@ -32,6 +32,9 @@ internal class ServiceBus : IServiceBus
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 
+		_options.HostLogger.LogStatusHost(traceInfo, _options.HostInfo);
+		_options.HostLogger.LogInformation(traceInfo, _options.HostInfo, x => x.InternalMessage(nameof(Initialize)), nameof(Initialize), true, null);
+
 		foreach (var queue in _options.QueueProvider.GetAllQueues())
 		{
 			_ = Task.Run(async () =>
@@ -45,7 +48,6 @@ internal class ServiceBus : IServiceBus
 					await _options.HostLogger.LogErrorAsync(
 						traceInfo,
 						_options.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
 						$"{nameof(Initialize)} >> {nameof(queue.OnMessageInternalAsync)}: QUEUE = {queue.QueueName}",
 						null,
@@ -69,7 +71,6 @@ internal class ServiceBus : IServiceBus
 					await _options.HostLogger.LogErrorAsync(
 						traceInfo,
 						_options.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
 						$"{nameof(Initialize)} >> {nameof(exchange.OnMessageInternalAsync)}: EXCHANGE = {exchange.QueueName}",
 						null,
@@ -93,7 +94,6 @@ internal class ServiceBus : IServiceBus
 					await _options.HostLogger.LogErrorAsync(
 						traceInfo,
 						_options.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
 						$"{nameof(Initialize)} >> {nameof(jobController.StartAllInternalAsync)}: Jobs",
 						null,
@@ -187,7 +187,6 @@ internal class ServiceBus : IServiceBus
 				await _options.HostLogger.LogErrorAsync(
 					TraceInfo.Create(traceInfo),
 					_options.HostInfo,
-					HostStatus.Unchanged,
 					x => x.ExceptionInfo(exHost),
 					$"{nameof(PublishAsync)}<{typeof(TMessage).FullName}> error",
 					null,
@@ -232,7 +231,6 @@ internal class ServiceBus : IServiceBus
 						var errorMessage = await _options.HostLogger.LogErrorAsync(
 							traceInfo,
 							_options.HostInfo,
-							HostStatus.Unchanged,
 							x => x.InternalMessage($"exchange == null | {nameof(options.ExchangeName)} == {options.ExchangeName} | MessageType = {typeof(TMessage).FullName}"),
 							$"{nameof(DispatchAsync)}<{nameof(TMessage)}> exchange == null",
 							null,
@@ -276,7 +274,6 @@ internal class ServiceBus : IServiceBus
 						await _options.HostLogger.LogErrorAsync(
 							traceInfo,
 							_options.HostInfo,
-							HostStatus.Unchanged,
 							x => x.ExceptionInfo(exception).Detail(detail),
 							detail,
 							null,
@@ -309,7 +306,6 @@ internal class ServiceBus : IServiceBus
 					await _options.HostLogger.LogErrorAsync(
 						TraceInfo.Create(traceInfo),
 						_options.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
 						$"{nameof(DispatchAsync)} >> {nameof(exchange.OnMessageInternalAsync)}",
 						null,
@@ -358,7 +354,6 @@ internal class ServiceBus : IServiceBus
 					var errorMessage = await _options.HostLogger.LogErrorAsync(
 						traceInfo,
 						_options.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						cancellationToken: default).ConfigureAwait(false);

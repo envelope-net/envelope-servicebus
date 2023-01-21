@@ -48,13 +48,17 @@ internal class JobController : IJobController
 			}
 			catch (Exception ex)
 			{
+				var executeResult = new JobExecuteResult(job.JobInstanceId, true, JobExecuteStatus.NONE);
 				var detail = nameof(IJobController.StartAllInternalAsync);
 				await 
 					_config
 						.JobLogger(_serviceProvider)
 						.LogErrorAsync(
 							traceInfo,
-							job.Name,
+							job,
+							executeResult,
+							null,
+							LogCodes.STARTING_ERROR,
 							x => x.ExceptionInfo(ex).Detail(detail),
 							detail,
 							null,
@@ -73,13 +77,17 @@ internal class JobController : IJobController
 			}
 			catch (Exception ex)
 			{
+				var executeResult = new JobExecuteResult(job.JobInstanceId, true, JobExecuteStatus.NONE);
 				var detail = nameof(IJobController.StopAllInternalAsync);
 				await
 					_config
 						.JobLogger(_serviceProvider)
 						.LogErrorAsync(
 							traceInfo,
-							job.Name,
+							job,
+							executeResult,
+							null,
+							LogCodes.STOPPING_ERROR,
 							x => x.ExceptionInfo(ex).Detail(detail),
 							detail,
 							null,

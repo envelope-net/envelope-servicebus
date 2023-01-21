@@ -5,6 +5,9 @@ using System.Text;
 
 namespace Envelope.ServiceBus.Messages.Options;
 
+#if NET6_0_OR_GREATER
+[Envelope.Serializer.JsonPolymorphicConverter]
+#endif
 public interface IMessageOptions : IValidable
 {
 	ITransactionController TransactionController { get; set; }

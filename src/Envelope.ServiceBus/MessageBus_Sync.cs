@@ -219,7 +219,6 @@ public partial class MessageBus : IMessageBus
 					MessageBusOptions.HostLogger.LogError(
 						traceInfo,
 						MessageBusOptions.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						null);
@@ -450,7 +449,6 @@ public partial class MessageBus : IMessageBus
 					MessageBusOptions.HostLogger.LogError(
 						traceInfo,
 						MessageBusOptions.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						null);

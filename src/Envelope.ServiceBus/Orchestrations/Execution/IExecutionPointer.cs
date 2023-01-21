@@ -3,6 +3,9 @@ using Envelope.ServiceBus.Orchestrations.Model;
 
 namespace Envelope.ServiceBus.Orchestrations.Execution;
 
+#if NET6_0_OR_GREATER
+[Envelope.Serializer.JsonPolymorphicConverter]
+#endif
 public interface IExecutionPointer
 {
 	Guid IdExecutionPointer { get; }

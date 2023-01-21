@@ -1,5 +1,8 @@
 ﻿namespace Envelope.ServiceBus.Orchestrations.Execution;
 
+#if NET6_0_OR_GREATER
+[Envelope.Serializer.JsonPolymorphicConverter]
+#endif
 public interface IExecutionResult
 {
 	IReadOnlyList<Guid>? NextSteps { get; }

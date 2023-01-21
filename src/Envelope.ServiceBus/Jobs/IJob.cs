@@ -1,4 +1,5 @@
 ﻿using Envelope.Calendar;
+using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Jobs.Configuration;
 using Envelope.Trace;
 
@@ -6,6 +7,10 @@ namespace Envelope.ServiceBus.Jobs;
 
 public interface IJob
 {
+	Guid JobInstanceId { get; }
+
+	IHostInfo HostInfo { get; }
+
 	string Name { get; }
 
 	bool Disabled { get; }
@@ -17,6 +22,16 @@ public interface IJob
 	TimeSpan? IdleTimeout { get; }
 
 	CronTimerSettings? CronTimerSettings { get; }
+
+	DateTime? NextExecutionRunUtc { get; }
+
+	int ExecutionEstimatedTimeInSeconds { get; }
+
+	int DeclaringAsOfflineAfterMinutesOfInactivity { get; }
+
+	DateTime LastUpdateUtc { get; }
+
+	DateTime? LastExecutionStartedUtc { get; }
 
 	JobStatus Status { get; }
 
@@ -33,5 +48,5 @@ public interface IJob<TData> : IJob
 {
 	TData? Data { get; }
 
-	Task SaveDataInternalAsync(ITraceInfo traceInfo, TData? data);
+	Task SaveDataInternalAsync(JobExecuteResult result, ITraceInfo traceInfo, TData? data);
 }

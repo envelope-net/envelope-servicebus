@@ -2,7 +2,7 @@
 
 public enum HostStatus
 {
-	Unchanged = 0,
+	NONE = 0,
 	Online = 1,
 	Error = 2,
 	Offline = 3

@@ -287,7 +287,6 @@ public partial class MessageBus : IMessageBus
 					await MessageBusOptions.HostLogger.LogErrorAsync(
 						traceInfo,
 						MessageBusOptions.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						null,
@@ -532,7 +531,6 @@ public partial class MessageBus : IMessageBus
 					await MessageBusOptions.HostLogger.LogErrorAsync(
 						traceInfo,
 						MessageBusOptions.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						null,

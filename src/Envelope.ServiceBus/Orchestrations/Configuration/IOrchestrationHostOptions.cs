@@ -3,11 +3,13 @@ using Envelope.ServiceBus.ErrorHandling;
 using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Orchestrations.Execution;
 using Envelope.ServiceBus.Orchestrations.Logging;
-using Envelope.Transactions;
 using Envelope.Validation;
 
 namespace Envelope.ServiceBus.Orchestrations.Configuration;
 
+#if NET6_0_OR_GREATER
+[Envelope.Serializer.JsonPolymorphicConverter]
+#endif
 public interface IOrchestrationHostOptions : IValidable
 {
 	IHostInfo HostInfo { get; }

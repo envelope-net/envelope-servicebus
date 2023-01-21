@@ -201,7 +201,6 @@ public partial class EventBus : IEventBus
 					EventBusOptions.HostLogger.LogError(
 						traceInfo,
 						EventBusOptions.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						null);

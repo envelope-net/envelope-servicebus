@@ -83,7 +83,6 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 				await _messageQueueContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 					traceInfo,
 					_messageQueueContext.ServiceBusOptions.HostInfo,
-					HostStatus.Unchanged,
 					x => x.ExceptionInfo(exception),
 					$"{nameof(GetCountAsync)} dispose {nameof(transactionController)} error",
 					null,
@@ -346,7 +345,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 						var peekResult = await TryPeekAsync(traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 						if (peekResult.HasError)
 						{
-							await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(peekResult, null, cancellationToken).ConfigureAwait(false);
+							await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_messageQueueContext.ServiceBusOptions.HostInfo, peekResult, null, cancellationToken).ConfigureAwait(false);
 							transactionController.ScheduleRollback(nameof(TryPeekAsync));
 
 							return LoopControlEnum.Return;
@@ -363,7 +362,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 								{
 									transactionController.ScheduleRollback(nameof(_queue.TryRemoveAsync));
 
-									await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(removeResult, null, cancellationToken).ConfigureAwait(false);
+									await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_messageQueueContext.ServiceBusOptions.HostInfo, removeResult, null, cancellationToken).ConfigureAwait(false);
 									await PublishQueueEventAsync(message, traceInfo, QueueEventType.OnMessage, removeResult).ConfigureAwait(false);
 								}
 								else
@@ -398,7 +397,6 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 										await _messageQueueContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 											traceInfo,
 											_messageQueueContext.ServiceBusOptions.HostInfo,
-											HostStatus.Unchanged,
 											x => x
 												.ExceptionInfo(faultEx)
 												.Detail($"{nameof(message.QueueName)} == {message.QueueName} | {nameof(message.SourceExchangeName)} == {message.SourceExchangeName} | MessageType = {message.Message?.GetType().FullName} >> {nameof(_messageQueueContext.ServiceBusOptions.QueueProvider.FaultQueue)}.{nameof(_messageQueueContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync)}"),
@@ -419,7 +417,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 								{
 									transactionController.ScheduleRollback($"{nameof(HandleMessageAsync)} - {nameof(_queue.TryRemoveAsync)}");
 
-									await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(removeResult, null, cancellationToken).ConfigureAwait(false);
+									await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_messageQueueContext.ServiceBusOptions.HostInfo, removeResult, null, cancellationToken).ConfigureAwait(false);
 									await PublishQueueEventAsync(message, traceInfo, QueueEventType.OnMessage, removeResult).ConfigureAwait(false);
 								}
 								else
@@ -437,7 +435,6 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 						await _messageQueueContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 						traceInfo,
 						_messageQueueContext.ServiceBusOptions.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						null,
@@ -508,14 +505,14 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 		catch (Exception ex)
 		{
 			result.WithInvalidOperationException(traceInfo, $"{nameof(handlerResult)} == null", ex);
-			await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(result.Build(), null, cancellationToken).ConfigureAwait(false);
+			await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_messageQueueContext.ServiceBusOptions.HostInfo, result.Build(), null, cancellationToken).ConfigureAwait(false);
 		}
 
 		if (handlerResult == null)
 		{
 			result.WithInvalidOperationException(traceInfo, $"{nameof(handlerResult)} == null");
 
-			await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(result.Build(), null, cancellationToken).ConfigureAwait(false);
+			await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_messageQueueContext.ServiceBusOptions.HostInfo, result.Build(), null, cancellationToken).ConfigureAwait(false);
 			return await PublishQueueEventAsync(message, traceInfo, QueueEventType.OnMessage, result.Build()).ConfigureAwait(false);
 		}
 
@@ -523,7 +520,7 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 		if (hasError)
 		{
 			result.MergeAllHasError(handlerResult.ErrorResult!);
-			await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(result.Build(), null, cancellationToken).ConfigureAwait(false);
+			await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_messageQueueContext.ServiceBusOptions.HostInfo, result.Build(), null, cancellationToken).ConfigureAwait(false);
 			await PublishQueueEventAsync(message, traceInfo, QueueEventType.OnMessage, result.Build()).ConfigureAwait(false);
 		}
 
@@ -591,7 +588,6 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 				return _messageQueueContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 					traceInfo,
 					_messageQueueContext.ServiceBusOptions.HostInfo,
-					HostStatus.Unchanged,
 					x => x.ExceptionInfo(exception).Detail(detail),
 					detail,
 					null,
@@ -620,12 +616,12 @@ public class MessageQueue<TMessage> : IMessageQueue<TMessage>, IQueueInfo, IDisp
 		if (result.HasError)
 		{
 			queueEvent = new QueueErrorEvent(this, queueEventType, message, result);
-			await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(result, null, cancellationToken: default).ConfigureAwait(false);
+			await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_messageQueueContext.ServiceBusOptions.HostInfo, result, null, cancellationToken: default).ConfigureAwait(false);
 		}
 		else
 		{
 			queueEvent = new QueueEvent(this, queueEventType, message);
-			await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultAllMessagesAsync(result, null, cancellationToken: default).ConfigureAwait(false);
+			await _messageQueueContext.ServiceBusOptions.HostLogger.LogResultAllMessagesAsync(_messageQueueContext.ServiceBusOptions.HostInfo, result, null, cancellationToken: default).ConfigureAwait(false);
 		}
 
 		await _messageQueueContext.ServiceBusOptions.ServiceBusLifeCycleEventManager.PublishServiceBusEventInternalAsync(

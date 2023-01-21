@@ -101,7 +101,6 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 				await _exchangeContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 					traceInfo,
 					_exchangeContext.ServiceBusOptions.HostInfo,
-					HostStatus.Unchanged,
 					x => x.ExceptionInfo(exception),
 					nameof(GetCountAsync),
 					null,
@@ -339,7 +338,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 						var peekResult = await TryPeekAsync(traceInfo, transactionController, cancellationToken).ConfigureAwait(false);
 						if (peekResult.HasError)
 						{
-							await _exchangeContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(peekResult, null, cancellationToken).ConfigureAwait(false);
+							await _exchangeContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_exchangeContext.ServiceBusOptions.HostInfo, peekResult, null, cancellationToken).ConfigureAwait(false);
 							transactionController.ScheduleRollback(nameof(TryPeekAsync));
 							return LoopControlEnum.Return;
 						}
@@ -355,7 +354,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 								{
 									transactionController.ScheduleRollback(nameof(_queue.TryRemoveAsync));
 
-									await _exchangeContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(removeResult, null, cancellationToken).ConfigureAwait(false);
+									await _exchangeContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_exchangeContext.ServiceBusOptions.HostInfo, removeResult, null, cancellationToken).ConfigureAwait(false);
 									await PublishExchangeEventAsync(message, traceInfo, ExchangeEventType.OnMessage, removeResult).ConfigureAwait(false);
 								}
 								else
@@ -390,7 +389,6 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 										await _exchangeContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 											traceInfo,
 											_exchangeContext.ServiceBusOptions.HostInfo,
-											HostStatus.Unchanged,
 											x => x
 												.ExceptionInfo(faultEx)
 												.Detail($"{nameof(message.ExchangeName)} == {message.ExchangeName} | {nameof(message.TargetQueueName)} == {message.TargetQueueName} | MessageType = {message.Message?.GetType().FullName} >> {nameof(_exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue)}.{nameof(_exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync)}"),
@@ -413,7 +411,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 								{
 									transactionController.ScheduleRollback($"{nameof(ProcessMessageHandlerResultAsync)} - {nameof(_queue.TryRemoveAsync)}");
 
-									await _exchangeContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(removeResult, null, cancellationToken).ConfigureAwait(false);
+									await _exchangeContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_exchangeContext.ServiceBusOptions.HostInfo, removeResult, null, cancellationToken).ConfigureAwait(false);
 									await PublishExchangeEventAsync(message, traceInfo, ExchangeEventType.OnMessage, removeResult).ConfigureAwait(false);
 								}
 								else
@@ -432,7 +430,6 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 						await _exchangeContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 							traceInfo,
 							_exchangeContext.ServiceBusOptions.HostInfo,
-							HostStatus.Unchanged,
 							x => x.ExceptionInfo(exception).Detail(detail),
 							detail,
 							null,
@@ -464,7 +461,6 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 							await _exchangeContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 								TraceInfo.Create(traceInfo),
 								_exchangeContext.ServiceBusOptions.HostInfo,
-								HostStatus.Unchanged,
 								x => x.ExceptionInfo(ex),
 								$"{nameof(OnMessageAsync)} >> {nameof(onMessageQueue)}",
 								null,
@@ -493,7 +489,7 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 		if (hasError)
 		{
 			result.MergeAllHasError(brokerResult.ErrorResult!);
-			await _exchangeContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(result.Build(), null, cancellationToken).ConfigureAwait(false);
+			await _exchangeContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_exchangeContext.ServiceBusOptions.HostInfo, result.Build(), null, cancellationToken).ConfigureAwait(false);
 			await PublishExchangeEventAsync(message, traceInfo, ExchangeEventType.OnMessage, result.Build()).ConfigureAwait(false);
 		}
 
@@ -566,7 +562,6 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 				return _exchangeContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 					traceInfo,
 					_exchangeContext.ServiceBusOptions.HostInfo,
-					HostStatus.Unchanged,
 					x => x.ExceptionInfo(exception).Detail(detail),
 					detail,
 					null,
@@ -595,12 +590,12 @@ public class Exchange<TMessage> : IExchange<TMessage>, IQueueInfo, IDisposable, 
 		if (result.HasError)
 		{
 			exchangeEvent = new ExchangeErrorEvent(this, exchangeEventType, message, result);
-			await _exchangeContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(result, null, cancellationToken: default).ConfigureAwait(false);
+			await _exchangeContext.ServiceBusOptions.HostLogger.LogResultErrorMessagesAsync(_exchangeContext.ServiceBusOptions.HostInfo, result, null, cancellationToken: default).ConfigureAwait(false);
 		}
 		else
 		{
 			exchangeEvent = new ExchangeEvent(this, exchangeEventType, message);
-			await _exchangeContext.ServiceBusOptions.HostLogger.LogResultAllMessagesAsync(result, null, cancellationToken: default).ConfigureAwait(false);
+			await _exchangeContext.ServiceBusOptions.HostLogger.LogResultAllMessagesAsync(_exchangeContext.ServiceBusOptions.HostInfo, result, null, cancellationToken: default).ConfigureAwait(false);
 		}
 
 		await _exchangeContext.ServiceBusOptions.ServiceBusLifeCycleEventManager.PublishServiceBusEventInternalAsync(

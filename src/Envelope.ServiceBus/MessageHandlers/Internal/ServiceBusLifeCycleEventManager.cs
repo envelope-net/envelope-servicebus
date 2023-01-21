@@ -33,7 +33,6 @@ internal class ServiceBusLifeCycleEventManager : IServiceBusLifeCycleEventManage
 					await serviceBusOptions.HostLogger.LogErrorAsync(
 						TraceInfo.Create(traceInfo),
 						serviceBusOptions.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(ex),
 						$"{nameof(serviceBusEvent)} type = {serviceBusEvent.GetType().FullName}",
 						null,
@@ -50,7 +49,6 @@ internal class ServiceBusLifeCycleEventManager : IServiceBusLifeCycleEventManage
 			//	await serviceBusOptions.HostLogger.LogErrorAsync(
 			//		traceInfo,
 			//		serviceBusOptions.HostInfo,
-			//		HostStatus.Unchanged,
 			//		x => x.ExceptionInfo(ex),
 			//		$"{nameof(serviceBusEvent)} type = {serviceBusEvent.GetType().FullName}",
 			//		null,

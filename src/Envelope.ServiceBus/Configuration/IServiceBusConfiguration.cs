@@ -7,11 +7,13 @@ using Envelope.ServiceBus.Messages.Resolvers;
 using Envelope.ServiceBus.Orchestrations.Model;
 using Envelope.ServiceBus.Queues;
 using Envelope.ServiceBus.Queues.Configuration;
-using Envelope.Transactions;
 using Envelope.Validation;
 
 namespace Envelope.ServiceBus.Configuration;
 
+#if NET6_0_OR_GREATER
+[Envelope.Serializer.JsonPolymorphicConverter]
+#endif
 public interface IServiceBusConfiguration : IValidable
 {
 	ServiceBusMode? ServiceBusMode { get; set; }

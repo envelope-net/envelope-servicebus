@@ -20,6 +20,10 @@ public interface IJobConfigurationBuilder<TBuilder, TObject>
 
 	TBuilder DelayedStart(TimeSpan? delayedStart, bool force = true);
 
+	TBuilder ExecutionEstimatedTimeInSeconds(int executionEstimatedTimeInSeconds);
+
+	TBuilder DeclaringAsOfflineAfterMinutesOfInactivity(int declaringAsOfflineAfterMinutesOfInactivity);
+
 	TBuilder IdleTimeout(TimeSpan? idleTimeout, bool force = true);
 
 	TBuilder CronTimerSettings(CronTimerSettings cronTimerSettings, bool force = true);
@@ -99,6 +103,24 @@ public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfi
 		return _builder;
 	}
 
+	public TBuilder ExecutionEstimatedTimeInSeconds(int executionEstimatedTimeInSeconds)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		_jobConfiguration.ExecutionEstimatedTimeInSeconds = executionEstimatedTimeInSeconds;
+		return _builder;
+	}
+
+	public TBuilder DeclaringAsOfflineAfterMinutesOfInactivity(int declaringAsOfflineAfterMinutesOfInactivity)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		_jobConfiguration.DeclaringAsOfflineAfterMinutesOfInactivity = declaringAsOfflineAfterMinutesOfInactivity;
+		return _builder;
+	}
+
 	public TBuilder IdleTimeout(TimeSpan? idleTimeout, bool force = true)
 	{
 		if (_finalized)
@@ -137,5 +159,7 @@ public class JobConfigurationBuilder : JobConfigurationBuilderBase<JobConfigurat
 			//.DelayedStart(null)
 			//.IdleTimeout(null)
 			//.CronTimerSettings(null)
+			//.ExecutionEstimatedTimeInSeconds(0)
+			//.DeclaringAsOfflineAfterMinutesOfInactivity(0)
 			;
 }

@@ -7,9 +7,38 @@ namespace Envelope.ServiceBus.Jobs.Logging;
 
 public interface IJobLogger
 {
+	void LogStatus(
+		ITraceInfo traceInfo,
+		IJob job,
+		JobExecuteResult executeResult,
+		JobExecuteStatus? newExecuteStatus);
+
+	Task LogStatusAsync(
+		ITraceInfo traceInfo,
+		IJob job,
+		JobExecuteResult executeResult,
+		JobExecuteStatus? newExecuteStatus,
+		CancellationToken cancellationToken = default);
+
+	Task LogExecutionStartAsync(
+		ITraceInfo traceInfo,
+		IJob job,
+		JobExecuteResult executeResult,
+		DateTime startedUtc,
+		bool finished = false);
+
+	Task LogExecutionFinishedAsync(
+		ITraceInfo traceInfo,
+		IJob job,
+		JobExecuteResult executeResult,
+		DateTime startedUtc);
+
 	Task<ILogMessage?> LogTraceAsync(
 		ITraceInfo traceInfo,
-		string jobName,
+		IJob job,
+		JobExecuteResult executeResult,
+		JobExecuteStatus? newExecuteStatus,
+		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionController? transactionController = null,
@@ -17,7 +46,10 @@ public interface IJobLogger
 
 	Task<ILogMessage?> LogDebugAsync(
 		ITraceInfo traceInfo,
-		string jobName,
+		IJob job,
+		JobExecuteResult executeResult,
+		JobExecuteStatus? newExecuteStatus,
+		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionController? transactionController = null,
@@ -25,7 +57,10 @@ public interface IJobLogger
 
 	Task<ILogMessage?> LogInformationAsync(
 		ITraceInfo traceInfo,
-		string jobName,
+		IJob job,
+		JobExecuteResult executeResult,
+		JobExecuteStatus? newExecuteStatus,
+		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -34,7 +69,10 @@ public interface IJobLogger
 
 	Task<ILogMessage?> LogWarningAsync(
 		ITraceInfo traceInfo,
-		string jobName,
+		IJob job,
+		JobExecuteResult executeResult,
+		JobExecuteStatus? newExecuteStatus,
+		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -43,7 +81,10 @@ public interface IJobLogger
 
 	Task<IErrorMessage> LogErrorAsync(
 		ITraceInfo traceInfo,
-		string jobName,
+		IJob job,
+		JobExecuteResult executeResult,
+		JobExecuteStatus? newExecuteStatus,
+		string logCode,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionController? transactionController = null,
@@ -51,20 +92,29 @@ public interface IJobLogger
 
 	Task<IErrorMessage> LogCriticalAsync(
 		ITraceInfo traceInfo,
-		string jobName,
+		IJob job,
+		JobExecuteResult executeResult,
+		JobExecuteStatus? newExecuteStatus,
+		string logCode,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
 
 	Task LogResultErrorMessagesAsync(
-		string jobName,
+		IJob job,
+		JobExecuteResult executeResult,
+		JobExecuteStatus? newExecuteStatus,
+		string logCode,
 		IResult result,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 
 	Task LogResultAllMessagesAsync(
-		string jobName,
+		IJob job,
+		JobExecuteResult executeResult,
+		JobExecuteStatus? newExecuteStatus,
+		string logCode,
 		IResult result,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);

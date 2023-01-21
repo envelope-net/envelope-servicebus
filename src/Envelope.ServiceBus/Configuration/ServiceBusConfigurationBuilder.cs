@@ -2,14 +2,12 @@
 using Envelope.ServiceBus.Exchange.Configuration;
 using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Hosts.Logging;
-using Envelope.ServiceBus.Internals;
 using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Logging;
 using Envelope.ServiceBus.Messages.Resolvers;
 using Envelope.ServiceBus.Orchestrations.Model;
 using Envelope.ServiceBus.Queues;
 using Envelope.ServiceBus.Queues.Configuration;
-using Envelope.Transactions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

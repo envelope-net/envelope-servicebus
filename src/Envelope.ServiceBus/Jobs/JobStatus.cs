@@ -3,7 +3,9 @@
 public enum JobStatus
 {
 	Disabled = 0,
-	Idle = 1,
-	InProcess = 2,
-	Stopped = 3
+	Stopped = 1,
+	Idle = 2,
+	InProcess = 3,
+	TooLongProcessing = 4, //calculated by last execution
+	Offline = 5 //calculated by last execution
 }

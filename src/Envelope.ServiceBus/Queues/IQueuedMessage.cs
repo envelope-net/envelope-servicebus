@@ -2,6 +2,9 @@
 
 namespace Envelope.ServiceBus.Queues;
 
+#if NET6_0_OR_GREATER
+[Envelope.Serializer.JsonPolymorphicConverter]
+#endif
 public interface IQueuedMessage<out TMessage> : IMessageMetadata, ISavedMessage<TMessage>, IMessageInfo
 	where TMessage : class, IMessage
 {
