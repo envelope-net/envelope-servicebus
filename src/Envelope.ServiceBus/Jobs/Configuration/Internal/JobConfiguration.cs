@@ -10,6 +10,8 @@ internal class JobConfiguration : IJobConfiguration, IValidable
 {
 	public string Name { get; set; }
 
+	public string Description { get; set; }
+
 	public bool Disabled { get; set; }
 
 	public JobExecutingMode Mode { get; set; }

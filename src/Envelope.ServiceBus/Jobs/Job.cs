@@ -1,9 +1,7 @@
 ﻿using Envelope.Calendar;
-using Envelope.Enums;
 using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Jobs.Configuration;
 using Envelope.ServiceBus.Jobs.Logging;
-using Envelope.ServiceBus.Queries;
 using Envelope.Services;
 using Envelope.Services.Transactions;
 using Envelope.Timers;
@@ -54,6 +52,8 @@ public abstract class Job : IJob
 	public bool Initialized { get; private set; }
 
 	public string Name => Config.Name;
+
+	public string? Description => Config.Description;
 
 	public bool Disabled => Config.Disabled;
 

@@ -10,6 +10,8 @@ public interface IJobConfiguration : IValidable
 {
 	string Name { get; set; }
 
+	string? Description { get; set; }
+
 	bool Disabled { get; set; }
 
 	JobExecutingMode Mode { get; set; }

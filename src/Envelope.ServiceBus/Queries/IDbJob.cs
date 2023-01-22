@@ -7,6 +7,7 @@ public interface IDbJob
 	Guid JobInstanceId { get; }
 	Guid HostInstanceId { get; }
 	string Name { get; }
+	string? Description { get; }
 	bool Disabled { get; }
 	int Mode { get; }
 	TimeSpan? DelayedStart { get; }

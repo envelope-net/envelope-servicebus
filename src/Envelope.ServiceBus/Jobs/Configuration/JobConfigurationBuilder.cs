@@ -14,6 +14,8 @@ public interface IJobConfigurationBuilder<TBuilder, TObject>
 
 	TBuilder Name(string name, bool force = true);
 
+	TBuilder Description(string description, bool force = true);
+
 	TBuilder Disabled(bool disabled);
 
 	TBuilder Mode(JobExecutingMode jobExecutingMode);
@@ -70,6 +72,17 @@ public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfi
 
 		if (force || string.IsNullOrWhiteSpace(_jobConfiguration.Name))
 			_jobConfiguration.Name = name;
+
+		return _builder;
+	}
+
+	public TBuilder Description(string description, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || string.IsNullOrWhiteSpace(_jobConfiguration.Description))
+			_jobConfiguration.Description = description;
 
 		return _builder;
 	}
@@ -154,6 +167,7 @@ public class JobConfigurationBuilder : JobConfigurationBuilderBase<JobConfigurat
 	public static JobConfigurationBuilder GetDefaultBuilder()
 		=> new JobConfigurationBuilder()
 			//.Name(null)
+			//.Description(null)
 			//.Disabled(false)
 			.Mode(JobExecutingMode.SequentialIntervalTimer)
 			//.DelayedStart(null)

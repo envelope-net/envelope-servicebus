@@ -13,6 +13,8 @@ public interface IJob
 
 	string Name { get; }
 
+	string? Description { get; }
+
 	bool Disabled { get; }
 
 	JobExecutingMode Mode { get; }
