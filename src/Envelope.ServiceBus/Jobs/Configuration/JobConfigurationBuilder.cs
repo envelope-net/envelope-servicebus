@@ -14,11 +14,17 @@ public interface IJobConfigurationBuilder<TBuilder, TObject>
 
 	TBuilder Name(string name, bool force = true);
 
+	TBuilder Description(string description, bool force = true);
+
 	TBuilder Disabled(bool disabled);
 
 	TBuilder Mode(JobExecutingMode jobExecutingMode);
 
 	TBuilder DelayedStart(TimeSpan? delayedStart, bool force = true);
+
+	TBuilder ExecutionEstimatedTimeInSeconds(int executionEstimatedTimeInSeconds);
+
+	TBuilder DeclaringAsOfflineAfterMinutesOfInactivity(int declaringAsOfflineAfterMinutesOfInactivity);
 
 	TBuilder IdleTimeout(TimeSpan? idleTimeout, bool force = true);
 
@@ -70,6 +76,17 @@ public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfi
 		return _builder;
 	}
 
+	public TBuilder Description(string description, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || string.IsNullOrWhiteSpace(_jobConfiguration.Description))
+			_jobConfiguration.Description = description;
+
+		return _builder;
+	}
+
 	public TBuilder Disabled(bool disabled)
 	{
 		if (_finalized)
@@ -96,6 +113,24 @@ public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfi
 		if (force || !_jobConfiguration.DelayedStart.HasValue)
 			_jobConfiguration.DelayedStart = delayedStart;
 
+		return _builder;
+	}
+
+	public TBuilder ExecutionEstimatedTimeInSeconds(int executionEstimatedTimeInSeconds)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		_jobConfiguration.ExecutionEstimatedTimeInSeconds = executionEstimatedTimeInSeconds;
+		return _builder;
+	}
+
+	public TBuilder DeclaringAsOfflineAfterMinutesOfInactivity(int declaringAsOfflineAfterMinutesOfInactivity)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		_jobConfiguration.DeclaringAsOfflineAfterMinutesOfInactivity = declaringAsOfflineAfterMinutesOfInactivity;
 		return _builder;
 	}
 
@@ -132,10 +167,13 @@ public class JobConfigurationBuilder : JobConfigurationBuilderBase<JobConfigurat
 	public static JobConfigurationBuilder GetDefaultBuilder()
 		=> new JobConfigurationBuilder()
 			//.Name(null)
+			//.Description(null)
 			//.Disabled(false)
 			.Mode(JobExecutingMode.SequentialIntervalTimer)
 			//.DelayedStart(null)
 			//.IdleTimeout(null)
 			//.CronTimerSettings(null)
+			//.ExecutionEstimatedTimeInSeconds(0)
+			//.DeclaringAsOfflineAfterMinutesOfInactivity(0)
 			;
 }

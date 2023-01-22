@@ -82,7 +82,7 @@ public class OrchestrationInstance : IOrchestrationInstance
 		_serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 		nextTimerStart = false;
 		_workerIdleTimeout = workerIdleTimeout ?? _orchestrationDefinition.WorkerIdleTimeout;
-		_timer = new SequentialAsyncTimer(null, _workerIdleTimeout, _workerIdleTimeout, OnTimerAsync, OnTimerExceptionAsync);
+		_timer = new SequentialAsyncTimer(null, null, _workerIdleTimeout, _workerIdleTimeout, OnTimerAsync, OnTimerExceptionAsync);
 	}
 
 	public void UpdateOrchestrationStatus(OrchestrationStatus status, DateTime? completeTimeUtc)

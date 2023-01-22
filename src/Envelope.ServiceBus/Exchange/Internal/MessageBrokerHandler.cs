@@ -46,7 +46,6 @@ internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 				await exchangeContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 					traceInfo,
 					exchangeContext.ServiceBusOptions.HostInfo,
-					HostStatus.Unchanged,
 					x => x
 						.ExceptionInfo(ex)
 						.Detail($"{nameof(message.ExchangeName)} == {message.ExchangeName} | {nameof(message.TargetQueueName)} == {message.TargetQueueName} | MessageType = '{message.Message?.GetType().FullName}'"),
@@ -66,7 +65,6 @@ internal class MessageBrokerHandler<TMessage> : IMessageBrokerHandler<TMessage>
 					await exchangeContext.ServiceBusOptions.HostLogger.LogErrorAsync(
 						traceInfo,
 						exchangeContext.ServiceBusOptions.HostInfo,
-						HostStatus.Unchanged,
 						x => x
 							.ExceptionInfo(faultEx)
 							.Detail($"{nameof(message.ExchangeName)} == {message.ExchangeName} | {nameof(message.TargetQueueName)} == {message.TargetQueueName} | MessageType = {message.Message?.GetType().FullName} >> {nameof(exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue)}.{nameof(exchangeContext.ServiceBusOptions.QueueProvider.FaultQueue.EnqueueAsync)}"),

@@ -243,7 +243,6 @@ public partial class EventBus : IEventBus
 					await EventBusOptions.HostLogger.LogErrorAsync(
 						traceInfo,
 						EventBusOptions.HostInfo,
-						HostStatus.Unchanged,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						null,

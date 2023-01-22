@@ -1,4 +1,5 @@
-﻿using Envelope.Logging;
+﻿using Envelope.Infrastructure;
+using Envelope.Logging;
 using Envelope.Services;
 using Envelope.Trace;
 using Envelope.Transactions;
@@ -7,10 +8,13 @@ namespace Envelope.ServiceBus.Hosts.Logging;
 
 public interface IHostLogger
 {
+	void LogStatusHost(
+		ITraceInfo traceInfo,
+		IHostInfo hostInfo);
+
 	ILogMessage? LogTrace(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
@@ -18,7 +22,6 @@ public interface IHostLogger
 	ILogMessage? LogDebug(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
@@ -26,7 +29,6 @@ public interface IHostLogger
 	ILogMessage? LogInformation(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -35,7 +37,6 @@ public interface IHostLogger
 	ILogMessage? LogWarning(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -44,7 +45,6 @@ public interface IHostLogger
 	IErrorMessage LogError(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
@@ -52,23 +52,28 @@ public interface IHostLogger
 	IErrorMessage LogCritical(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	void LogResultErrorMessages(
+		IHostInfo hostInfo,
 		IResult result,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	void LogResultAllMessages(
+		IHostInfo hostInfo,
 		IResult result,
 		ITransactionCoordinator? transactionCoordinator = null);
+
+	Task LogStatusHostAsync(
+		ITraceInfo traceInfo,
+		IHostInfo hostInfo,
+		CancellationToken cancellationToken = default);
 
 	Task<ILogMessage?> LogTraceAsync(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
@@ -77,7 +82,6 @@ public interface IHostLogger
 	Task<ILogMessage?> LogDebugAsync(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
@@ -86,7 +90,6 @@ public interface IHostLogger
 	Task<ILogMessage?> LogInformationAsync(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -96,7 +99,6 @@ public interface IHostLogger
 	Task<ILogMessage?> LogWarningAsync(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -106,7 +108,6 @@ public interface IHostLogger
 	Task<IErrorMessage> LogErrorAsync(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
@@ -115,19 +116,22 @@ public interface IHostLogger
 	Task<IErrorMessage> LogCriticalAsync(
 		ITraceInfo traceInfo,
 		IHostInfo hostInfo,
-		HostStatus hostStatus,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 
 	Task LogResultErrorMessagesAsync(
+		IHostInfo hostInfo,
 		IResult result,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 
 	Task LogResultAllMessagesAsync(
+		IHostInfo hostInfo,
 		IResult result,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
+
+	void LogEnvironmentInfo(EnvironmentInfo environmentInfo);
 }

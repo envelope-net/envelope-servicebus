@@ -1,8 +1,10 @@
 ﻿using Envelope.Trace;
-using Envelope.Transactions;
 
 namespace Envelope.ServiceBus.Queues;
 
+#if NET6_0_OR_GREATER
+[Envelope.Serializer.JsonPolymorphicConverter]
+#endif
 public interface IQueueInfo
 {
 	Guid QueueId { get; }

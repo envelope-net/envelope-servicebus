@@ -11,6 +11,8 @@ public class HostInfo : IHostInfo
 
 	public Guid InstanceId { get; }
 
+	public HostStatus HostStatus { get; set; }
+
 	public EnvironmentInfo EnvironmentInfo { get; }
 
 	public HostInfo(string name)
@@ -21,6 +23,7 @@ public class HostInfo : IHostInfo
 
 		HostId = GuidConverter.ToGuid(HostName);
 		InstanceId = Guid.NewGuid();
-		EnvironmentInfo = EnvironmentInfoProvider.GetEnvironmentInfo();
+		HostStatus = HostStatus.Online;
+		EnvironmentInfo = EnvironmentInfoProvider.GetEnvironmentInfo(HostName);
 	}
 }

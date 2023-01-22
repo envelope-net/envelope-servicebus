@@ -5,6 +5,9 @@ using Envelope.Validation;
 
 namespace Envelope.ServiceBus.Orchestrations.Definition;
 
+#if NET6_0_OR_GREATER
+[Envelope.Serializer.JsonPolymorphicConverter]
+#endif
 public interface IOrchestrationDefinition : IValidable
 {
 	Guid IdOrchestrationDefinition { get; }

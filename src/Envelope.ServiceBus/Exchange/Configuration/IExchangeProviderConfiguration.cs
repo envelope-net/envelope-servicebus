@@ -4,6 +4,9 @@ using Envelope.Validation;
 
 namespace Envelope.ServiceBus.Exchange.Configuration;
 
+#if NET6_0_OR_GREATER
+[Envelope.Serializer.JsonPolymorphicConverter]
+#endif
 public interface IExchangeProviderConfiguration : IValidable
 {
 	IServiceBusOptions ServiceBusOptions { get; }
