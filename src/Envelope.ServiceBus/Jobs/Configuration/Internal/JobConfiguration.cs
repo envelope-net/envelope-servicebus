@@ -10,7 +10,7 @@ internal class JobConfiguration : IJobConfiguration, IValidable
 {
 	public string Name { get; set; }
 
-	public string Description { get; set; }
+	public string? Description { get; set; }
 
 	public bool Disabled { get; set; }
 
@@ -25,6 +25,8 @@ internal class JobConfiguration : IJobConfiguration, IValidable
 	public int ExecutionEstimatedTimeInSeconds { get; set; }
 
 	public int DeclaringAsOfflineAfterMinutesOfInactivity { get; set; }
+
+	public Dictionary<int, string> JobExecutioinOperations { get; set; }
 
 	public List<IValidationMessage> Validate(string propertyPrefix = null, List<IValidationMessage> parentErrorBuffer = null, Dictionary<string, object> validationContext = null)
 	{

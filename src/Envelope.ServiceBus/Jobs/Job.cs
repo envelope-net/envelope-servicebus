@@ -71,6 +71,8 @@ public abstract class Job : IJob
 
 	public int DeclaringAsOfflineAfterMinutesOfInactivity { get; protected set; }
 
+	public Dictionary<int, string>? JobExecutioinOperations => Config.JobExecutioinOperations;
+
 	public JobStatus Status { get; private set; }
 
 	public DateTime LastUpdateUtc { get; private set; }

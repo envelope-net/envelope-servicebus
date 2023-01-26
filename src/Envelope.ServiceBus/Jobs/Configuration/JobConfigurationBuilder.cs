@@ -29,6 +29,8 @@ public interface IJobConfigurationBuilder<TBuilder, TObject>
 	TBuilder IdleTimeout(TimeSpan? idleTimeout, bool force = true);
 
 	TBuilder CronTimerSettings(CronTimerSettings cronTimerSettings, bool force = true);
+
+	TBuilder JobExecutioinOperations(Dictionary<int, string> jobExecutioinOperations, bool force = true);
 }
 
 public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfigurationBuilder<TBuilder, TObject>
@@ -155,6 +157,17 @@ public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfi
 
 		return _builder;
 	}
+
+	public TBuilder JobExecutioinOperations(Dictionary<int, string> jobExecutioinOperations, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _jobConfiguration.JobExecutioinOperations == null)
+			_jobConfiguration.JobExecutioinOperations = jobExecutioinOperations;
+
+		return _builder;
+	}
 }
 
 public class JobConfigurationBuilder : JobConfigurationBuilderBase<JobConfigurationBuilder, IJobConfiguration>
@@ -175,5 +188,6 @@ public class JobConfigurationBuilder : JobConfigurationBuilderBase<JobConfigurat
 			//.CronTimerSettings(null)
 			//.ExecutionEstimatedTimeInSeconds(0)
 			//.DeclaringAsOfflineAfterMinutesOfInactivity(0)
+			//.JobExecutioinOperations(null)
 			;
 }

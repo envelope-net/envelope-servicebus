@@ -16,6 +16,7 @@ public interface IDbJob
 	bool CronExpressionIncludeSeconds { get; }
 	DateTime? NextExecutionRunUtc { get; }
 	int Status { get; }
+	Dictionary<int, string>? JobExecutioinOperations { get; }
 	int CurrentExecuteStatus { get; }
 	int ExecutionEstimatedTimeInSeconds { get; }
 	int DeclaringAsOfflineAfterMinutesOfInactivity { get; }

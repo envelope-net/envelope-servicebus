@@ -25,4 +25,6 @@ public interface IJobConfiguration : IValidable
 	int ExecutionEstimatedTimeInSeconds { get; set; }
 
 	int DeclaringAsOfflineAfterMinutesOfInactivity { get; set; }
+
+	Dictionary<int, string>? JobExecutioinOperations { get; set; }
 }
