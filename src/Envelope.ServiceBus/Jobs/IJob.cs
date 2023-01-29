@@ -37,7 +37,7 @@ public interface IJob
 
 	JobStatus Status { get; }
 
-	Dictionary<int,string>? JobExecutioinOperations { get; }
+	Dictionary<int,string>? JobExecutionOperations { get; }
 
 	Task StartAsync(ITraceInfo traceInfo);
 

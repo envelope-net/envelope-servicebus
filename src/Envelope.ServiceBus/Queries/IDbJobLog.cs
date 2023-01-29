@@ -14,6 +14,7 @@ public interface IDbJobLog
 	int Status { get; }
 	int ExecuteStatus { get; }
 	DateTime CreatedUtc { get; }
+	Guid? JobMessageId { get; }
 
 	string ToJson();
 }

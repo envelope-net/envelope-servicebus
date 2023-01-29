@@ -22,13 +22,15 @@ public class DefaultJobLogger : IJobLogger
 		IJob job,
 		JobExecuteResult executeResult,
 		JobExecuteStatus? newExecuteStatus,
-		string? detail)
+		string? detail,
+		Guid? jobMessageId)
 	{
 		messageBuilder += x => x
 			.AddCustomData(nameof(executeResult.ExecutionId), executeResult.ExecutionId.ToString())
 			.AddCustomData(nameof(executeResult.ExecuteStatus), executeResult.ExecuteStatus.ToString())
 			.AddCustomData(nameof(newExecuteStatus), newExecuteStatus?.ToString())
-			.AddCustomData(nameof(job.Name), job?.Name);
+			.AddCustomData(nameof(job.Name), job?.Name)
+			.AddCustomData(nameof(jobMessageId), jobMessageId?.ToString());
 
 		if (!string.IsNullOrWhiteSpace(detail))
 			messageBuilder += x => x.AddCustomData(nameof(detail), detail);
@@ -47,13 +49,15 @@ public class DefaultJobLogger : IJobLogger
 		IJob job,
 		JobExecuteResult executeResult,
 		JobExecuteStatus? newExecuteStatus,
-		string? detail)
+		string? detail,
+		Guid? jobMessageId)
 	{
 		messageBuilder += x => x
 			.AddCustomData(nameof(executeResult.ExecutionId), executeResult.ExecutionId.ToString())
 			.AddCustomData(nameof(executeResult.ExecuteStatus), executeResult.ExecuteStatus.ToString())
 			.AddCustomData(nameof(newExecuteStatus), newExecuteStatus?.ToString())
-			.AddCustomData(nameof(job.Name), job?.Name);
+			.AddCustomData(nameof(job.Name), job?.Name)
+			.AddCustomData(nameof(jobMessageId), jobMessageId?.ToString());
 
 		if (!string.IsNullOrWhiteSpace(detail))
 			messageBuilder += x => x.AddCustomData(nameof(detail), detail);
@@ -120,6 +124,7 @@ public class DefaultJobLogger : IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
@@ -130,7 +135,7 @@ public class DefaultJobLogger : IJobLogger
 		if (executeResult == null)
 			throw new ArgumentNullException(nameof(executeResult));
 
-		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail);
+		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail, jobMessageId);
 		var msg = _logger.LogTraceMessage(traceInfo, messageBuilder, true);
 		return Task.FromResult(msg);
 	}
@@ -142,6 +147,7 @@ public class DefaultJobLogger : IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
@@ -152,7 +158,7 @@ public class DefaultJobLogger : IJobLogger
 		if (executeResult == null)
 			throw new ArgumentNullException(nameof(executeResult));
 
-		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail);
+		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail, jobMessageId);
 		var msg = _logger.LogDebugMessage(traceInfo, messageBuilder, true);
 		return Task.FromResult(msg);
 	}
@@ -164,6 +170,7 @@ public class DefaultJobLogger : IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		bool force = false,
 		ITransactionController? transactionController= null,
@@ -175,7 +182,7 @@ public class DefaultJobLogger : IJobLogger
 		if (executeResult == null)
 			throw new ArgumentNullException(nameof(executeResult));
 
-		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail);
+		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail, jobMessageId);
 		var msg = _logger.LogInformationMessage(traceInfo, messageBuilder, true);
 		return Task.FromResult(msg);
 	}
@@ -187,6 +194,7 @@ public class DefaultJobLogger : IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		bool force = false,
 		ITransactionController? transactionController= null,
@@ -198,7 +206,7 @@ public class DefaultJobLogger : IJobLogger
 		if (executeResult == null)
 			throw new ArgumentNullException(nameof(executeResult));
 
-		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail);
+		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail, jobMessageId);
 		var msg = _logger.LogWarningMessage(traceInfo, messageBuilder, true);
 		return Task.FromResult(msg);
 	}
@@ -210,6 +218,7 @@ public class DefaultJobLogger : IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<ErrorMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
@@ -220,7 +229,7 @@ public class DefaultJobLogger : IJobLogger
 		if (executeResult == null)
 			throw new ArgumentNullException(nameof(executeResult));
 
-		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail);
+		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail, jobMessageId);
 		var msg = _logger.LogErrorMessage(traceInfo, messageBuilder, true);
 		return Task.FromResult(msg);
 	}
@@ -232,6 +241,7 @@ public class DefaultJobLogger : IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<ErrorMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		ITransactionController? transactionController= null,
 		CancellationToken cancellationToken = default)
@@ -242,7 +252,7 @@ public class DefaultJobLogger : IJobLogger
 		if (executeResult == null)
 			throw new ArgumentNullException(nameof(executeResult));
 
-		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail);
+		AppendToBuilder(messageBuilder, logCode, job, executeResult, newExecuteStatus, detail, jobMessageId);
 		var msg = _logger.LogCriticalMessage(traceInfo, messageBuilder, true);
 		return Task.FromResult(msg);
 	}
@@ -253,6 +263,7 @@ public class DefaultJobLogger : IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		IResult result,
+		Guid? jobMessageId,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
@@ -288,6 +299,7 @@ public class DefaultJobLogger : IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		IResult result,
+		Guid? jobMessageId,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{

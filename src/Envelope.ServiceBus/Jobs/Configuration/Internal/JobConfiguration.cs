@@ -20,13 +20,15 @@ internal class JobConfiguration : IJobConfiguration, IValidable
 
 	public TimeSpan? IdleTimeout { get; set; }
 
+	public bool CronStartImmediately { get; set; }
+
 	public CronTimerSettings CronTimerSettings { get; set; }
 
 	public int ExecutionEstimatedTimeInSeconds { get; set; }
 
 	public int DeclaringAsOfflineAfterMinutesOfInactivity { get; set; }
 
-	public Dictionary<int, string> JobExecutioinOperations { get; set; }
+	public Dictionary<int, string> JobExecutionOperations { get; set; }
 
 	public List<IValidationMessage> Validate(string propertyPrefix = null, List<IValidationMessage> parentErrorBuffer = null, Dictionary<string, object> validationContext = null)
 	{

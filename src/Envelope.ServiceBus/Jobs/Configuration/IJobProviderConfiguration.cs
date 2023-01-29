@@ -1,5 +1,7 @@
 ﻿using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Jobs.Logging;
+using Envelope.ServiceBus.Queries;
+using Envelope.ServiceBus.Writers;
 using Envelope.Validation;
 
 namespace Envelope.ServiceBus.Jobs.Configuration;
@@ -16,4 +18,8 @@ public interface IJobProviderConfiguration : IValidable
 	Func<IServiceProvider, IJobRepository> JobRepository { get; set;}
 
 	Func<IServiceProvider, IJobLogger> JobLogger { get; set; }
+
+	Func<IServiceProvider, IJobMessageReader> JobMessageReader { get; set; }
+
+	Func<IServiceProvider, IJobMessageWriter> JobMessageWriter { get; set; }
 }

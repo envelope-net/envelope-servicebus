@@ -20,11 +20,13 @@ public interface IJobConfiguration : IValidable
 
 	TimeSpan? IdleTimeout { get; set; }
 
+	bool CronStartImmediately { get; set; }
+
 	CronTimerSettings? CronTimerSettings { get; set; }
 
 	int ExecutionEstimatedTimeInSeconds { get; set; }
 
 	int DeclaringAsOfflineAfterMinutesOfInactivity { get; set; }
 
-	Dictionary<int, string>? JobExecutioinOperations { get; set; }
+	Dictionary<int, string>? JobExecutionOperations { get; set; }
 }

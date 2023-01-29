@@ -6,6 +6,7 @@ public interface IDbJob
 {
 	Guid JobInstanceId { get; }
 	Guid HostInstanceId { get; }
+	string HostName { get; }
 	string Name { get; }
 	string? Description { get; }
 	bool Disabled { get; }
@@ -16,7 +17,7 @@ public interface IDbJob
 	bool CronExpressionIncludeSeconds { get; }
 	DateTime? NextExecutionRunUtc { get; }
 	int Status { get; }
-	Dictionary<int, string>? JobExecutioinOperations { get; }
+	Dictionary<int, string>? JobExecutionOperations { get; }
 	int CurrentExecuteStatus { get; }
 	int ExecutionEstimatedTimeInSeconds { get; }
 	int DeclaringAsOfflineAfterMinutesOfInactivity { get; }

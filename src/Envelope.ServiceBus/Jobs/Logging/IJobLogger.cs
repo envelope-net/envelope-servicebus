@@ -40,6 +40,7 @@ public interface IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
@@ -51,6 +52,7 @@ public interface IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
@@ -62,6 +64,7 @@ public interface IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		bool force = false,
 		ITransactionController? transactionController = null,
@@ -74,6 +77,7 @@ public interface IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<LogMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		bool force = false,
 		ITransactionController? transactionController = null,
@@ -86,6 +90,7 @@ public interface IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<ErrorMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
@@ -97,6 +102,7 @@ public interface IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		Action<ErrorMessageBuilder> messageBuilder,
+		Guid? jobMessageId,
 		string? detail = null,
 		ITransactionController? transactionController = null,
 		CancellationToken cancellationToken = default);
@@ -107,6 +113,7 @@ public interface IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		IResult result,
+		Guid? jobMessageId,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 
@@ -116,6 +123,7 @@ public interface IJobLogger
 		JobExecuteStatus? newExecuteStatus,
 		string logCode,
 		IResult result,
+		Guid? jobMessageId,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 }

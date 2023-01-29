@@ -2,6 +2,8 @@
 using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Jobs.Configuration;
 using Envelope.ServiceBus.Jobs.Logging;
+using Envelope.ServiceBus.Queries;
+using Envelope.ServiceBus.Writers;
 using Envelope.Services;
 using Envelope.Services.Transactions;
 using Envelope.Timers;
@@ -29,6 +31,8 @@ public abstract class Job : IJob
 	private Timer? _periodicTimer;
 	private CronAsyncTimer? _cronAsyncTimer;
 
+	private bool _cronTimerStartedImmediately;
+
 	public Guid JobInstanceId { get; private set; }
 
 	internal virtual Func<ITraceInfo, Task>? BeforeStartAsync { get; }
@@ -42,6 +46,10 @@ public abstract class Job : IJob
 	internal IJobRepository JobRepository { get; private set; }
 
 	protected IJobLogger Logger { get; private set; }
+
+	protected IJobMessageReader JobMessageReader { get; private set; }
+
+	protected IJobMessageWriter JobMessageWriter { get; private set; }
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -65,13 +73,15 @@ public abstract class Job : IJob
 
 	public CronTimerSettings? CronTimerSettings { get; private set; }
 
+	public bool CronStartImmediately { get; protected set; }
+
 	public DateTime? NextExecutionRunUtc { get; private set; }
 
 	public int ExecutionEstimatedTimeInSeconds { get; protected set; }
 
 	public int DeclaringAsOfflineAfterMinutesOfInactivity { get; protected set; }
 
-	public Dictionary<int, string>? JobExecutioinOperations => Config.JobExecutioinOperations;
+	public Dictionary<int, string>? JobExecutionOperations => Config.JobExecutionOperations;
 
 	public JobStatus Status { get; private set; }
 
@@ -108,7 +118,10 @@ public abstract class Job : IJob
 
 			DelayedStart = Config.DelayedStart;
 			IdleTimeout = Config.IdleTimeout;
+			CronStartImmediately = Config.CronStartImmediately;
 			CronTimerSettings = Config.CronTimerSettings;
+			JobMessageReader = config.JobMessageReader(serviceProvider) ?? throw new InvalidOperationException($"{nameof(JobMessageReader)} == null");
+			JobMessageWriter = config.JobMessageWriter(serviceProvider) ?? throw new InvalidOperationException($"{nameof(JobMessageWriter)} == null");
 
 			ExecutionEstimatedTimeInSeconds = Config.ExecutionEstimatedTimeInSeconds;
 			DeclaringAsOfflineAfterMinutesOfInactivity = Config.DeclaringAsOfflineAfterMinutesOfInactivity;
@@ -155,6 +168,8 @@ public abstract class Job : IJob
 			{
 				if (CronTimerSettings == null)
 					throw new InvalidOperationException($"{nameof(CronTimerSettings)} == null");
+
+				_cronTimerStartedImmediately = !CronStartImmediately;
 
 				_cronAsyncTimer = new CronAsyncTimer(CronTimerSettings.CronExpression);
 			}
@@ -239,7 +254,7 @@ public abstract class Job : IJob
 	public async Task StartAsync(ITraceInfo traceInfo)
 	{
 		var executeResult = new JobExecuteResult(JobInstanceId, true, JobExecuteStatus.NONE);
-		await Logger.LogInformationAsync(traceInfo, this, executeResult, null, LogCodes.STARTING, x => x.Detail("Starting"), "Starting", true, null, cancellationToken: default);
+		await Logger.LogInformationAsync(traceInfo, this, executeResult, null, LogCodes.STARTING, x => x.Detail("Starting"), null, "Starting", true, null, cancellationToken: default);
 
 		if (!Initialized)
 			throw new InvalidOperationException("Not initialized");
@@ -290,6 +305,16 @@ public abstract class Job : IJob
 
 			_ = Task.Run(async () =>
 			{
+				if (!_cronTimerStartedImmediately)
+				{
+					_cronTimerStartedImmediately = true;
+
+					await OnNextCronTimerTickAsync().ConfigureAwait(false);
+
+					if (_cronAsyncTimerIsStopped)
+						return;
+				}
+
 				while (await _cronAsyncTimer!.WaitForNextTickAsync().ConfigureAwait(false))
 				{
 					await OnNextCronTimerTickAsync().ConfigureAwait(false);
@@ -301,13 +326,13 @@ public abstract class Job : IJob
 			cancellationToken: default);
 		}
 
-		await Logger.LogInformationAsync(traceInfo, this, executeResult, null, LogCodes.STARTED, x => x.Detail("Started"), "Started", true, null, cancellationToken: default);
+		await Logger.LogInformationAsync(traceInfo, this, executeResult, null, LogCodes.STARTED, x => x.Detail("Started"), null, "Started", true, null, cancellationToken: default);
 	}
 
 	public async Task StopAsync(ITraceInfo traceInfo)
 	{
 		var executeResult = new JobExecuteResult(JobInstanceId, true, JobExecuteStatus.NONE);
-		await Logger.LogInformationAsync(traceInfo, this, executeResult, null, LogCodes.STOPPING, x => x.Detail("Stopping"), "Stopping", true, null, cancellationToken: default);
+		await Logger.LogInformationAsync(traceInfo, this, executeResult, null, LogCodes.STOPPING, x => x.Detail("Stopping"), null, "Stopping", true, null, cancellationToken: default);
 
 		if (!Initialized)
 			throw new InvalidOperationException("Not initialized");
@@ -335,7 +360,7 @@ public abstract class Job : IJob
 
 		NextExecutionRunUtc = null;
 
-		await Logger.LogInformationAsync(traceInfo, this, executeResult, null, LogCodes.STOPPED, x => x.Detail("Stopped"), "Stopped", true, null, cancellationToken: default);
+		await Logger.LogInformationAsync(traceInfo, this, executeResult, null, LogCodes.STOPPED, x => x.Detail("Stopped"), null, "Stopped", true, null, cancellationToken: default);
 	}
 
 	public abstract Task ExecuteAsync(JobExecuteResult executeResult, IServiceProvider scopedServiceProvider);
@@ -395,7 +420,7 @@ public abstract class Job : IJob
 	{
 		traceInfo = TraceInfo.Create(traceInfo);
 		var detail = $"{this.GetType().FullName} >> {nameof(OnUnhandledExceptionAsync)}";
-		await Logger.LogErrorAsync(traceInfo, this, executeResult, JobExecuteStatus.Failed, LogCodes.GLOBAL_ERROR, x => x.ExceptionInfo(exception).Detail(detail), detail, null, cancellationToken: default).ConfigureAwait(false);
+		await Logger.LogErrorAsync(traceInfo, this, executeResult, JobExecuteStatus.Failed, LogCodes.GLOBAL_ERROR, x => x.ExceptionInfo(exception).Detail(detail), null, detail, null, cancellationToken: default).ConfigureAwait(false);
 	}
 
 	public virtual T? GetData<T>()
@@ -441,6 +466,7 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 							null,
 							LogCodes.LOAD_DATA_ERROR,
 							x => x.ExceptionInfo(exception).Detail(detail),
+							null,
 							detail,
 							null,
 							cancellationToken: default).ConfigureAwait(false);
@@ -486,6 +512,7 @@ public abstract class Job<TData> : Job, IJob<TData>, IJob
 							null,
 							LogCodes.SAVE_DATA_ERROR,
 							x => x.ExceptionInfo(exception).Detail(detail),
+							null,
 							detail,
 							null,
 							cancellationToken: default).ConfigureAwait(false);

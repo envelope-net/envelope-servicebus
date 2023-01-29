@@ -28,9 +28,11 @@ public interface IJobConfigurationBuilder<TBuilder, TObject>
 
 	TBuilder IdleTimeout(TimeSpan? idleTimeout, bool force = true);
 
+	TBuilder CronStartImmediately(bool startImmediately, bool force = true);
+
 	TBuilder CronTimerSettings(CronTimerSettings cronTimerSettings, bool force = true);
 
-	TBuilder JobExecutioinOperations(Dictionary<int, string> jobExecutioinOperations, bool force = true);
+	TBuilder JobExecutionOperations(Dictionary<int, string> jobExecutionOperations, bool force = true);
 }
 
 public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfigurationBuilder<TBuilder, TObject>
@@ -147,6 +149,15 @@ public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfi
 		return _builder;
 	}
 
+	public TBuilder CronStartImmediately(bool startImmediately, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		_jobConfiguration.CronStartImmediately = startImmediately;
+		return _builder;
+	}
+
 	public TBuilder CronTimerSettings(CronTimerSettings cronTimerSettings, bool force = true)
 	{
 		if (_finalized)
@@ -158,13 +169,13 @@ public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfi
 		return _builder;
 	}
 
-	public TBuilder JobExecutioinOperations(Dictionary<int, string> jobExecutioinOperations, bool force = true)
+	public TBuilder JobExecutionOperations(Dictionary<int, string> jobExecutionOperations, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
 
-		if (force || _jobConfiguration.JobExecutioinOperations == null)
-			_jobConfiguration.JobExecutioinOperations = jobExecutioinOperations;
+		if (force || _jobConfiguration.JobExecutionOperations == null)
+			_jobConfiguration.JobExecutionOperations = jobExecutionOperations;
 
 		return _builder;
 	}
@@ -188,6 +199,6 @@ public class JobConfigurationBuilder : JobConfigurationBuilderBase<JobConfigurat
 			//.CronTimerSettings(null)
 			//.ExecutionEstimatedTimeInSeconds(0)
 			//.DeclaringAsOfflineAfterMinutesOfInactivity(0)
-			//.JobExecutioinOperations(null)
+			//.jobExecutionOperations(null)
 			;
 }

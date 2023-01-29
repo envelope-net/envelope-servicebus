@@ -3,7 +3,10 @@ using Envelope.ServiceBus.Hosts;
 using Envelope.ServiceBus.Jobs.Configuration.Internal;
 using Envelope.ServiceBus.Jobs.Internal;
 using Envelope.ServiceBus.Jobs.Logging;
-using Envelope.Trace;
+using Envelope.ServiceBus.Queries;
+using Envelope.ServiceBus.Queries.Internal;
+using Envelope.ServiceBus.Writers;
+using Envelope.ServiceBus.Writers.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -23,6 +26,10 @@ public interface IJobProviderConfigurationBuilder<TBuilder, TObject>
 	TBuilder JobRepository(Func<IServiceProvider, IJobRepository> jobRepository, bool force = true);
 
 	TBuilder JobLogger(Func<IServiceProvider, IJobLogger> jobLogger, bool force = true);
+
+	TBuilder JobMessageReader(Func<IServiceProvider, IJobMessageReader> jobMessageReader, bool force = true);
+
+	TBuilder JobMessageWriter(Func<IServiceProvider, IJobMessageWriter> jobMessageWriter, bool force = true);
 
 	TBuilder RegisterJob(IJob job);
 
@@ -109,6 +116,28 @@ public abstract class JobProviderConfigurationBuilderBase<TBuilder, TObject> : I
 		return _builder;
 	}
 
+	public TBuilder JobMessageReader(Func<IServiceProvider, IJobMessageReader> jobMessageReader, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _jobProviderConfiguration.JobMessageReader == null)
+			_jobProviderConfiguration.JobMessageReader = jobMessageReader;
+
+		return _builder;
+	}
+
+	public TBuilder JobMessageWriter(Func<IServiceProvider, IJobMessageWriter> jobMessageWriter, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _jobProviderConfiguration.JobMessageWriter == null)
+			_jobProviderConfiguration.JobMessageWriter = jobMessageWriter;
+
+		return _builder;
+	}
+
 	public TBuilder RegisterJob(IJob job)
 	{
 		if (_finalized)
@@ -153,5 +182,7 @@ public class JobProviderConfigurationBuilder : JobProviderConfigurationBuilderBa
 		=> new JobProviderConfigurationBuilder()
 			.JobRepository(sp => new InMemoryJobRepository())
 			.JobLogger(sp => new DefaultJobLogger(sp.GetRequiredService<ILogger<DefaultJobLogger>>()))
+			.JobMessageReader(sp => new DefaultJobMessageReader())
+			.JobMessageWriter(sp => new DefaultJobMessageWriter())
 			;
 }

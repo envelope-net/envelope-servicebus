@@ -60,6 +60,7 @@ internal class JobController : IJobController
 							null,
 							LogCodes.STARTING_ERROR,
 							x => x.ExceptionInfo(ex).Detail(detail),
+							null,
 							detail,
 							null,
 							cancellationToken: default).ConfigureAwait(false);
@@ -89,6 +90,7 @@ internal class JobController : IJobController
 							null,
 							LogCodes.STOPPING_ERROR,
 							x => x.ExceptionInfo(ex).Detail(detail),
+							null,
 							detail,
 							null,
 							cancellationToken: default).ConfigureAwait(false);

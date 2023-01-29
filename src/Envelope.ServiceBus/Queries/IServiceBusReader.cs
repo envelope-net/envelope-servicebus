@@ -1,12 +1,14 @@
 ﻿namespace Envelope.ServiceBus.Queries;
 
-public interface IServiceBusQueries : IDisposable, IAsyncDisposable
+public interface IServiceBusReader : IJobMessageReader, IDisposable, IAsyncDisposable
 {
 	Task<List<IDbHost>> GetHostsAsync(CancellationToken cancellationToken = default);
 
 	Task<List<IDbHostLog>> GetHostLogsAsync(Guid hostInstanceId, CancellationToken cancellationToken = default);
 
 	Task<List<IDbJob>> GetJobsAsync(Guid hostInstanceId, CancellationToken cancellationToken = default);
+
+	Task<List<IDbJob>> GetJobsAsync(string jobName, string hostName, int count = 5, CancellationToken cancellationToken = default);
 
 	Task<IDbJob?> GetJobAsync(Guid jobInstanceId, CancellationToken cancellationToken = default);
 
@@ -17,4 +19,6 @@ public interface IServiceBusQueries : IDisposable, IAsyncDisposable
 	Task<IDbJobExecution?> GetJobExecutionAsync(Guid executionId, CancellationToken cancellationToken = default);
 
 	Task<List<IDbJobLog>> GetJobLogsAsync(Guid executionId, CancellationToken cancellationToken = default);
+
+	Task<List<IDbJobLog>> JobLogsForMessageAsync(Guid jobMessageId, CancellationToken cancellationToken = default);
 }
