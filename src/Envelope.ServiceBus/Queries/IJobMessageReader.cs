@@ -5,6 +5,16 @@ namespace Envelope.ServiceBus.Queries;
 
 public interface IJobMessageReader : IDisposable, IAsyncDisposable
 {
+	Task<IJobMessage?> GetActiveJobMessageAsync(
+		Guid jobMessageId,
+		ITransactionController? transactionController = null,
+		CancellationToken cancellationToken = default);
+
+	Task<IJobMessage?> GetArchivedJobMessageAsync(
+		Guid jobMessageId,
+		ITransactionController? transactionController = null,
+		CancellationToken cancellationToken = default);
+
 	Task<List<IJobMessage>> GetActiveJobMessagesAsync(
 		int jobMessageTypeId,
 		int? status = null,
