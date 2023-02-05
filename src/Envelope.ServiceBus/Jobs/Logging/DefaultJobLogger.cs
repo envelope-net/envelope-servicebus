@@ -264,6 +264,7 @@ public class DefaultJobLogger : IJobLogger
 		string logCode,
 		IResult result,
 		Guid? jobMessageId,
+		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
@@ -284,7 +285,9 @@ public class DefaultJobLogger : IJobLogger
 				.AddCustomData(nameof(executeResult.ExecuteStatus), executeResult.ExecuteStatus.ToString())
 				.AddCustomData(nameof(newExecuteStatus), newExecuteStatus?.ToString())
 				.AddCustomData(nameof(job.Name), job.Name)
-				.LogCode(logCode, force: true);
+				.AddCustomData(nameof(jobMessageId), jobMessageId?.ToString())
+				.LogCode(logCode, force: true)
+				.AppendDetail(detail);
 		}
 
 		executeResult.SetStatus(newExecuteStatus);
@@ -300,6 +303,7 @@ public class DefaultJobLogger : IJobLogger
 		string logCode,
 		IResult result,
 		Guid? jobMessageId,
+		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default)
 	{
@@ -320,7 +324,9 @@ public class DefaultJobLogger : IJobLogger
 				.AddCustomData(nameof(executeResult.ExecuteStatus), executeResult.ExecuteStatus.ToString())
 				.AddCustomData(nameof(newExecuteStatus), newExecuteStatus?.ToString())
 				.AddCustomData(nameof(job.Name), job.Name)
-				.LogCode(logCode, force: true);
+				.AddCustomData(nameof(jobMessageId), jobMessageId?.ToString())
+				.LogCode(logCode, force: true)
+				.AppendDetail(detail);
 		}
 
 		foreach (var msg in result.WarningMessages)
@@ -331,7 +337,9 @@ public class DefaultJobLogger : IJobLogger
 				.AddCustomData(nameof(executeResult.ExecuteStatus), executeResult.ExecuteStatus.ToString())
 				.AddCustomData(nameof(newExecuteStatus), newExecuteStatus?.ToString())
 				.AddCustomData(nameof(job.Name), job.Name)
-				.LogCode(logCode, force: true);
+				.AddCustomData(nameof(jobMessageId), jobMessageId?.ToString())
+				.LogCode(logCode, force: true)
+				.AppendDetail(detail);
 		}
 
 		foreach (var msg in result.ErrorMessages)
@@ -342,7 +350,9 @@ public class DefaultJobLogger : IJobLogger
 				.AddCustomData(nameof(executeResult.ExecuteStatus), executeResult.ExecuteStatus.ToString())
 				.AddCustomData(nameof(newExecuteStatus), newExecuteStatus?.ToString())
 				.AddCustomData(nameof(job.Name), job.Name)
-				.LogCode(logCode, force: true);
+				.AddCustomData(nameof(jobMessageId), jobMessageId?.ToString())
+				.LogCode(logCode, force: true)
+				.AppendDetail(detail);
 		}
 
 		executeResult.SetStatus(newExecuteStatus);

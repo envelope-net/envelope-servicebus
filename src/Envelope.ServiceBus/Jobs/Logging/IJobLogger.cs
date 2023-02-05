@@ -114,6 +114,7 @@ public interface IJobLogger
 		string logCode,
 		IResult result,
 		Guid? jobMessageId,
+		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 
@@ -124,6 +125,7 @@ public interface IJobLogger
 		string logCode,
 		IResult result,
 		Guid? jobMessageId,
+		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
 		CancellationToken cancellationToken = default);
 }

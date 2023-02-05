@@ -47,7 +47,7 @@ public abstract class Job : IJob
 
 	protected IJobLogger Logger { get; private set; }
 
-	protected IJobMessageReader JobMessageReader { get; private set; }
+	protected IServiceBusReader ServiceBusReader { get; private set; }
 
 	protected IJobMessageWriter JobMessageWriter { get; private set; }
 
@@ -81,7 +81,9 @@ public abstract class Job : IJob
 
 	public int DeclaringAsOfflineAfterMinutesOfInactivity { get; protected set; }
 
-	public Dictionary<int, string>? JobExecutionOperations => Config.JobExecutionOperations;
+	public IReadOnlyDictionary<int, string>? JobExecutionOperations => Config.JobExecutionOperations;
+
+	public IReadOnlyList<int>? AssociatedJobMessageTypes => Config.AssociatedJobMessageTypes;
 
 	public JobStatus Status { get; private set; }
 
@@ -120,7 +122,7 @@ public abstract class Job : IJob
 			IdleTimeout = Config.IdleTimeout;
 			CronStartImmediately = Config.CronStartImmediately;
 			CronTimerSettings = Config.CronTimerSettings;
-			JobMessageReader = config.JobMessageReader(serviceProvider) ?? throw new InvalidOperationException($"{nameof(JobMessageReader)} == null");
+			ServiceBusReader = config.ServiceBusReader(serviceProvider) ?? throw new InvalidOperationException($"{nameof(ServiceBusReader)} == null");
 			JobMessageWriter = config.JobMessageWriter(serviceProvider) ?? throw new InvalidOperationException($"{nameof(JobMessageWriter)} == null");
 
 			ExecutionEstimatedTimeInSeconds = Config.ExecutionEstimatedTimeInSeconds;
@@ -402,7 +404,7 @@ public abstract class Job : IJob
 
 		if (Mode == JobExecutingMode.SequentialIntervalTimer)
 		{
-			NextExecutionRunUtc = DateTime.UtcNow.AddSeconds(ExecutionEstimatedTimeInSeconds).Add(IdleTimeout!.Value);
+			NextExecutionRunUtc = DateTime.UtcNow/*AddSeconds(ExecutionEstimatedTimeInSeconds).*/.Add(IdleTimeout!.Value);
 		}
 		else if (Mode == JobExecutingMode.ExactPeriodicTimer)
 		{

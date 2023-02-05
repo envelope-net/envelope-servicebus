@@ -31,6 +31,28 @@ internal class JobMessage : IJobMessage
 	public IJobMessage Clone()
 		=> JobMessageFactory.Clone(this);
 
+	public object? GetProperty(string key, object? defaultValue = default)
+	{
+		if (Properties == null)
+			return defaultValue;
+
+		if (Properties.TryGetValue(key, out var value))
+			return value;
+
+		return defaultValue;
+	}
+
+	public T? GetProperty<T>(string key, T? defaultValue = default)
+	{
+		if (Properties == null)
+			return defaultValue;
+
+		if (Properties.TryGetValue(key, out var value))
+			return (T)value;
+
+		return defaultValue;
+	}
+
 	public void CopyFrom(IJobMessage from)
 	{
 		if (from == null)
@@ -83,13 +105,13 @@ internal class JobMessage : IJobMessage
 			CopyFrom(clon);
 	}
 
-	public void Susspend(
+	public void Suspend(
 		ITraceInfo traceInfo,
 		Dictionary<string, object?>? properties = null,
 		string? detail = null,
 		bool? isDetailJson = null)
 	{
-		var clon = JobMessageFactory.CreateSusspendedMessage(this, traceInfo, properties, detail, isDetailJson);
+		var clon = JobMessageFactory.CreateSuspendedMessage(this, traceInfo, properties, detail, isDetailJson);
 		if (clon != null)
 			CopyFrom(clon);
 	}

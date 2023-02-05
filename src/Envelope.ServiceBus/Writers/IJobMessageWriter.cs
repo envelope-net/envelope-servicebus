@@ -33,7 +33,7 @@ public interface IJobMessageWriter : IJobMessagePublisher
 		bool? isDetailJson = null,
 		CancellationToken cancellationToken = default);
 
-	Task WriteSusspendAsync(
+	Task WriteSuspendAsync(
 		IJobMessage message,
 		ITraceInfo traceInfo,
 		ITransactionController? transactionController,

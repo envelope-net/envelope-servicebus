@@ -139,7 +139,7 @@ public static class JobMessageFactory
 			|| (!delayedToUtc.HasValue && delay.HasValue))
 			throw new InvalidOperationException($"Both {nameof(delayedToUtc)} and {nameof(delay)} must be set or null.");
 
-		if (message.Status == (int)JobMessageStatus.Susspended
+		if (message.Status == (int)JobMessageStatus.Suspended
 			|| message.Status == (int)JobMessageStatus.Deleted)
 			return null;
 
@@ -157,7 +157,7 @@ public static class JobMessageFactory
 		}
 		else
 		{
-			clone.Status = (int)JobMessageStatus.Susspended;
+			clone.Status = (int)JobMessageStatus.Suspended;
 		}
 
 		if (properties != null)
@@ -172,7 +172,7 @@ public static class JobMessageFactory
 		return clone;
 	}
 
-	public static IJobMessage? CreateSusspendedMessage(
+	public static IJobMessage? CreateSuspendedMessage(
 		IJobMessage message,
 		ITraceInfo traceInfo,
 		Dictionary<string, object?>? properties = null,
@@ -193,7 +193,7 @@ public static class JobMessageFactory
 
 		clone.LastUpdatedUtc = DateTime.UtcNow;
 		clone.LastUpdatedTraceInfo = traceInfo;
-		clone.Status = (int)JobMessageStatus.Susspended;
+		clone.Status = (int)JobMessageStatus.Suspended;
 
 		if (properties != null)
 			clone.Properties = properties;
@@ -220,7 +220,7 @@ public static class JobMessageFactory
 		if (traceInfo == null)
 			throw new ArgumentNullException(nameof(traceInfo));
 
-		if (message.Status != (int)JobMessageStatus.Susspended)
+		if (message.Status != (int)JobMessageStatus.Suspended)
 			return null;
 
 		var clone = CloneInternal(message);

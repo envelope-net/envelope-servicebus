@@ -32,7 +32,9 @@ public interface IJobConfigurationBuilder<TBuilder, TObject>
 
 	TBuilder CronTimerSettings(CronTimerSettings cronTimerSettings, bool force = true);
 
-	TBuilder JobExecutionOperations(Dictionary<int, string> jobExecutionOperations, bool force = true);
+	TBuilder JobExecutionOperations(Dictionary<int, string>? jobExecutionOperations, bool force = true);
+
+	TBuilder AssociatedJobMessageTypes(List<int>? associatedJobMessageTypes, bool force = true);
 }
 
 public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfigurationBuilder<TBuilder, TObject>
@@ -169,13 +171,24 @@ public abstract class JobConfigurationBuilderBase<TBuilder, TObject> : IJobConfi
 		return _builder;
 	}
 
-	public TBuilder JobExecutionOperations(Dictionary<int, string> jobExecutionOperations, bool force = true)
+	public TBuilder JobExecutionOperations(Dictionary<int, string>? jobExecutionOperations, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
 
 		if (force || _jobConfiguration.JobExecutionOperations == null)
 			_jobConfiguration.JobExecutionOperations = jobExecutionOperations;
+
+		return _builder;
+	}
+
+	public TBuilder AssociatedJobMessageTypes(List<int>? associatedJobMessageTypes, bool force = true)
+	{
+		if (_finalized)
+			throw new ConfigurationException("The builder was finalized");
+
+		if (force || _jobConfiguration.AssociatedJobMessageTypes == null)
+			_jobConfiguration.AssociatedJobMessageTypes = associatedJobMessageTypes;
 
 		return _builder;
 	}
@@ -199,6 +212,7 @@ public class JobConfigurationBuilder : JobConfigurationBuilderBase<JobConfigurat
 			//.CronTimerSettings(null)
 			//.ExecutionEstimatedTimeInSeconds(0)
 			//.DeclaringAsOfflineAfterMinutesOfInactivity(0)
-			//.jobExecutionOperations(null)
+			//.JobExecutionOperations(null)
+			//.AssociatedJobMessageTypes(null)
 			;
 }

@@ -28,6 +28,10 @@ public interface IJobMessage
 
 	IJobMessage Clone();
 
+	object? GetProperty(string key, object? defaultValue = default);
+
+	T? GetProperty<T>(string key, T? defaultValue = default);
+
 	void CopyFrom(IJobMessage message);
 
 	void Complete(
@@ -45,7 +49,7 @@ public interface IJobMessage
 		string? detail = null,
 		bool? isDetailJson = null);
 
-	void Susspend(
+	void Suspend(
 		ITraceInfo traceInfo,
 		Dictionary<string, object?>? properties = null,
 		string? detail = null,

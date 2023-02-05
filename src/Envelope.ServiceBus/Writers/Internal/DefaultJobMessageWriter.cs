@@ -36,7 +36,7 @@ internal class DefaultJobMessageWriter : IJobMessageWriter, IJobMessagePublisher
 		CancellationToken cancellationToken = default)
 		=> Task.CompletedTask;
 
-	public Task WriteSusspendAsync(
+	public Task WriteSuspendAsync(
 		IJobMessage message,
 		ITraceInfo traceInfo,
 		ITransactionController? transactionController,

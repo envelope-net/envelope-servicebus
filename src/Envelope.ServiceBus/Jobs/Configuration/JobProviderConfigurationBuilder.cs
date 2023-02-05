@@ -27,7 +27,7 @@ public interface IJobProviderConfigurationBuilder<TBuilder, TObject>
 
 	TBuilder JobLogger(Func<IServiceProvider, IJobLogger> jobLogger, bool force = true);
 
-	TBuilder JobMessageReader(Func<IServiceProvider, IJobMessageReader> jobMessageReader, bool force = true);
+	TBuilder ServiceBusReader(Func<IServiceProvider, IServiceBusReader> serviceBusReader, bool force = true);
 
 	TBuilder JobMessageWriter(Func<IServiceProvider, IJobMessageWriter> jobMessageWriter, bool force = true);
 
@@ -116,13 +116,13 @@ public abstract class JobProviderConfigurationBuilderBase<TBuilder, TObject> : I
 		return _builder;
 	}
 
-	public TBuilder JobMessageReader(Func<IServiceProvider, IJobMessageReader> jobMessageReader, bool force = true)
+	public TBuilder ServiceBusReader(Func<IServiceProvider, IServiceBusReader> serviceBusReader, bool force = true)
 	{
 		if (_finalized)
 			throw new ConfigurationException("The builder was finalized");
 
-		if (force || _jobProviderConfiguration.JobMessageReader == null)
-			_jobProviderConfiguration.JobMessageReader = jobMessageReader;
+		if (force || _jobProviderConfiguration.ServiceBusReader == null)
+			_jobProviderConfiguration.ServiceBusReader = serviceBusReader;
 
 		return _builder;
 	}
@@ -182,7 +182,7 @@ public class JobProviderConfigurationBuilder : JobProviderConfigurationBuilderBa
 		=> new JobProviderConfigurationBuilder()
 			.JobRepository(sp => new InMemoryJobRepository())
 			.JobLogger(sp => new DefaultJobLogger(sp.GetRequiredService<ILogger<DefaultJobLogger>>()))
-			.JobMessageReader(sp => new DefaultJobMessageReader())
+			.ServiceBusReader(sp => new DefaultServiceBusReader())
 			.JobMessageWriter(sp => new DefaultJobMessageWriter())
 			;
 }

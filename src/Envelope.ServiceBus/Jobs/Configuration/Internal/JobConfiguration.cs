@@ -30,6 +30,8 @@ internal class JobConfiguration : IJobConfiguration, IValidable
 
 	public Dictionary<int, string> JobExecutionOperations { get; set; }
 
+	public List<int> AssociatedJobMessageTypes { get; set; }
+
 	public List<IValidationMessage> Validate(string propertyPrefix = null, List<IValidationMessage> parentErrorBuffer = null, Dictionary<string, object> validationContext = null)
 	{
 		if (string.IsNullOrWhiteSpace(Name))

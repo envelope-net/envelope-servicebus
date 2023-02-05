@@ -29,4 +29,6 @@ public interface IJobConfiguration : IValidable
 	int DeclaringAsOfflineAfterMinutesOfInactivity { get; set; }
 
 	Dictionary<int, string>? JobExecutionOperations { get; set; }
+
+	List<int>? AssociatedJobMessageTypes { get; set; }
 }

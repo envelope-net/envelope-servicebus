@@ -19,7 +19,7 @@ public interface IJobProviderConfiguration : IValidable
 
 	Func<IServiceProvider, IJobLogger> JobLogger { get; set; }
 
-	Func<IServiceProvider, IJobMessageReader> JobMessageReader { get; set; }
+	Func<IServiceProvider, IServiceBusReader> ServiceBusReader { get; set; }
 
 	Func<IServiceProvider, IJobMessageWriter> JobMessageWriter { get; set; }
 }
