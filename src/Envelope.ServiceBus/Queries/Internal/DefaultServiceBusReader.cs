@@ -35,6 +35,9 @@ internal class DefaultServiceBusReader : IServiceBusReader
 	public Task<List<IDbJobLog>> JobLogsForMessageAsync(Guid jobMessageId, CancellationToken cancellationToken = default)
 		=> Task.FromResult(new List<IDbJobLog>());
 
+	public Task<IDbJobLog?> GetJobLogAsync(Guid idLogMessage, CancellationToken cancellationToken = default)
+		=> Task.FromResult((IDbJobLog?)null);
+
 	public Task<IJobMessage?> GetActiveJobMessageAsync(
 		Guid jobMessageId,
 		ITransactionController? transactionController = null,

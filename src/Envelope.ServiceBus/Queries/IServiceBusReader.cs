@@ -21,4 +21,6 @@ public interface IServiceBusReader : IJobMessageReader, IDisposable, IAsyncDispo
 	Task<List<IDbJobLog>> GetJobLogsAsync(Guid executionId, CancellationToken cancellationToken = default);
 
 	Task<List<IDbJobLog>> JobLogsForMessageAsync(Guid jobMessageId, CancellationToken cancellationToken = default);
+
+	Task<IDbJobLog?> GetJobLogAsync(Guid idLogMessage, CancellationToken cancellationToken = default);
 }
