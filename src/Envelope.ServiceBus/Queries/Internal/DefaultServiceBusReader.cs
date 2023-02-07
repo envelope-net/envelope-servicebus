@@ -14,13 +14,13 @@ internal class DefaultServiceBusReader : IServiceBusReader
 	public Task<List<IDbJob>> GetJobsAsync(Guid hostInstanceId, CancellationToken cancellationToken = default)
 		=> Task.FromResult(new List<IDbJob>());
 
-	public Task<List<IDbJob>> GetJobsAsync(string jobName, string hostName, int count = 5, CancellationToken cancellationToken = default)
+	public Task<List<IDbJob>> GetJobsAsync(string jobName, string hostName, int page = 1, int pageSize = 5, CancellationToken cancellationToken = default)
 		=> Task.FromResult(new List<IDbJob>());
 
 	public Task<IDbJob?> GetJobAsync(Guid jobInstanceId, CancellationToken cancellationToken = default)
 		=> Task.FromResult((IDbJob?)null);
 
-	public Task<List<IDbJobExecution>> GetJobLatestExecutionsAsync(Guid jobInstanceId, int count = 3, CancellationToken cancellationToken = default)
+	public Task<List<IDbJobExecution>> GetJobLatestExecutionsAsync(Guid jobInstanceId, int page = 1, int pageSize = 3, CancellationToken cancellationToken = default)
 		=> Task.FromResult(new List<IDbJobExecution>());
 
 	public Task<List<IDbJobExecution>> GetJobExecutionsAsync(Guid jobInstanceId, DateTime from, DateTime to, CancellationToken cancellationToken = default)
