@@ -54,6 +54,18 @@ internal class DefaultServiceBusReader : IServiceBusReader
 		=> Task.FromResult((IJobMessage?)null);
 
 	public Task<List<IJobMessage>> GetActiveJobMessagesAsync(
+		List<Guid> jobMessageIds,
+		ITransactionController? transactionController = null,
+		CancellationToken cancellationToken = default)
+		=> Task.FromResult(new List<IJobMessage>());
+
+	public Task<List<IJobMessage>> GetArchivedJobMessagesAsync(
+		List<Guid> jobMessageIds,
+		ITransactionController? transactionController = null,
+		CancellationToken cancellationToken = default)
+		=> Task.FromResult(new List<IJobMessage>());
+
+	public Task<List<IJobMessage>> GetActiveJobMessagesAsync(
 		int jobMessageTypeId,
 		int? status = null,
 		int page = 1,

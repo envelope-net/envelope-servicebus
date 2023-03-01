@@ -16,6 +16,16 @@ public interface IJobMessageReader : IDisposable, IAsyncDisposable
 		CancellationToken cancellationToken = default);
 
 	Task<List<IJobMessage>> GetActiveJobMessagesAsync(
+		List<Guid> jobMessageIds,
+		ITransactionController? transactionController = null,
+		CancellationToken cancellationToken = default);
+
+	Task<List<IJobMessage>> GetArchivedJobMessagesAsync(
+		List<Guid> jobMessageIds,
+		ITransactionController? transactionController = null,
+		CancellationToken cancellationToken = default);
+
+	Task<List<IJobMessage>> GetActiveJobMessagesAsync(
 		int jobMessageTypeId,
 		int? status = null,
 		int page = 1,
