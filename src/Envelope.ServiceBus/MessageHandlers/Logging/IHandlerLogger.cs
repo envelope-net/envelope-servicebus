@@ -1,5 +1,4 @@
 ﻿using Envelope.Logging;
-using Envelope.ServiceBus.Messages;
 using Envelope.Trace;
 using Envelope.Transactions;
 
@@ -9,21 +8,18 @@ public interface IHandlerLogger
 {
 	ILogMessage? LogTrace(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	ILogMessage? LogDebug(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	ILogMessage? LogInformation(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -31,7 +27,6 @@ public interface IHandlerLogger
 
 	ILogMessage? LogWarning(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -39,21 +34,18 @@ public interface IHandlerLogger
 
 	IErrorMessage LogError(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	IErrorMessage LogCritical(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	Task<ILogMessage?> LogTraceAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
@@ -61,7 +53,6 @@ public interface IHandlerLogger
 
 	Task<ILogMessage?> LogDebugAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
@@ -69,7 +60,6 @@ public interface IHandlerLogger
 
 	Task<ILogMessage?> LogInformationAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -78,7 +68,6 @@ public interface IHandlerLogger
 
 	Task<ILogMessage?> LogWarningAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -87,7 +76,6 @@ public interface IHandlerLogger
 
 	Task<IErrorMessage> LogErrorAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
@@ -95,7 +83,6 @@ public interface IHandlerLogger
 
 	Task<IErrorMessage> LogCriticalAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,

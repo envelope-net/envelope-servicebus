@@ -1,23 +1,19 @@
-﻿using Envelope.ServiceBus.Hosts;
-using Envelope.ServiceBus.Internals;
-using Envelope.ServiceBus.MessageHandlers;
+﻿using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Processors;
 using Envelope.ServiceBus.Messages;
-using Envelope.ServiceBus.Messages.Options;
 using Envelope.Services;
 using Envelope.Services.Transactions;
 using Envelope.Trace;
 using Envelope.Transactions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Runtime.CompilerServices;
-using System.Threading;
 
 namespace Envelope.ServiceBus;
 
 public partial class EventBus : IEventBus
 {
 	/// <inheritdoc />
-	public IResult<Guid> Publish(
+	public IResult Publish(
 		IEvent @event,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
@@ -25,80 +21,75 @@ public partial class EventBus : IEventBus
 		=> Publish(@event, null!, memberName, sourceFilePath, sourceLineNumber);
 
 	/// <inheritdoc />
-	public IResult<Guid> Publish(
+	public IResult Publish(
 		IEvent @event,
-		Action<MessageOptionsBuilder> optionsBuilder,
+		ITransactionController transactionController,
 		[CallerMemberName] string memberName = "",
 		[CallerFilePath] string sourceFilePath = "",
 		[CallerLineNumber] int sourceLineNumber = 0)
 		=> Publish(
 			@event,
-			optionsBuilder,
+			transactionController,
 			TraceInfo.Create(
 				ServiceProvider.GetRequiredService<IApplicationContext>().TraceInfo,
-				null, //EventBusOptions.HostInfo.HostName,
+				null, //HostInfo.HostName,
 				null,
 				memberName,
 				sourceFilePath,
 				sourceLineNumber));
 
 	/// <inheritdoc />
-	public IResult<Guid> Publish(
+	public IResult Publish(
 		IEvent @event,
 		ITraceInfo traceInfo)
-		=> Publish(@event, null, traceInfo);
+		=> Publish(@event, null!, traceInfo);
 
 	/// <inheritdoc />
-	public IResult<Guid> Publish(
+	public IResult Publish(
 		IEvent @event,
-		Action<MessageOptionsBuilder>? optionsBuilder,
+		ITransactionController transactionController,
 		ITraceInfo traceInfo)
 	{
 		if (@event == null)
 		{
-			var result = new ResultBuilder<Guid>();
+			var result = new ResultBuilder();
 			return result.WithArgumentNullException(traceInfo, nameof(@event));
 		}
 
-		var builder = MessageOptionsBuilder.GetDefaultBuilder(@event.GetType());
-		optionsBuilder?.Invoke(builder);
-		var options = builder.Build(true);
-
 		var isLocalTransactionCoordinator = false;
-		if (options.TransactionController == null)
+		if (transactionController == null)
 		{
-			options.TransactionController = CreateTransactionController();
+			transactionController = CreateTransactionController();
 			isLocalTransactionCoordinator = true;
 		}
 
-		return PublishInternal(@event, options, isLocalTransactionCoordinator, traceInfo);
+		return PublishInternal(@event, transactionController, isLocalTransactionCoordinator, traceInfo);
 	}
 
-	protected IResult<Guid> PublishInternal(
+	protected IResult PublishInternal(
 		IEvent @event,
-		IMessageOptions options,
+		ITransactionController transactionController,
 		bool isLocalTransactionCoordinator,
 		ITraceInfo traceInfo)
 	{
-		var result = new ResultBuilder<Guid>();
+		var result = new ResultBuilder();
 
 		if (@event == null)
 			return result.WithArgumentNullException(traceInfo, nameof(@event));
-		if (options == null)
-			return result.WithArgumentNullException(traceInfo, nameof(options));
+		if (transactionController == null)
+			return result.WithArgumentNullException(traceInfo, nameof(transactionController));
 		if (traceInfo == null)
 			return result.WithArgumentNullException(
 				TraceInfo.Create(
 					ServiceProvider.GetRequiredService<IApplicationContext>().TraceInfo
-					//EventBusOptions.HostInfo.HostName
+					//HostInfo.HostName
 					),
 				nameof(traceInfo));
 
 		traceInfo = TraceInfo.Create(traceInfo);
 
-		var transactionController = options.TransactionController;
 		EventHandlerProcessor? handlerProcessor = null;
-		MessageHandlerContext? handlerContext = null;
+		IMessageHandlerContext? handlerContext = null;
 
 		return ServiceTransactionInterceptor.ExecuteAction(
 			false,
@@ -108,58 +99,17 @@ public partial class EventBus : IEventBus
 			{
 				var eventType = @event.GetType();
 
-				var savedEventResult = SaveEvent(@event, options, traceInfo);
-				if (result.MergeHasError(savedEventResult))
-					return result.Build();
-
-				var savedEvent = savedEventResult.Data;
-
-				if (savedEvent == null)
-					return result.WithInvalidOperationException(traceInfo, $"{nameof(savedEvent)} == null | {nameof(eventType)} = {eventType.FullName}");
-				if (savedEvent.Message == null)
-					return result.WithInvalidOperationException(traceInfo, $"{nameof(savedEvent)}.{nameof(savedEvent.Message)} == null | {nameof(eventType)} = {eventType.FullName}");
-
 				handlerContext = EventHandlerRegistry.CreateEventHandlerContext(eventType, ServiceProvider);
 
-				var throwNoHandlerException = options.ThrowNoHandlerException ?? false;
-
 				if (handlerContext == null)
-				{
-					if (throwNoHandlerException)
-					{
-						return result.WithInvalidOperationException(traceInfo, $"{nameof(handlerContext)} == null| {nameof(eventType)} = {eventType.FullName}");
-					}
-					else
-					{
-						return result.WithWarning(traceInfo, $"{nameof(handlerContext)} == null| {nameof(eventType)} = {eventType.FullName}");
-					}
-				}
+					return result.WithInvalidOperationException(traceInfo, $"{nameof(handlerContext)} == null| {nameof(eventType)} = {eventType.FullName}");
 
-				handlerContext.MessageHandlerResultFactory = EventBusOptions.MessageHandlerResultFactory;
-				handlerContext.TransactionController = transactionController;
-				handlerContext.ServiceProvider = ServiceProvider;
-				handlerContext.TraceInfo = traceInfo;
-				handlerContext.HostInfo = EventBusOptions.HostInfo;
-				handlerContext.HandlerLogger = EventBusOptions.HandlerLogger;
-				handlerContext.MessageId = savedEvent.MessageId;
-				handlerContext.DisabledMessagePersistence = options.DisabledMessagePersistence;
-				handlerContext.ThrowNoHandlerException = throwNoHandlerException;
-				handlerContext.PublisherId = PublisherHelper.GetPublisherIdentifier(EventBusOptions.HostInfo, traceInfo);
-				handlerContext.PublishingTimeUtc = DateTime.UtcNow;
-				handlerContext.ParentMessageId = null;
-				handlerContext.Timeout = options.Timeout;
-				handlerContext.RetryCount = 0;
-				handlerContext.ErrorHandling = options.ErrorHandling;
-				handlerContext.IdSession = options.IdSession;
-				handlerContext.ContentType = options.ContentType;
-				handlerContext.ContentEncoding = options.ContentEncoding;
-				handlerContext.IsCompressedContent = options.IsCompressContent;
-				handlerContext.IsEncryptedContent = options.IsEncryptContent;
-				handlerContext.ContainsContent = true;
-				handlerContext.Priority = options.Priority;
-				handlerContext.Headers = options.Headers?.GetAll();
-
-				handlerContext.Initialize(MessageStatus.Created, null);
+				handlerContext.Initialize(
+					ServiceProvider,
+					traceInfo,
+					HostInfo,
+					transactionController,
+					HandlerLogger);
 
 				handlerProcessor = (EventHandlerProcessor)_asyncVoidEventHandlerProcessors.GetOrAdd(
 					eventType,
@@ -179,7 +129,7 @@ public partial class EventBus : IEventBus
 				if (handlerProcessor == null)
 					return result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {eventType}");
 
-				var handlerResult = handlerProcessor.Handle(savedEvent.Message, handlerContext, ServiceProvider, unhandledExceptionDetail);
+				var handlerResult = handlerProcessor.Handle(@event, handlerContext, ServiceProvider, unhandledExceptionDetail);
 				result.MergeAllHasError(handlerResult);
 
 				if (result.HasError())
@@ -192,15 +142,15 @@ public partial class EventBus : IEventBus
 						transactionController.ScheduleCommit();
 				}
 
-				return result.WithData(savedEvent.MessageId).Build();
+				return result.Build();
 			},
 			$"{nameof(Publish)}<{@event?.GetType().FullName}>",
 			(traceInfo, exception, detail) =>
 			{
 				var errorMessage =
-					EventBusOptions.HostLogger.LogError(
+					HostLogger.LogError(
 						traceInfo,
-						EventBusOptions.HostInfo,
+						HostInfo,
 						x => x.ExceptionInfo(exception).Detail(detail),
 						detail,
 						null);
@@ -218,50 +168,5 @@ public partial class EventBus : IEventBus
 			},
 			null,
 			isLocalTransactionCoordinator);
-	}
-
-	protected virtual IResult<ISavedMessage<TEvent>> SaveEvent<TEvent>(
-		TEvent @event,
-		IMessageOptions options,
-		ITraceInfo traceInfo)
-		where TEvent : class, IEvent
-	{
-		traceInfo = TraceInfo.Create(traceInfo);
-		var result = new ResultBuilder<ISavedMessage<TEvent>>();
-
-		var utcNow = DateTime.UtcNow;
-		var metadata = new MessageMetadata<TEvent>
-		{
-			MessageId = Guid.NewGuid(),
-			Message = @event,
-			ParentMessageId = null,
-			PublishingTimeUtc = utcNow,
-			PublisherId = "--EventBus--",
-			TraceInfo = traceInfo,
-			Timeout = options.Timeout,
-			RetryCount = 0,
-			ErrorHandling = options.ErrorHandling,
-			IdSession = options.IdSession,
-			ContentType = options.ContentType,
-			ContentEncoding = options.ContentEncoding,
-			IsCompressedContent = options.IsCompressContent,
-			IsEncryptedContent = options.IsEncryptContent,
-			ContainsContent = @event != null,
-			Priority = options.Priority,
-			Headers = options.Headers?.GetAll(),
-			DisabledMessagePersistence = options.DisabledMessagePersistence,
-			MessageStatus = MessageStatus.Created,
-			DelayedToUtc = null
-		};
-
-		if (EventBusOptions.EventBodyProvider != null
-			&& EventBusOptions.EventBodyProvider.AllowMessagePersistence(options.DisabledMessagePersistence, metadata))
-		{
-			var saveResult = EventBusOptions.EventBodyProvider.SaveToStorage(new List<IMessageMetadata> { metadata }, @event, traceInfo, options.TransactionController);
-			if (result.MergeHasError(saveResult))
-				return result.Build();
-		}
-
-		return result.WithData(metadata).Build();
 	}
 }

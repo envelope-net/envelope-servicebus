@@ -2,5 +2,5 @@
 
 internal abstract class EventHandlerProcessorBase
 {
-	protected abstract IEnumerable<IEventHandler> CreateHandlers(IServiceProvider serviceProvider, bool throwNoHandlerException);
+	protected abstract IEnumerable<IEventHandler> CreateHandlers(IServiceProvider serviceProvider);
 }

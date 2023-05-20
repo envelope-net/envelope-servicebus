@@ -38,4 +38,3 @@ public class EventHandlerType<TEventHandlerType, TContext> : EventHandlerType<TC
 	{
 	}
 }
-

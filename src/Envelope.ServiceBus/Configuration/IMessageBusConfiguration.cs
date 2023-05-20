@@ -1,7 +1,6 @@
 ﻿using Envelope.ServiceBus.Hosts.Logging;
 using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Logging;
-using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Resolvers;
 using Envelope.Validation;
 
@@ -19,10 +18,6 @@ public interface IMessageBusConfiguration : IValidable
 	Func<IServiceProvider, IHostLogger> HostLogger { get; set; }
 
 	Func<IServiceProvider, IHandlerLogger> HandlerLogger { get; set; }
-
-	Func<IServiceProvider, IMessageHandlerResultFactory> MessageHandlerResultFactory { get; set; }
-
-	IMessageBodyProvider? MessageBodyProvider { get; set; }
 
 	List<IMessageHandlerType> MessageHandlerTypes { get; set; }
 

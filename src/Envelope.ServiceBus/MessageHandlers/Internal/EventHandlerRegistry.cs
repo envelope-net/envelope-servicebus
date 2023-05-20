@@ -281,7 +281,7 @@ internal class EventHandlerRegistry : IEventRegistry, IEventHandlerRegistry
 		}
 	}
 
-	public MessageHandlerContext? CreateEventHandlerContext(Type eventType, IServiceProvider serviceProvider)
+	public IMessageHandlerContext? CreateEventHandlerContext(Type eventType, IServiceProvider serviceProvider)
 	{
 		if (_eventHandlerContextFactories.TryGetValue(eventType, out var contextFactory))
 			return contextFactory(serviceProvider);

@@ -2,9 +2,7 @@
 using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.Hosts.Logging;
 using Envelope.ServiceBus.MessageHandlers;
-using Envelope.ServiceBus.MessageHandlers.Internal;
 using Envelope.ServiceBus.MessageHandlers.Logging;
-using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Resolvers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -26,10 +24,6 @@ public interface IMessageBusConfigurationBuilder<TBuilder, TObject>
 	TBuilder MessageTypeResolver(IMessageTypeResolver messageTypeResolver, bool force = true);
 
 	TBuilder HandlerLogger(Func<IServiceProvider, IHandlerLogger> handlerLogger, bool force = true);
-
-	TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = true);
-
-	TBuilder MessageBodyProvider(IMessageBodyProvider messageBodyProvider, bool force = true);
 
 	TBuilder AddMessageHandlerType(IMessageHandlerType messageHandlerType, bool force = true);
 
@@ -114,28 +108,6 @@ public abstract class MessageBusConfigurationBuilderBase<TBuilder, TObject> : IM
 
 		if (force || _messageBusConfiguration.HandlerLogger == null)
 			_messageBusConfiguration.HandlerLogger = handlerLogger;
-
-		return _builder;
-	}
-
-	public TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = true)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || _messageBusConfiguration.MessageHandlerResultFactory == null)
-			_messageBusConfiguration.MessageHandlerResultFactory = messageHandlerResultFactory;
-
-		return _builder;
-	}
-
-	public TBuilder MessageBodyProvider(IMessageBodyProvider? messageBodyProvider, bool force = true)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || _messageBusConfiguration.MessageBodyProvider == null)
-			_messageBusConfiguration.MessageBodyProvider = messageBodyProvider;
 
 		return _builder;
 	}
@@ -234,9 +206,6 @@ public class MessageBusConfigurationBuilder : MessageBusConfigurationBuilderBase
 			//.MessageTypeResolver()
 			//.MessageHandlerAssemblies()
 			//.MessageBusName(null)
-			//.MessageHandlerContextFactory(null)
-			//.MessageBodyProvider(null)
 			.HostLogger(sp => new DefaultHostLogger(sp.GetRequiredService<ILogger<DefaultHostLogger>>()))
-			.HandlerLogger(sp => new DefaultHandlerLogger(sp.GetRequiredService<ILogger<DefaultHandlerLogger>>()))
-			.MessageHandlerResultFactory(sp => new MessageHandlerResultFactory());
+			.HandlerLogger(sp => new DefaultHandlerLogger(sp.GetRequiredService<ILogger<DefaultHandlerLogger>>()));
 }
