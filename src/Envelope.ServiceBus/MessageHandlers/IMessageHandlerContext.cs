@@ -1,52 +1,53 @@
 ﻿using Envelope.Logging;
-using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.Hosts;
-using Envelope.ServiceBus.Messages;
+using Envelope.ServiceBus.MessageHandlers.Logging;
 using Envelope.Trace;
 using Envelope.Transactions;
 
 namespace Envelope.ServiceBus.MessageHandlers;
 
-public interface IMessageHandlerContext : IMessageMetadata
+public interface IMessageHandlerContext
 {
-	IServiceBusOptions? ServiceBusOptions { get; }
-
-	bool ThrowNoHandlerException { get; }
-
-	/// <summary>
-	/// Current transaction context
-	/// </summary>
-	ITransactionController TransactionController { get; }
-
 	/// <summary>
 	/// MessageBus's service provider
 	/// </summary>
 	IServiceProvider? ServiceProvider { get; }
-
-	IMessageHandlerResultFactory MessageHandlerResultFactory { get; }
 
 	/// <summary>
 	/// ServiceBus Host
 	/// </summary>
 	IHostInfo HostInfo { get; }
 
+	/// <summary>
+	/// Current transaction context
+	/// </summary>
+	ITransactionController TransactionController { get; }
+
+	ITraceInfo TraceInfo { get; }
+
+	IHandlerLogger HandlerLogger { get; }
+
+	void Initialize(
+		IServiceProvider serviceProvider,
+		ITraceInfo traceInfo,
+		IHostInfo hostInfo,
+		ITransactionController transactionController,
+		IHandlerLogger handlerLogger);
+
 	ILogMessage? LogTrace(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	ILogMessage? LogDebug(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	ILogMessage? LogInformation(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -54,7 +55,6 @@ public interface IMessageHandlerContext : IMessageMetadata
 
 	ILogMessage? LogWarning(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -62,21 +62,18 @@ public interface IMessageHandlerContext : IMessageMetadata
 
 	IErrorMessage? LogError(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	IErrorMessage? LogCritical(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null);
 
 	Task<ILogMessage?> LogTraceAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
@@ -84,7 +81,6 @@ public interface IMessageHandlerContext : IMessageMetadata
 
 	Task<ILogMessage?> LogDebugAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
@@ -92,7 +88,6 @@ public interface IMessageHandlerContext : IMessageMetadata
 
 	Task<ILogMessage?> LogInformationAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -101,7 +96,6 @@ public interface IMessageHandlerContext : IMessageMetadata
 
 	Task<ILogMessage?> LogWarningAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<LogMessageBuilder> messageBuilder,
 		string? detail = null,
 		bool force = false,
@@ -110,7 +104,6 @@ public interface IMessageHandlerContext : IMessageMetadata
 
 	Task<IErrorMessage?> LogErrorAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,
@@ -118,7 +111,6 @@ public interface IMessageHandlerContext : IMessageMetadata
 
 	Task<IErrorMessage?> LogCriticalAsync(
 		ITraceInfo traceInfo,
-		IMessageMetadata? messageMetadata,
 		Action<ErrorMessageBuilder> messageBuilder,
 		string? detail = null,
 		ITransactionCoordinator? transactionCoordinator = null,

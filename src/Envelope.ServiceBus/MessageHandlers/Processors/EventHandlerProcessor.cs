@@ -28,10 +28,10 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 	where TEvent : IEvent
 	where TContext : IMessageHandlerContext
 {
-	protected override IEnumerable<IEventHandler> CreateHandlers(IServiceProvider serviceProvider, bool throwNoHandlerException)
+	protected override IEnumerable<IEventHandler> CreateHandlers(IServiceProvider serviceProvider)
 	{
 		var handlers = serviceProvider.GetServices<IEventHandler<TEvent, TContext>>();
-		if (handlers == null || (throwNoHandlerException && !handlers.Any()))
+		if (handlers == null || !handlers.Any())
 			throw new InvalidOperationException($"Could not resolve handler for {typeof(IEventHandler<TEvent, TContext>).FullName}");
 
 		return handlers;
@@ -53,11 +53,11 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 		List<IEventHandler<TEvent, TContext>>? handlers = null;
 		try
 		{
-			handlers = CreateHandlers(serviceProvider, handlerContext.ThrowNoHandlerException).Select(x => (IEventHandler<TEvent, TContext>)x).ToList();
+			handlers = CreateHandlers(serviceProvider).Select(x => (IEventHandler<TEvent, TContext>)x).ToList();
 		}
 		catch (Exception exHandler)
 		{
-			handlerContext.LogError(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), $"PublishAsync<IEvent> {nameof(CreateHandlers)} error", null);
+			handlerContext.LogError(TraceInfo.Create(handlerContext.TraceInfo), x => x.ExceptionInfo(exHandler), $"PublishAsync<IEvent> {nameof(CreateHandlers)} error", null);
 			throw;
 		}
 
@@ -74,9 +74,8 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 				}
 				else
 				{
-					var interceptor = (IEventHandlerInterceptor<TEvent, TContext>?)serviceProvider.GetService(interceptorType);
-					if (interceptor == null)
-						throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IEventHandlerInterceptor<TEvent, TContext>).FullName}");
+					var interceptor = (IEventHandlerInterceptor<TEvent, TContext>?)serviceProvider.GetService(interceptorType)
+						?? throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IEventHandlerInterceptor<TEvent, TContext>).FullName}");
 
 					result = interceptor.InterceptHandle(@event, handlerContext, handler.Handle);
 				}
@@ -94,7 +93,7 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 					{
 						try
 						{
-							handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnError: PublishAsync<IEvent> error", null);
+							handlerContext.LogCritical(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnError: PublishAsync<IEvent> error", null);
 						}
 						catch { }
 					}
@@ -105,7 +104,7 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 				var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
 				try
 				{
-					handlerContext.LogError(traceInfo, null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null);
+					handlerContext.LogError(traceInfo, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null);
 				}
 				catch { }
 
@@ -119,7 +118,7 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 					{
 						try
 						{
-							handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnError: PublishAsync<IEvent> error", null);
+							handlerContext.LogCritical(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnError: PublishAsync<IEvent> error", null);
 						}
 						catch { }
 					}
@@ -153,7 +152,7 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 	{
 		try
 		{
-			var handlers = CreateHandlers(serviceProvider, true).Select(x => (IEventHandler<TEvent, TContext>)x).ToList();
+			var handlers = CreateHandlers(serviceProvider).Select(x => (IEventHandler<TEvent, TContext>)x).ToList();
 
 			foreach (var handler in handlers)
 			{
@@ -165,8 +164,7 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 				{
 					try
 					{
-						if (handlerContext != null)
-							handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(handlerOnErrorEx), "OnErrorAsync1: SendAsync<Messages.IRequestMessage> error", null);
+						handlerContext?.LogCritical(traceInfo, x => x.ExceptionInfo(handlerOnErrorEx), "OnErrorAsync1: SendAsync<Messages.IRequestMessage> error", null);
 					}
 					catch { }
 				}
@@ -176,8 +174,7 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 		{
 			try
 			{
-				if (handlerContext != null)
-					handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync2: SendAsync<Messages.IRequestMessage> error", null);
+				handlerContext?.LogCritical(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync2: SendAsync<Messages.IRequestMessage> error", null);
 			}
 			catch { }
 		}

@@ -1,5 +1,5 @@
 ﻿using Envelope.Extensions;
-using Envelope.MessageBus.Configuration;
+using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Internal;
 using Envelope.ServiceBus.Messages.Resolvers;
@@ -10,7 +10,7 @@ namespace Envelope.ServiceBus.Extensions;
 
 public static partial class ServiceCollectionExtensions
 {
-	public static IServiceCollection AddInMemoryMessageBus(
+	public static IServiceCollection AddMessageBus(
 		this IServiceCollection services,
 		Action<MessageBusConfigurationBuilder> configure,
 		ServiceLifetime messageBusLifetime = ServiceLifetime.Scoped,
@@ -57,8 +57,6 @@ public static partial class ServiceCollectionExtensions
 			}
 		}
 
-		services.TryAddSingleton<IMessageHandlerResultFactory, MessageHandlerResultFactory>();
-
 		services.TryAdd(new ServiceDescriptor(
 			typeof(IMessageBus),
 			sp =>
@@ -72,9 +70,10 @@ public static partial class ServiceCollectionExtensions
 		return services;
 	}
 
-	public static IServiceCollection AddInMemoryMessageBus(
+	public static IServiceCollection AddMessageBus(
 		this IServiceCollection services,
 		string messageBusName,
+		Action<MessageBusConfigurationBuilder> configure,
 		params IMessageHandlersAssembly[] assembliesToScan)
 	{
 		if (string.IsNullOrWhiteSpace(messageBusName))
@@ -83,7 +82,7 @@ public static partial class ServiceCollectionExtensions
 		if (assembliesToScan == null || assembliesToScan.Length == 0)
 			throw new ArgumentNullException(nameof(assembliesToScan));
 
-		return AddInMemoryMessageBus(
+		return AddMessageBus(
 			services,
 			builder =>
 			{
@@ -91,9 +90,21 @@ public static partial class ServiceCollectionExtensions
 					.MessageBusName(messageBusName)
 					.MessageHandlerAssemblies(assembliesToScan)
 					.MessageTypeResolver(new FullNameTypeResolver());
+
+				configure?.Invoke(builder);
 			},
 			ServiceLifetime.Scoped,
 			ServiceLifetime.Transient,
 			ServiceLifetime.Transient);
 	}
+
+	public static IServiceCollection AddMessageBus(
+		this IServiceCollection services,
+		string messageBusName,
+		params IMessageHandlersAssembly[] assembliesToScan)
+		=> AddMessageBus(
+			services,
+			messageBusName,
+			null!,
+			assembliesToScan);
 }

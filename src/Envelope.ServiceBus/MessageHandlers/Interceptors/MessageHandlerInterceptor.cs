@@ -50,9 +50,8 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 
 			try
 			{
-				var executeResult = next(message!, handlerContext);
-				if (executeResult == null)
-					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse>).FullName}");
+				var executeResult = next(message!, handlerContext)
+					?? throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse>).FullName}");
 
 				resultBuilder.MergeAllHasError(executeResult);
 
@@ -69,8 +68,7 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 						Logger.LogErrorMessage(errMsg, false);
 					}
 
-					if (handlerContext.TransactionController != null)
-						handlerContext.TransactionController.ScheduleRollback(result.ToException()!.ToStringTrace());
+					handlerContext.TransactionController?.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 				else
 				{
@@ -85,8 +83,7 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 				callEndTicks = StaticWatch.CurrentTicks;
 				methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
-				if (handlerContext.TransactionController != null)
-					handlerContext.TransactionController.ScheduleRollback(executeEx.ToStringTrace());
+				handlerContext.TransactionController?.ScheduleRollback(executeEx.ToStringTrace());
 
 				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 

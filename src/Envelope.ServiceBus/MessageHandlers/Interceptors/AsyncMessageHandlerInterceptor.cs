@@ -51,9 +51,8 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 
 			try
 			{
-				var executeResult = await next(message!, handlerContext, cancellationToken).ConfigureAwait(false);
-				if (executeResult == null)
-					throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse>).FullName}");
+				var executeResult = await next(message!, handlerContext, cancellationToken).ConfigureAwait(false)
+					?? throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse>).FullName}");
 
 				resultBuilder.MergeAllHasError(executeResult);
 
@@ -70,8 +69,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 						Logger.LogErrorMessage(errMsg, false);
 					}
 
-					if (handlerContext.TransactionController != null)
-						handlerContext.TransactionController.ScheduleRollback(result.ToException()!.ToStringTrace());
+					handlerContext.TransactionController?.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 				else
 				{
@@ -86,8 +84,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 				callEndTicks = StaticWatch.CurrentTicks;
 				methodCallElapsedMilliseconds = StaticWatch.ElapsedMilliseconds(callStartTicks, callEndTicks);
 
-				if (handlerContext.TransactionController != null)
-					handlerContext.TransactionController.ScheduleRollback(executeEx.ToStringTrace());
+				handlerContext.TransactionController?.ScheduleRollback(executeEx.ToStringTrace());
 
 				var clientErrorMessage = handlerContext.ServiceProvider?.GetService<IApplicationContext>()?.ApplicationResources?.GlobalExceptionMessage ?? "Error";
 

@@ -543,7 +543,7 @@ internal class MessageHandlerRegistry : IMessageRegistry, IMessageHandlerRegistr
 		}
 	}
 
-	public MessageHandlerContext? CreateMessageHandlerContext(Type messageType, IServiceProvider serviceProvider)
+	public IMessageHandlerContext? CreateMessageHandlerContext(Type messageType, IServiceProvider serviceProvider)
 	{
 		if (_messageHandlerContextFactories.TryGetValue(messageType, out var contextFactory))
 			return contextFactory(serviceProvider);

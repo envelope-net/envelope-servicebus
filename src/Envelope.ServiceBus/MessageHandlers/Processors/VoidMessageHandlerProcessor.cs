@@ -30,9 +30,8 @@ internal class VoidMessageHandlerProcessor<TRequestMessage, TContext> : VoidMess
 {
 	protected override IMessageHandler CreateHandler(IServiceProvider serviceProvider)
 	{
-		var handler = serviceProvider.GetService<IMessageHandler<TRequestMessage, TContext>>();
-		if (handler == null)
-			throw new InvalidOperationException($"Could not resolve handler for {typeof(IMessageHandler<TRequestMessage, TContext>).FullName}");
+		var handler = serviceProvider.GetService<IMessageHandler<TRequestMessage, TContext>>()
+			?? throw new InvalidOperationException($"Could not resolve handler for {typeof(IMessageHandler<TRequestMessage, TContext>).FullName}");
 
 		return handler;
 	}
@@ -64,9 +63,8 @@ internal class VoidMessageHandlerProcessor<TRequestMessage, TContext> : VoidMess
 			}
 			else
 			{
-				var interceptor = (IMessageHandlerInterceptor<TRequestMessage, TContext>?)serviceProvider.GetService(interceptorType);
-				if (interceptor == null)
-					throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IMessageHandlerInterceptor<TRequestMessage, TContext>).FullName}");
+				var interceptor = (IMessageHandlerInterceptor<TRequestMessage, TContext>?)serviceProvider.GetService(interceptorType)
+					?? throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IMessageHandlerInterceptor<TRequestMessage, TContext>).FullName}");
 
 				result = interceptor.InterceptHandle(message, handlerContext, handler.Handle);
 			}
@@ -82,7 +80,7 @@ internal class VoidMessageHandlerProcessor<TRequestMessage, TContext> : VoidMess
 				{
 					try
 					{
-						handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnError: Send<Messages.IRequestMessage> error", null);
+						handlerContext.LogCritical(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnError: Send<Messages.IRequestMessage> error", null);
 					}
 					catch { }
 				}
@@ -95,7 +93,7 @@ internal class VoidMessageHandlerProcessor<TRequestMessage, TContext> : VoidMess
 			var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
 			try
 			{
-				handlerContext.LogError(traceInfo, null, x => x.ExceptionInfo(exHandler), "Send<Messages.IRequestMessage> error", null);
+				handlerContext.LogError(traceInfo, x => x.ExceptionInfo(exHandler), "Send<Messages.IRequestMessage> error", null);
 			}
 			catch { }
 
@@ -109,7 +107,7 @@ internal class VoidMessageHandlerProcessor<TRequestMessage, TContext> : VoidMess
 				{
 					try
 					{
-						handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnError: Send<Messages.IRequestMessage> error", null);
+						handlerContext.LogCritical(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnError: Send<Messages.IRequestMessage> error", null);
 					}
 					catch { }
 				}
@@ -147,8 +145,7 @@ internal class VoidMessageHandlerProcessor<TRequestMessage, TContext> : VoidMess
 		{
 			try
 			{
-				if (handlerContext != null)
-					handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null);
+				handlerContext?.LogCritical(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null);
 			}
 			catch { }
 		}

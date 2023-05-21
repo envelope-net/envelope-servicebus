@@ -2,9 +2,7 @@
 using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.Hosts.Logging;
 using Envelope.ServiceBus.MessageHandlers;
-using Envelope.ServiceBus.MessageHandlers.Internal;
 using Envelope.ServiceBus.MessageHandlers.Logging;
-using Envelope.ServiceBus.Messages;
 using Envelope.ServiceBus.Messages.Resolvers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -26,10 +24,6 @@ public interface IEventBusConfigurationBuilder<TBuilder, TObject>
 	TBuilder HostLogger(Func<IServiceProvider, IHostLogger> hostLogger, bool force = true);
 
 	TBuilder HandlerLogger(Func<IServiceProvider, IHandlerLogger> handlerLogger, bool force = true);
-
-	TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = true);
-
-	TBuilder EventBodyProvider(IMessageBodyProvider eventBodyProvider, bool force = true);
 
 	TBuilder AddEventHandlerType(IEventHandlerType eventHandlerType, bool force = true);
 
@@ -114,28 +108,6 @@ public abstract class EventBusConfigurationBuilderBase<TBuilder, TObject> : IEve
 
 		if (force || _eventBusConfiguration.HandlerLogger == null)
 			_eventBusConfiguration.HandlerLogger = handlerLogger;
-
-		return _builder;
-	}
-
-	public TBuilder MessageHandlerResultFactory(Func<IServiceProvider, IMessageHandlerResultFactory> messageHandlerResultFactory, bool force = true)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || _eventBusConfiguration.MessageHandlerResultFactory == null)
-			_eventBusConfiguration.MessageHandlerResultFactory = messageHandlerResultFactory;
-
-		return _builder;
-	}
-
-	public TBuilder EventBodyProvider(IMessageBodyProvider? eventBodyProvider, bool force = true)
-	{
-		if (_finalized)
-			throw new ConfigurationException("The builder was finalized");
-
-		if (force || _eventBusConfiguration.EventBodyProvider == null)
-			_eventBusConfiguration.EventBodyProvider = eventBodyProvider;
 
 		return _builder;
 	}
@@ -234,8 +206,6 @@ public class EventBusConfigurationBuilder : EventBusConfigurationBuilderBase<Eve
 			//.EventTypeResolver()
 			//.EventHandlerAssemblies()
 			//.EventBusName(null)
-			//.EventBodyProvider(null)
 			.HostLogger(sp => new DefaultHostLogger(sp.GetRequiredService<ILogger<DefaultHostLogger>>()))
-			.HandlerLogger(sp => new DefaultHandlerLogger(sp.GetRequiredService<ILogger<DefaultHandlerLogger>>()))
-			.MessageHandlerResultFactory(sp => new MessageHandlerResultFactory());
+			.HandlerLogger(sp => new DefaultHandlerLogger(sp.GetRequiredService<ILogger<DefaultHandlerLogger>>()));
 }

@@ -10,7 +10,7 @@ namespace Envelope.ServiceBus.Extensions;
 
 public static partial class ServiceCollectionExtensions
 {
-	public static IServiceCollection AddInMemoryEventBus(
+	public static IServiceCollection AddEventBus(
 		this IServiceCollection services,
 		Action<EventBusConfigurationBuilder> configure,
 		ServiceLifetime eventBusLifetime = ServiceLifetime.Scoped,
@@ -22,13 +22,6 @@ public static partial class ServiceCollectionExtensions
 
 		var builder = EventBusConfigurationBuilder.GetDefaultBuilder();
 		configure(builder);
-
-		//var orchestrationEventHandlerType = typeof(Orchestrations.EventHandlers.Internal.OrchestrationEventHandler);
-
-		//builder.AddEventHandlerType(
-		//	new EventHandlerType<Orchestrations.EventHandlers.Internal.OrchestrationEventHandler, Orchestrations.EventHandlers.OrchestrationEventHandlerContext>(
-		//		typeof(Orchestrations.EventHandlers.AsyncEventHandlerInterceptor<Orchestrations.Model.OrchestrationEvent>),
-		//		sp => new Orchestrations.EventHandlers.OrchestrationEventHandlerContext()));
 
 		var config = builder.Build();
 
@@ -64,8 +57,6 @@ public static partial class ServiceCollectionExtensions
 			}
 		}
 
-		services.TryAddSingleton<IMessageHandlerResultFactory, MessageHandlerResultFactory>();
-
 		services.TryAdd(new ServiceDescriptor(
 			typeof(IEventBus),
 			sp =>
@@ -74,41 +65,49 @@ public static partial class ServiceCollectionExtensions
 				configure(builder);
 
 				var cfg = builder.Build();
-				var messageBus = new EventBus(sp, cfg, registry);
-				return messageBus;
+				var eventBus = new EventBus(sp, cfg, registry);
+				return eventBus;
 			},
-			eventBusLifetime));
-
-		services.TryAdd(new ServiceDescriptor(
-			typeof(IEventPublisher),
-			sp => sp.GetRequiredService<IEventBus>(),
 			eventBusLifetime));
 
 		return services;
 	}
 
-	public static IServiceCollection AddInMemoryEventBus(
+	public static IServiceCollection AddEventBus(
 		this IServiceCollection services,
-		string messageBusName,
+		string eventBusName,
+		Action<EventBusConfigurationBuilder> configure,
 		params IEventHandlersAssembly[] assembliesToScan)
 	{
-		if (string.IsNullOrWhiteSpace(messageBusName))
-			throw new ArgumentNullException(nameof(messageBusName));
+		if (string.IsNullOrWhiteSpace(eventBusName))
+			throw new ArgumentNullException(nameof(eventBusName));
 
 		if (assembliesToScan == null || assembliesToScan.Length == 0)
 			throw new ArgumentNullException(nameof(assembliesToScan));
 
-		return AddInMemoryEventBus(
+		return AddEventBus(
 			services,
 			builder =>
 			{
 				builder
-					.EventBusName(messageBusName)
+					.EventBusName(eventBusName)
 					.EventHandlerAssemblies(assembliesToScan)
 					.EventTypeResolver(new FullNameTypeResolver());
+
+				configure?.Invoke(builder);
 			},
 			ServiceLifetime.Scoped,
 			ServiceLifetime.Transient,
 			ServiceLifetime.Transient);
 	}
+
+	public static IServiceCollection AddEventBus(
+		this IServiceCollection services,
+		string eventBusName,
+		params IEventHandlersAssembly[] assembliesToScan)
+		=> AddEventBus(
+			services,
+			eventBusName,
+			null!,
+			assembliesToScan);
 }

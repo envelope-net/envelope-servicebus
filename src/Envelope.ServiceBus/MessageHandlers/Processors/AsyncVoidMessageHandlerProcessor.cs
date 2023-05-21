@@ -31,9 +31,8 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 {
 	protected override IMessageHandler CreateHandler(IServiceProvider serviceProvider)
 	{
-		var handler = serviceProvider.GetService<IAsyncMessageHandler<TRequestMessage, TContext>>();
-		if (handler == null)
-			throw new InvalidOperationException($"Could not resolve handler for {typeof(IAsyncMessageHandler<TRequestMessage, TContext>).FullName}");
+		var handler = serviceProvider.GetService<IAsyncMessageHandler<TRequestMessage, TContext>>()
+			?? throw new InvalidOperationException($"Could not resolve handler for {typeof(IAsyncMessageHandler<TRequestMessage, TContext>).FullName}");
 
 		return handler;
 	}
@@ -67,9 +66,8 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 			}
 			else
 			{
-				var interceptor = (IAsyncMessageHandlerInterceptor<TRequestMessage, TContext>?)serviceProvider.GetService(interceptorType);
-				if (interceptor == null)
-					throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IAsyncMessageHandlerInterceptor<TRequestMessage, TContext>).FullName}");
+				var interceptor = (IAsyncMessageHandlerInterceptor<TRequestMessage, TContext>?)serviceProvider.GetService(interceptorType)
+					?? throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IAsyncMessageHandlerInterceptor<TRequestMessage, TContext>).FullName}");
 
 				result = await interceptor.InterceptHandleAsync(message, handlerContext, handler.HandleAsync, cancellationToken).ConfigureAwait(false);
 			}
@@ -85,7 +83,7 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 				{
 					try
 					{
-						await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
+						await handlerContext.LogCriticalAsync(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
 					}
 					catch { }
 				}
@@ -98,7 +96,7 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 			var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
 			try
 			{
-				await handlerContext.LogErrorAsync(traceInfo, null, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
+				await handlerContext.LogErrorAsync(traceInfo, x => x.ExceptionInfo(exHandler), "SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
 			}
 			catch { }
 
@@ -112,7 +110,7 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 				{
 					try
 					{
-						await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
+						await handlerContext.LogCriticalAsync(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
 					}
 					catch { }
 				}
@@ -153,7 +151,7 @@ internal class AsyncVoidMessageHandlerProcessor<TRequestMessage, TContext> : Asy
 			try
 			{
 				if (handlerContext != null)
-					await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
+					await handlerContext.LogCriticalAsync(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null, cancellationToken).ConfigureAwait(false);
 			}
 			catch { }
 		}

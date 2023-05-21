@@ -30,10 +30,10 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 	where TEvent : IEvent
 	where TContext : IMessageHandlerContext
 {
-	protected override IEnumerable<IEventHandler> CreateHandlers(IServiceProvider serviceProvider, bool throwNoHandlerException)
+	protected override IEnumerable<IEventHandler> CreateHandlers(IServiceProvider serviceProvider)
 	{
 		var handlers = serviceProvider.GetServices<IAsyncEventHandler<TEvent, TContext>>();
-		if (handlers == null || (throwNoHandlerException && !handlers.Any()))
+		if (handlers == null || !handlers.Any())
 			throw new InvalidOperationException($"Could not resolve handler for {typeof(IAsyncEventHandler<TEvent, TContext>).FullName}");
 
 		return handlers;
@@ -57,11 +57,11 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 		List<IAsyncEventHandler<TEvent, TContext>>? handlers = null;
 		try
 		{
-			handlers = CreateHandlers(serviceProvider, handlerContext.ThrowNoHandlerException).Select(x => (IAsyncEventHandler<TEvent, TContext>)x).ToList();
+			handlers = CreateHandlers(serviceProvider).Select(x => (IAsyncEventHandler<TEvent, TContext>)x).ToList();
 		}
 		catch (Exception exHandler)
 		{
-			handlerContext.LogError(TraceInfo.Create(handlerContext.TraceInfo), null, x => x.ExceptionInfo(exHandler), $"PublishAsync<IEvent> {nameof(CreateHandlers)} error", null);
+			await handlerContext.LogErrorAsync(TraceInfo.Create(handlerContext.TraceInfo), x => x.ExceptionInfo(exHandler), $"PublishAsync<IEvent> {nameof(CreateHandlers)} error", null, cancellationToken).ConfigureAwait(false);
 			throw;
 		}
 
@@ -78,9 +78,8 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 				}
 				else
 				{
-					var interceptor = (IAsyncEventHandlerInterceptor<TEvent, TContext>?)serviceProvider.GetService(interceptorType);
-					if (interceptor == null)
-						throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IAsyncEventHandlerInterceptor<TEvent, TContext>).FullName}");
+					var interceptor = (IAsyncEventHandlerInterceptor<TEvent, TContext>?)serviceProvider.GetService(interceptorType)
+						?? throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IAsyncEventHandlerInterceptor<TEvent, TContext>).FullName}");
 
 					result = await interceptor.InterceptHandleAsync(@event, handlerContext, handler.HandleAsync, cancellationToken).ConfigureAwait(false);
 				}
@@ -98,7 +97,7 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 					{
 						try
 						{
-							await handlerContext.LogErrorAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
+							await handlerContext.LogErrorAsync(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
 						}
 						catch { }
 					}
@@ -109,7 +108,7 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 				var traceInfo = TraceInfo.Create(handlerContext.TraceInfo);
 				try
 				{
-					await handlerContext.LogErrorAsync(traceInfo, null, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
+					await handlerContext.LogErrorAsync(traceInfo, x => x.ExceptionInfo(exHandler), "PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
 				}
 				catch { }
 
@@ -123,7 +122,7 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 					{
 						try
 						{
-							await handlerContext.LogErrorAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
+							await handlerContext.LogErrorAsync(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
 						}
 						catch { }
 					}
@@ -159,7 +158,7 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 	{
 		try
 		{
-			var handlers = CreateHandlers(serviceProvider, true).Select(x => (IAsyncEventHandler<TEvent, TContext>)x).ToList();
+			var handlers = CreateHandlers(serviceProvider).Select(x => (IAsyncEventHandler<TEvent, TContext>)x).ToList();
 
 			foreach (var handler in handlers)
 			{
@@ -172,7 +171,7 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 					try
 					{
 						if (handlerContext != null)
-							handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(handlerOnErrorEx), "OnErrorAsync1: PublishAsync<IEvent> error", null);
+							handlerContext.LogCritical(traceInfo, x => x.ExceptionInfo(handlerOnErrorEx), "OnErrorAsync1: PublishAsync<IEvent> error", null);
 					}
 					catch { }
 				}
@@ -183,7 +182,7 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 			try
 			{
 				if (handlerContext != null)
-					await handlerContext.LogCriticalAsync(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync2: PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
+					await handlerContext.LogCriticalAsync(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync2: PublishAsync<IEvent> error", null, cancellationToken).ConfigureAwait(false);
 			}
 			catch { }
 		}

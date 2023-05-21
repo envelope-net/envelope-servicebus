@@ -1,6 +1,4 @@
 ﻿using Envelope.ServiceBus.MessageHandlers.Interceptors;
-using Envelope.ServiceBus.Messages;
-using Envelope.ServiceBus.Messages.Internal;
 using Envelope.Services;
 using Envelope.Trace;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,12 +7,11 @@ namespace Envelope.ServiceBus.MessageHandlers.Processors;
 
 internal abstract class MessageHandlerProcessor<TResponse> : MessageHandlerProcessorBase
 {
-	public abstract IResult<ISendResponse<TResponse>> Handle(
+	public abstract IResult<TResponse> Handle(
 		Messages.IRequestMessage<TResponse> message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
 		ITraceInfo traceInfo,
-		Func<TResponse, IMessageHandlerContext, ITraceInfo, IResult<Guid>> saveResponseMessageAction,
 		string? unhandledExceptionDetail);
 
 	public abstract void OnError(
@@ -33,28 +30,25 @@ internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : M
 {
 	protected override IMessageHandler CreateHandler(IServiceProvider serviceProvider)
 	{
-		var handler = serviceProvider.GetService<IMessageHandler<TRequestMessage, TResponse, TContext>>();
-		if (handler == null)
-			throw new InvalidOperationException($"Could not resolve handler for {typeof(IMessageHandler<TRequestMessage, TResponse, TContext>).FullName}");
+		var handler = serviceProvider.GetService<IMessageHandler<TRequestMessage, TResponse, TContext>>()
+			?? throw new InvalidOperationException($"Could not resolve handler for {typeof(IMessageHandler<TRequestMessage, TResponse, TContext>).FullName}");
 
 		return handler;
 	}
 
-	public override IResult<ISendResponse<TResponse>> Handle(
+	public override IResult<TResponse> Handle(
 		Messages.IRequestMessage<TResponse> message,
 		IMessageHandlerContext handlerContext,
 		IServiceProvider serviceProvider,
 		ITraceInfo traceInfo,
-		Func<TResponse, IMessageHandlerContext, ITraceInfo, IResult<Guid>> saveResponseMessageAction,
 		string? unhandledExceptionDetail)
-		=> Handle((TRequestMessage)message, (TContext)handlerContext, serviceProvider, traceInfo, saveResponseMessageAction, unhandledExceptionDetail);
+		=> Handle((TRequestMessage)message, (TContext)handlerContext, serviceProvider, traceInfo, unhandledExceptionDetail);
 
-	public IResult<ISendResponse<TResponse>> Handle(
+	public IResult<TResponse> Handle(
 		TRequestMessage message,
 		TContext handlerContext,
 		IServiceProvider serviceProvider,
 		ITraceInfo traceInfo,
-		Func<TResponse, IMessageHandlerContext, ITraceInfo, IResult<Guid>> saveResponseMessageAction,
 		string? unhandledExceptionDetail)
 	{
 		IMessageHandler<TRequestMessage, TResponse, TContext>? handler = null;
@@ -71,27 +65,23 @@ internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : M
 			}
 			else
 			{
-				var interceptor = (IMessageHandlerInterceptor<TRequestMessage, TResponse, TContext>?)serviceProvider.GetService(interceptorType);
-				if (interceptor == null)
-					throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IMessageHandlerInterceptor<TRequestMessage, TResponse, TContext>).FullName}");
+				var interceptor = (IMessageHandlerInterceptor<TRequestMessage, TResponse, TContext>?)serviceProvider.GetService(interceptorType)
+					?? throw new InvalidOperationException($"Could not resolve interceptor for {typeof(IMessageHandlerInterceptor<TRequestMessage, TResponse, TContext>).FullName}");
 
 				result = interceptor.InterceptHandle(message, handlerContext, handler.Handle);
 			}
 
-			var resultBuilder = new ResultBuilder<ISendResponse<TResponse>>();
+			var resultBuilder = new ResultBuilder<TResponse>();
 			resultBuilder.Merge(result);
 
-			IResult<ISendResponse<TResponse>> newResult;
+			IResult<TResponse> newResult;
 			if (result.Data != null)
 			{
-				var response = result.Data;
-				var saveResult = saveResponseMessageAction(response, handlerContext, traceInfo);
-				resultBuilder.MergeHasError(saveResult);
-				newResult = resultBuilder.WithData(new SendResponse<TResponse>(handlerContext.MessageId, saveResult.Data, result.Data)).Build();
+				newResult = resultBuilder.WithData(result.Data).Build();
 			}
 			else
 			{
-				newResult = resultBuilder.WithData(new SendResponse<TResponse>(handlerContext.MessageId, Guid.Empty, default)).Build();
+				newResult = resultBuilder.WithData(default).Build();
 			}
 
 			if (newResult.HasError)
@@ -104,7 +94,7 @@ internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : M
 				{
 					try
 					{
-						handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnError: Send<Messages.IRequestMessage<TResponse>> error", null);
+						handlerContext.LogCritical(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnError: Send<Messages.IRequestMessage<TResponse>> error", null);
 					}
 					catch { }
 				}
@@ -117,7 +107,7 @@ internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : M
 			traceInfo = TraceInfo.Create(traceInfo);
 			try
 			{
-				handlerContext.LogError(traceInfo, null, x => x.ExceptionInfo(exHandler), "Send<Messages.IRequestMessage<TResponse>> error", null);
+				handlerContext.LogError(traceInfo, x => x.ExceptionInfo(exHandler), "Send<Messages.IRequestMessage<TResponse>> error", null);
 			}
 			catch { }
 
@@ -131,7 +121,7 @@ internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : M
 				{
 					try
 					{
-						handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnError: Send<Messages.IRequestMessage<TResponse>> error", null);
+						handlerContext.LogCritical(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnError: Send<Messages.IRequestMessage<TResponse>> error", null);
 					}
 					catch { }
 				}
@@ -169,8 +159,7 @@ internal class MessageHandlerProcessor<TRequestMessage, TResponse, TContext> : M
 		{
 			try
 			{
-				if (handlerContext != null)
-					handlerContext.LogCritical(traceInfo, null, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null);
+				handlerContext?.LogCritical(traceInfo, x => x.ExceptionInfo(onErrorEx), "OnErrorAsync: SendAsync<Messages.IRequestMessage> error", null);
 			}
 			catch { }
 		}
