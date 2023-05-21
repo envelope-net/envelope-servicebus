@@ -1,5 +1,5 @@
 ﻿using Envelope.Extensions;
-using Envelope.MessageBus.Configuration;
+using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Internal;
 using Envelope.ServiceBus.Messages.Resolvers;

@@ -1,5 +1,4 @@
 ﻿using Envelope.Exceptions;
-using Envelope.ServiceBus.Configuration;
 using Envelope.ServiceBus.Hosts.Logging;
 using Envelope.ServiceBus.MessageHandlers;
 using Envelope.ServiceBus.MessageHandlers.Logging;
@@ -7,7 +6,7 @@ using Envelope.ServiceBus.Messages.Resolvers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Envelope.MessageBus.Configuration;
+namespace Envelope.ServiceBus.Configuration;
 
 public interface IMessageBusConfigurationBuilder<TBuilder, TObject>
 	where TBuilder : IMessageBusConfigurationBuilder<TBuilder, TObject>
