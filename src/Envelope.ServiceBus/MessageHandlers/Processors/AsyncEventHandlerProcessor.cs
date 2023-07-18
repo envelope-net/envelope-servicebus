@@ -84,7 +84,7 @@ internal class AsyncEventHandlerProcessor<TEvent, TContext> : AsyncEventHandlerP
 					result = await interceptor.InterceptHandleAsync(@event, handlerContext, handler.HandleAsync, cancellationToken).ConfigureAwait(false);
 				}
 
-				resultBuilder.Merge(result);
+				resultBuilder.MergeAll(result);
 
 				if (resultBuilder.HasError())
 				{

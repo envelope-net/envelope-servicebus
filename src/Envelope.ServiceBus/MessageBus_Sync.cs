@@ -125,9 +125,9 @@ public partial class MessageBus : IMessageBus
 					return result.WithInvalidOperationException(traceInfo, $"Could not create handlerProcessor type for {requestMessageType}");
 
 				var handlerResult = handlerProcessor.Handle(message, handlerContext, ServiceProvider, unhandledExceptionDetail);
-				result.MergeAllHasError(handlerResult);
+				result.MergeAll(handlerResult);
 
-				if (result.HasError())
+				if (result.HasTransactionRollbackError())
 				{
 					transactionController.ScheduleRollback();
 				}
@@ -211,7 +211,7 @@ public partial class MessageBus : IMessageBus
 		}
 
 		var sendResult = SendInternal(message, transactionController, isLocalTransactionCoordinator, traceInfo);
-		result.MergeAllHasError(sendResult);
+		result.MergeAll(sendResult);
 
 		if (sendResult.Data != null)
 			result.WithData(sendResult.Data);
@@ -284,7 +284,7 @@ public partial class MessageBus : IMessageBus
 				var handlerResult = handlerProcessor.Handle(message, handlerContext, ServiceProvider, traceInfo, unhandledExceptionDetail);
 				result.MergeAllWithData(handlerResult);
 
-				if (result.HasError())
+				if (result.HasTransactionRollbackError())
 				{
 					transactionController.ScheduleRollback();
 				}

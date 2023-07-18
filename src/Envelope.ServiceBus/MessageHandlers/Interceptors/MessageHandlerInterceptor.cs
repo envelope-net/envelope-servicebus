@@ -53,7 +53,7 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 				var executeResult = next(message!, handlerContext)
 					?? throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse>).FullName}");
 
-				resultBuilder.MergeAllHasError(executeResult);
+				resultBuilder.MergeAll(executeResult);
 
 				if (result.HasError)
 				{
@@ -68,7 +68,8 @@ public abstract class MessageHandlerInterceptor<TRequestMessage, TResponse, TCon
 						Logger.LogErrorMessage(errMsg, false);
 					}
 
-					handlerContext.TransactionController?.ScheduleRollback(result.ToException()!.ToStringTrace());
+					if (result.HasTransactionRollbackError)
+						handlerContext.TransactionController?.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 				else
 				{

@@ -53,7 +53,7 @@ public abstract class VoidMessageHandlerInterceptor<TRequestMessage, TContext> :
 				var executeResult = next(message!, handlerContext)
 					?? throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult).FullName}");
 
-				resultBuilder.MergeAllHasError(executeResult);
+				resultBuilder.MergeAll(executeResult);
 
 				if (result.HasError)
 				{
@@ -68,7 +68,8 @@ public abstract class VoidMessageHandlerInterceptor<TRequestMessage, TContext> :
 						Logger.LogErrorMessage(errMsg, false);
 					}
 
-					handlerContext.TransactionController?.ScheduleRollback(result.ToException()!.ToStringTrace());
+					if (result.HasTransactionRollbackError)
+						handlerContext.TransactionController?.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 
 				callEndTicks = StaticWatch.CurrentTicks;

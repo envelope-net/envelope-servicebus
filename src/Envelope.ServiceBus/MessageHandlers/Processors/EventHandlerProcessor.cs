@@ -80,7 +80,7 @@ internal class EventHandlerProcessor<TEvent, TContext> : EventHandlerProcessor
 					result = interceptor.InterceptHandle(@event, handlerContext, handler.Handle);
 				}
 
-				resultBuilder.Merge(result);
+				resultBuilder.MergeAll(result);
 
 				if (resultBuilder.HasError())
 				{

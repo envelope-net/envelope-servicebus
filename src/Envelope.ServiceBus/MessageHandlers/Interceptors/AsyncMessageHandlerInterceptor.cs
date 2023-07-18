@@ -54,7 +54,7 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 				var executeResult = await next(message!, handlerContext, cancellationToken).ConfigureAwait(false)
 					?? throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult<TResponse>).FullName}");
 
-				resultBuilder.MergeAllHasError(executeResult);
+				resultBuilder.MergeAll(executeResult);
 
 				if (result.HasError)
 				{
@@ -69,7 +69,8 @@ public abstract class AsyncMessageHandlerInterceptor<TRequestMessage, TResponse,
 						Logger.LogErrorMessage(errMsg, false);
 					}
 
-					handlerContext.TransactionController?.ScheduleRollback(result.ToException()!.ToStringTrace());
+					if (result.HasTransactionRollbackError)
+						handlerContext.TransactionController?.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 				else
 				{

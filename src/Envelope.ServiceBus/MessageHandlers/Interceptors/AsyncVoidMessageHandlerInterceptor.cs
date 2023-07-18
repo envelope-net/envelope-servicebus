@@ -54,7 +54,7 @@ public abstract class AsyncVoidMessageHandlerInterceptor<TRequestMessage, TConte
 				var executeResult = await next(message!, handlerContext, cancellationToken).ConfigureAwait(false)
 					?? throw new InvalidOperationException($"Interceptor's {nameof(next)} method returns null. Expected {typeof(IResult).FullName}");
 
-				resultBuilder.MergeAllHasError(executeResult);
+				resultBuilder.MergeAll(executeResult);
 
 				if (result.HasError)
 				{
@@ -69,7 +69,8 @@ public abstract class AsyncVoidMessageHandlerInterceptor<TRequestMessage, TConte
 						Logger.LogErrorMessage(errMsg, false);
 					}
 
-					handlerContext.TransactionController?.ScheduleRollback(result.ToException()!.ToStringTrace());
+					if (result.HasTransactionRollbackError)
+						handlerContext.TransactionController?.ScheduleRollback(result.ToException()!.ToStringTrace());
 				}
 
 				callEndTicks = StaticWatch.CurrentTicks;
